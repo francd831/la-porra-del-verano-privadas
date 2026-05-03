@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, CreditCard, Crown, Shield, Trophy, Users } from "lucide-react";
+import { ArrowLeft, Copy, CreditCard, Crown, Shield, Trophy, Users, Medal, TrendingUp, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -161,12 +161,12 @@ export default function LigaDetalle() {
     try {
       await navigator.clipboard.writeText(league.invite_code);
       toast({
-        title: "Codigo copiado",
-        description: "Ya puedes compartirlo con tu grupo.",
+        title: "¡Código copiado! 📋",
+        description: "Compártelo con tu grupo.",
       });
     } catch {
       toast({
-        title: "Codigo de invitacion",
+        title: "Código de invitación",
         description: league.invite_code,
       });
     }
@@ -185,15 +185,15 @@ export default function LigaDetalle() {
       if (error) throw error;
       setLeague(data);
       toast({
-        title: "Plan actualizado",
-        description: "Cambio manual aplicado para testing. Stripe queda pendiente.",
+        title: "Plan actualizado ✅",
+        description: "Cambio aplicado para testing.",
       });
     } catch (error) {
       console.error("Error updating league plan:", error);
       toast({
         variant: "destructive",
         title: "No se pudo cambiar el plan",
-        description: "Solo el owner puede cambiar el plan manualmente.",
+        description: "Solo el owner puede cambiar el plan.",
       });
     } finally {
       setUpdatingPlan(false);
@@ -206,116 +206,173 @@ export default function LigaDetalle() {
     return "Miembro";
   };
 
+  const getMedalColor = (index: number) => {
+    if (index === 0) return "text-gold";
+    if (index === 1) return "text-muted-foreground";
+    if (index === 2) return "text-orange-400";
+    return "";
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="py-12 text-center text-muted-foreground">Cargando liga...</div>
+        <div className="py-16 text-center">
+          <div className="mx-auto mb-4 h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <p className="text-muted-foreground text-sm">Cargando liga...</p>
+        </div>
       </div>
     );
   }
 
   if (!league) return null;
 
+  const capacityPct = Math.round((members.length / league.max_members) * 100);
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <Button variant="ghost" className="mb-4 gap-2" onClick={() => navigate("/ligas")}>
+    <div className="container mx-auto px-4 py-6 max-w-6xl pb-24">
+      <Button variant="ghost" className="mb-4 gap-2 -ml-2 text-muted-foreground hover:text-foreground" onClick={() => navigate("/ligas")}>
         <ArrowLeft className="h-4 w-4" />
         Mis ligas
       </Button>
 
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow">
-            <Trophy className="h-6 w-6" />
+      {/* League header */}
+      <div className="mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/60 shadow-glow">
+              <Trophy className="h-7 w-7 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold leading-tight">{league.name}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="secondary" className="uppercase text-[10px] tracking-wider font-bold">
+                  {currentPlan.name}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {members.length}/{league.max_members} miembros
+                </span>
+              </div>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">{league.name}</h1>
-            <p className="text-sm text-muted-foreground">
-              {members.length}/{league.max_members} miembros - plan {currentPlan.name}
-            </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={copyInviteCode}
+              className="gap-2 rounded-xl border-border/50 hover:border-primary/50"
+            >
+              <Copy className="h-4 w-4" />
+              <span className="font-mono font-bold tracking-wider">{league.invite_code}</span>
+            </Button>
+            <Button asChild className="rounded-xl font-bold">
+              <Link to="/mi-porra">Mi porra</Link>
+            </Button>
           </div>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button variant="outline" onClick={copyInviteCode} className="gap-2">
-            <Copy className="h-4 w-4" />
-            {league.invite_code}
-          </Button>
-          <Button asChild>
-            <Link to="/mi-porra">Editar mi porra</Link>
-          </Button>
+
+        {/* Capacity bar */}
+        <div className="mt-4">
+          <div className="h-1.5 rounded-full bg-muted/50 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${
+                isLeagueFull ? "bg-destructive" : capacityPct > 75 ? "bg-gold" : "bg-primary"
+              }`}
+              style={{ width: `${Math.min(capacityPct, 100)}%` }}
+            />
+          </div>
         </div>
       </div>
 
       {shouldShowUpgrade && (
-        <Alert className="mb-6 border-primary/30 bg-primary/5">
-          <CreditCard className="h-4 w-4" />
-          <AlertTitle>Liga free completa</AlertTitle>
+        <Alert className="mb-6 border-gold/30 bg-gold/5 rounded-xl">
+          <CreditCard className="h-4 w-4 text-gold" />
+          <AlertTitle className="text-gold">Liga completa</AlertTitle>
           <AlertDescription className="space-y-3">
-            <p>
-              Esta liga ya tiene {members.length} de {league.max_members} miembros. Para aceptar nuevas incorporaciones,
-              cambia a Pro o superior. Los cobros reales no estan activos todavia.
+            <p className="text-sm text-muted-foreground">
+              Has alcanzado el límite del plan Free ({league.max_members} miembros). Amplía tu plan para seguir invitando.
             </p>
             {isOwner && (
-              <Button className="gap-2" onClick={() => handlePlanChange("pro")} disabled={updatingPlan}>
-                <CreditCard className="h-4 w-4" />
-                {updatingPlan ? "Actualizando..." : "Subir a Pro para testing"}
+              <Button className="gap-2 rounded-xl bg-gold text-gold-foreground hover:bg-gold/90" onClick={() => handlePlanChange("pro")} disabled={updatingPlan}>
+                <TrendingUp className="h-4 w-4" />
+                {updatingPlan ? "Actualizando..." : "Ampliar a Pro"}
               </Button>
             )}
           </AlertDescription>
         </Alert>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <Card className="border-0 bg-gradient-card shadow-strong">
-          <CardHeader>
+      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+        {/* Rankings table */}
+        <Card className="border border-border/50 bg-card/60 backdrop-blur-xl shadow-strong overflow-hidden">
+          <CardHeader className="border-b border-border/30">
             <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-gold" />
-              Clasificacion de la liga
+              <Medal className="h-5 w-5 text-gold" />
+              Clasificación
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {rankings.length === 0 ? (
-              <div className="px-6 py-10 text-center text-muted-foreground">
-                Todavia no hay pronosticos guardados por los miembros de esta liga.
+              <div className="px-6 py-14 text-center">
+                <Trophy className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
+                <p className="text-muted-foreground text-sm">
+                  Aún no hay pronósticos guardados.
+                </p>
+                <p className="text-muted-foreground/60 text-xs mt-1">
+                  Los puntos aparecerán cuando los miembros completen su porra.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border">
-                      <th className="p-3 text-left text-xs font-semibold">Pos.</th>
-                      <th className="p-3 text-left text-xs font-semibold">Participante</th>
-                      <th className="p-3 text-center text-xs font-semibold">Total</th>
-                      <th className="hidden p-3 text-center text-xs font-semibold sm:table-cell">Grupos</th>
-                      <th className="hidden p-3 text-center text-xs font-semibold md:table-cell">Final</th>
-                      <th className="hidden p-3 text-center text-xs font-semibold md:table-cell">Premios</th>
+                    <tr className="border-b border-border/30 bg-muted/10">
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">#</th>
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Participante</th>
+                      <th className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Pts</th>
+                      <th className="hidden px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:table-cell">Grupos</th>
+                      <th className="hidden px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground md:table-cell">Elim.</th>
+                      <th className="hidden px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground md:table-cell">Bonus</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rankings.map((ranking, index) => {
                       const isCurrentUser = ranking.user_id === user?.id;
+                      const isTopThree = index < 3;
                       return (
                         <tr
                           key={ranking.user_id}
-                          className={`border-b border-border/50 hover:bg-muted/20 ${
-                            isCurrentUser ? "bg-primary/5" : ""
+                          className={`border-b border-border/20 transition-colors ${
+                            isCurrentUser
+                              ? "bg-primary/8 hover:bg-primary/12"
+                              : "hover:bg-muted/10"
                           }`}
                         >
-                          <td className="p-3 font-bold">#{index + 1}</td>
-                          <td className="p-3">
+                          <td className="px-4 py-3">
+                            {isTopThree ? (
+                              <span className={`font-bold text-lg ${getMedalColor(index)}`}>
+                                {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
+                              </span>
+                            ) : (
+                              <span className="font-semibold text-muted-foreground text-sm">{index + 1}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium">{ranking.display_name}</span>
+                              <span className={`font-medium text-sm ${isCurrentUser ? "text-primary" : ""}`}>
+                                {ranking.display_name}
+                              </span>
                               {isCurrentUser && (
-                                <Badge variant="outline" className="bg-primary/10 text-primary">
-                                  Tu
+                                <Badge variant="outline" className="bg-primary/10 text-primary text-[10px] px-1.5 py-0">
+                                  Tú
                                 </Badge>
                               )}
                             </div>
                           </td>
-                          <td className="p-3 text-center font-bold text-primary">{ranking.points_total}</td>
-                          <td className="hidden p-3 text-center sm:table-cell">{ranking.points_groups}</td>
-                          <td className="hidden p-3 text-center md:table-cell">{ranking.points_playoffs}</td>
-                          <td className="hidden p-3 text-center md:table-cell">{ranking.points_awards}</td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="font-bold text-primary">{ranking.points_total}</span>
+                          </td>
+                          <td className="hidden px-4 py-3 text-center text-sm text-muted-foreground sm:table-cell">{ranking.points_groups}</td>
+                          <td className="hidden px-4 py-3 text-center text-sm text-muted-foreground md:table-cell">{ranking.points_playoffs}</td>
+                          <td className="hidden px-4 py-3 text-center text-sm text-muted-foreground md:table-cell">{ranking.points_awards}</td>
                         </tr>
                       );
                     })}
@@ -326,100 +383,150 @@ export default function LigaDetalle() {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
-          <Card className="border-0 bg-gradient-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-5 w-5 text-primary" />
-                Miembros
+        {/* Sidebar */}
+        <div className="space-y-5">
+          {/* Members */}
+          <Card className="border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft overflow-hidden">
+            <CardHeader className="pb-3 border-b border-border/30">
+              <CardTitle className="flex items-center justify-between text-base">
+                <span className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  Miembros
+                </span>
+                <span className="text-xs text-muted-foreground font-normal">{members.length}</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {members.map((member) => (
-                <div key={member.user_id} className="flex items-center justify-between gap-3 rounded-lg bg-muted/30 p-3">
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">{member.display_name}</div>
-                    <div className="text-xs text-muted-foreground">{member.user_id === user?.id ? "Tu cuenta" : "Participante"}</div>
+            <CardContent className="p-3 space-y-1.5 max-h-[320px] overflow-y-auto">
+              {members.map((member) => {
+                const isMe = member.user_id === user?.id;
+                return (
+                  <div
+                    key={member.user_id}
+                    className={`flex items-center justify-between gap-2 rounded-lg p-2.5 transition-colors ${
+                      isMe ? "bg-primary/8" : "bg-muted/20 hover:bg-muted/30"
+                    }`}
+                  >
+                    <div className="min-w-0 flex items-center gap-2">
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                        member.role === "owner"
+                          ? "bg-gold/20 text-gold"
+                          : member.role === "admin"
+                          ? "bg-primary/20 text-primary"
+                          : "bg-muted/40 text-muted-foreground"
+                      }`}>
+                        {member.display_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className={`truncate text-sm font-medium ${isMe ? "text-primary" : ""}`}>
+                          {member.display_name}
+                          {isMe && <span className="text-xs text-primary/60 ml-1">(tú)</span>}
+                        </div>
+                      </div>
+                    </div>
+                    {member.role !== "member" && (
+                      <Badge variant={member.role === "owner" ? "default" : "secondary"} className="shrink-0 gap-1 text-[10px]">
+                        {member.role === "owner" ? <Crown className="h-2.5 w-2.5" /> : <Shield className="h-2.5 w-2.5" />}
+                        {roleLabel(member.role)}
+                      </Badge>
+                    )}
                   </div>
-                  <Badge variant={member.role === "member" ? "secondary" : "default"} className="shrink-0 gap-1">
-                    {member.role === "owner" ? <Crown className="h-3 w-3" /> : member.role === "admin" ? <Shield className="h-3 w-3" /> : null}
-                    {roleLabel(member.role)}
-                  </Badge>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
 
+          {/* Invite CTA */}
+          <Card className="border border-primary/20 bg-primary/5 backdrop-blur-xl shadow-soft overflow-hidden">
+            <CardContent className="p-4 text-center space-y-3">
+              <Share2 className="h-6 w-6 text-primary mx-auto" />
+              <div>
+                <p className="font-semibold text-sm mb-1">Invita a más gente</p>
+                <p className="text-xs text-muted-foreground">Comparte el código con tu grupo</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={copyInviteCode}
+                className="w-full gap-2 rounded-xl border-primary/30 hover:bg-primary/10 font-mono font-bold tracking-wider"
+              >
+                <Copy className="h-4 w-4" />
+                {league.invite_code}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Owner plan management */}
           {isOwner && (
-            <Card className="border-0 bg-gradient-card shadow-soft">
-              <CardHeader>
+            <Card className="border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft overflow-hidden">
+              <CardHeader className="pb-3 border-b border-border/30">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                  Planes de liga
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  Plan de liga
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-3">
+              <CardContent className="p-4 space-y-4">
+                <div className="grid gap-2">
                   {LEAGUE_PLANS.map((plan) => {
                     const isActive = plan.id === league.plan;
                     return (
                       <div
                         key={plan.id}
-                        className={`rounded-lg border p-3 ${
-                          isActive ? "border-primary bg-primary/5" : "border-border bg-muted/20"
+                        className={`rounded-xl border p-3 transition-all ${
+                          isActive
+                            ? "border-primary/40 bg-primary/8 shadow-sm"
+                            : "border-border/30 bg-muted/10 opacity-70"
                         }`}
                       >
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center justify-between gap-2">
                           <div>
-                            <div className="font-semibold">{plan.name}</div>
-                            <div className="text-xs text-muted-foreground">Hasta {plan.maxMembers} miembros</div>
+                            <span className="font-semibold text-sm">{plan.name}</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {plan.maxMembers} miembros
+                            </span>
                           </div>
-                          {isActive && <Badge>Actual</Badge>}
+                          {isActive && (
+                            <Badge className="text-[10px] bg-primary/20 text-primary border-0">Actual</Badge>
+                          )}
                         </div>
-                        <p className="mt-2 text-xs text-muted-foreground">{plan.description}</p>
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="space-y-2">
-                  <div className="text-sm font-medium">Cambio manual para testing</div>
+                <div className="space-y-2 pt-2 border-t border-border/30">
+                  <label className="text-xs font-medium text-muted-foreground">Cambiar plan (testing)</label>
                   <Select
                     value={league.plan}
                     onValueChange={(value) => handlePlanChange(value as LeaguePlanId)}
                     disabled={updatingPlan}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="rounded-xl bg-muted/20 border-border/50">
                       <SelectValue placeholder="Selecciona un plan" />
                     </SelectTrigger>
                     <SelectContent>
                       {LEAGUE_PLANS.map((plan) => (
                         <SelectItem key={plan.id} value={plan.id}>
-                          {plan.name} - {plan.maxMembers} miembros
+                          {plan.name} — {plan.maxMembers} miembros
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Preparado para conectar Stripe despues: por ahora no se crea ningun cobro ni checkout.
+                  <p className="text-[11px] text-muted-foreground/60">
+                    Sin cobros reales por ahora. Stripe pendiente de integración.
                   </p>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          <Card className="border-0 bg-gradient-card shadow-soft">
-            <CardContent className="space-y-3 p-5 text-sm">
+          {/* Info card */}
+          <Card className="border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft overflow-hidden">
+            <CardContent className="p-4 space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Tu rol</span>
-                <span className="font-semibold">{roleLabel(currentMember?.role || "member")}</span>
+                <span className="text-muted-foreground text-xs">Tu rol</span>
+                <span className="font-semibold text-xs">{roleLabel(currentMember?.role || "member")}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Codigo</span>
-                <span className="font-mono font-semibold">{league.invite_code}</span>
-              </div>
-              <p className="text-muted-foreground">
-                Tus predicciones son unicas por usuario y cuentan en todas las ligas donde participes.
+              <p className="text-[11px] text-muted-foreground/60 pt-1 border-t border-border/20">
+                Tus pronósticos son únicos y cuentan en todas las ligas donde participes.
               </p>
             </CardContent>
           </Card>
