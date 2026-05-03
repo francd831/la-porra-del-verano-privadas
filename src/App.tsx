@@ -17,6 +17,9 @@ import Login from "./pages/Login";
 import Registro from "./pages/Registro";
 import RecuperarPassword from "./pages/RecuperarPassword";
 import MiPorra from "./pages/MiPorra";
+import MisLigas from "./pages/MisLigas";
+import CrearLiga from "./pages/CrearLiga";
+import LigaDetalle from "./pages/LigaDetalle";
 import Pronosticos from "./pages/Pronosticos";
 import Resultados from "./pages/Resultados";
 import Clasificacion from "./pages/Clasificacion";
@@ -49,6 +52,9 @@ const App = () => (
               <Route path="/registro" element={<Registro />} />
               <Route path="/recuperar-password" element={<RecuperarPassword />} />
               <Route path="/mi-porra" element={<UserGuard><MiPorra /></UserGuard>} />
+              <Route path="/ligas" element={<AuthGuard><MisLigas /></AuthGuard>} />
+              <Route path="/ligas/crear" element={<AuthGuard><CrearLiga /></AuthGuard>} />
+              <Route path="/ligas/:leagueId" element={<AuthGuard><LigaDetalle /></AuthGuard>} />
               <Route path="/pronosticos" element={<AuthGuard><Pronosticos /></AuthGuard>} />
               <Route path="/resultados" element={<AdminGuard><Resultados /></AdminGuard>} />
               <Route path="/clasificacion" element={<AuthGuard><Clasificacion /></AuthGuard>} />

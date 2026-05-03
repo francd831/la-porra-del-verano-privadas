@@ -295,6 +295,74 @@ export type Database = {
           },
         ]
       }
+      league_members: {
+        Row: {
+          id: string
+          joined_at: string
+          league_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          league_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          league_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "league_members_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leagues: {
+        Row: {
+          created_at: string
+          id: string
+          invite_code: string
+          max_members: number
+          name: string
+          owner_id: string
+          plan: string
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invite_code?: string
+          max_members?: number
+          name: string
+          owner_id: string
+          plan?: string
+          tournament_id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invite_code?: string
+          max_members?: number
+          name?: string
+          owner_id?: string
+          plan?: string
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leaderboard_snapshot: {
         Row: {
           created_at: string
@@ -953,6 +1021,18 @@ export type Database = {
       is_display_name_available: {
         Args: { p_display_name: string }
         Returns: boolean
+      }
+      is_league_admin: {
+        Args: { p_league_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_league_member: {
+        Args: { p_league_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      join_league_by_invite_code: {
+        Args: { p_invite_code: string }
+        Returns: string
       }
       update_all_user_points: {
         Args: { p_tournament_id: string }
