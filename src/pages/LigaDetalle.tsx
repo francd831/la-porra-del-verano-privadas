@@ -76,7 +76,7 @@ export default function LigaDetalle() {
     try {
       const { data: leagueData, error: leagueError } = await supabase
         .from("leagues")
-        .select("id, name, invite_code, owner_id, plan, max_members, created_at")
+        .select("id, name, invite_code, owner_id, plan, max_members, created_at, tournament_id")
         .eq("id", leagueId)
         .single();
 
