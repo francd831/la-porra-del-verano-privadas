@@ -24,13 +24,24 @@ interface MemberRow {
   role: string;
 }
 
+interface LeagueStats {
+  memberCount: number;
+  userPosition: number | null;
+  userPoints: number;
+}
+
+interface SubmissionRow {
+  user_id: string;
+  points_total: number | null;
+}
+
 export default function MisLigas() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [leagues, setLeagues] = useState<League[]>([]);
   const [memberships, setMemberships] = useState<MemberRow[]>([]);
-  const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
+  const [leagueStats, setLeagueStats] = useState<Record<string, LeagueStats>>({});
   const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
@@ -60,7 +71,7 @@ export default function MisLigas() {
       const leagueIds = rows.map((row) => row.league_id);
       if (leagueIds.length === 0) {
         setLeagues([]);
-        setMemberCounts({});
+        setLeagueStats({});
         return;
       }
 
@@ -75,14 +86,47 @@ export default function MisLigas() {
 
       const { data: countsData } = await supabase
         .from("league_members")
-        .select("league_id")
+        .select("league_id, user_id")
         .in("league_id", leagueIds);
 
-      const counts: Record<string, number> = {};
+      const membersByLeague = new Map<string, string[]>();
+      const allMemberIds = new Set<string>();
       (countsData || []).forEach((row) => {
-        counts[row.league_id] = (counts[row.league_id] || 0) + 1;
+        const ids = membersByLeague.get(row.league_id) || [];
+        ids.push(row.user_id);
+        membersByLeague.set(row.league_id, ids);
+        allMemberIds.add(row.user_id);
       });
-      setMemberCounts(counts);
+
+      const { data: submissionsData } = allMemberIds.size
+        ? await supabase
+            .from("user_submissions")
+            .select("user_id, points_total")
+            .eq("tournament_id", "11111111-1111-1111-1111-111111111111")
+            .in("user_id", Array.from(allMemberIds))
+        : { data: [] };
+
+      const submissionsMap = new Map(
+        ((submissionsData || []) as SubmissionRow[]).map((submission) => [
+          submission.user_id,
+          submission.points_total || 0,
+        ])
+      );
+
+      const stats: Record<string, LeagueStats> = {};
+      leagueIds.forEach((leagueId) => {
+        const memberIds = membersByLeague.get(leagueId) || [];
+        const rankedMembers = [...memberIds].sort((a, b) => {
+          return (submissionsMap.get(b) || 0) - (submissionsMap.get(a) || 0);
+        });
+        const position = rankedMembers.findIndex((memberId) => memberId === user.id);
+        stats[leagueId] = {
+          memberCount: memberIds.length,
+          userPosition: position >= 0 ? position + 1 : null,
+          userPoints: submissionsMap.get(user.id) || 0,
+        };
+      });
+      setLeagueStats(stats);
     } catch (error) {
       console.error("Error loading leagues:", error);
       toast({
@@ -192,7 +236,11 @@ export default function MisLigas() {
         <div className="grid gap-4 md:grid-cols-2">
           {leagues.map((league) => {
             const role = roleByLeague.get(league.id);
-            const memberCount = memberCounts[league.id] || 0;
+            const stats = leagueStats[league.id] || {
+              memberCount: 0,
+              userPosition: null,
+              userPoints: 0,
+            };
             return (
               <Link key={league.id} to={`/ligas/${league.id}`} className="block">
                 <Card className="h-full border-0 bg-gradient-card shadow-soft transition-all hover:shadow-strong">
@@ -207,7 +255,17 @@ export default function MisLigas() {
                   <CardContent className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Miembros</span>
-                      <span className="font-semibold">{memberCount}/{league.max_members}</span>
+                      <span className="font-semibold">{stats.memberCount}/{league.max_members}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Tu posicion</span>
+                      <span className="font-semibold">
+                        {stats.userPosition ? `#${stats.userPosition}` : "Sin porra"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Tus puntos</span>
+                      <span className="font-semibold text-primary">{stats.userPoints} pts</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Codigo</span>

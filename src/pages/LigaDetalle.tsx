@@ -39,6 +39,14 @@ interface DisplayNameResult {
   display_name: string | null;
 }
 
+interface SubmissionRow {
+  user_id: string;
+  points_total: number | null;
+  points_groups: number | null;
+  points_playoffs: number | null;
+  points_awards: number | null;
+}
+
 export default function LigaDetalle() {
   const { leagueId } = useParams();
   const { user } = useAuth();
@@ -102,14 +110,23 @@ export default function LigaDetalle() {
 
       if (submissionsError) throw submissionsError;
 
-      setRankings((submissionsData || []).map((submission) => ({
-        user_id: submission.user_id,
-        display_name: profileMap.get(submission.user_id) || "Usuario",
-        points_total: submission.points_total || 0,
-        points_groups: submission.points_groups || 0,
-        points_playoffs: submission.points_playoffs || 0,
-        points_awards: submission.points_awards || 0,
-      })));
+      const submissionsMap = new Map(
+        ((submissionsData || []) as SubmissionRow[]).map((submission) => [submission.user_id, submission])
+      );
+
+      setRankings(formattedMembers
+        .map((member) => {
+          const submission = submissionsMap.get(member.user_id);
+          return {
+            user_id: member.user_id,
+            display_name: member.display_name,
+            points_total: submission?.points_total || 0,
+            points_groups: submission?.points_groups || 0,
+            points_playoffs: submission?.points_playoffs || 0,
+            points_awards: submission?.points_awards || 0,
+          };
+        })
+        .sort((a, b) => b.points_total - a.points_total));
     } catch (error) {
       console.error("Error loading league:", error);
       toast({
