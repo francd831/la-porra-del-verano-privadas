@@ -1,8 +1,6 @@
 import { FileText, Target, Trophy, Award, Calendar, Users, Clock, CheckCircle, XCircle, Mail } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import packDeportivoImg from "@/assets/pack-deportivo.jpg";
-import packExperienciaImg from "@/assets/pack-experiencia.jpg";
 export default function Bases() {
   return <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
@@ -29,7 +27,7 @@ export default function Bases() {
                   <Trophy className="w-8 h-8 text-gold" />
                   <div>
                     <h4 className="font-semibold">Juego gratuito</h4>
-                    <p className="text-sm text-muted-foreground">Acceso a premios opcional </p>
+                    <p className="text-sm text-muted-foreground">Crea tu liga sin coste</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
@@ -85,104 +83,8 @@ export default function Bases() {
         </Card>
       </div>
 
-      {/* Premios */}
-      <div className="space-y-6 mb-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold flex items-center justify-center space-x-2 mb-2">
-            <Trophy className="w-6 h-6 text-gold" />
-            <span>Premios</span>
-          </h2>
-          <p className="text-muted-foreground text-sm">Reconocimiento a los mejores clasificados</p>
-        </div>
 
-        {/* Cards de clasificación */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* 1º Clasificado */}
-          <Card className="shadow-soft border-0 bg-gold/10 border-2 border-gold/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
-            <CardContent className="pt-6 text-center">
-              <div className="w-16 h-16 bg-gradient-gold rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Trophy className="w-8 h-8 text-gold-foreground" />
-              </div>
-              <h3 className="text-xl font-bold text-gold mb-2">1º Clasificado</h3>
-              <p className="text-foreground text-sm">Premio con un valor máximo orientativo de hasta <span className="font-bold text-gold">300 €</span>
-              </p>
-            </CardContent>
-          </Card>
 
-          {/* 2º Clasificado */}
-          <Card className="shadow-soft border-0 bg-muted/30 border-2 border-muted/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
-            <CardContent className="pt-6 text-center">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Award className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-xl font-bold text-muted-foreground mb-2">2º Clasificado</h3>
-              <p className="text-foreground text-sm">Premio con un valor máximo orientativo de hasta <span className="font-bold text-muted-foreground">150 €</span>
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* 3º Clasificado */}
-          <Card className="shadow-soft border-0 bg-secondary/10 border-2 border-secondary/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
-            <CardContent className="pt-6 text-center">
-              <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Award className="w-8 h-8 text-secondary-foreground" />
-              </div>
-              <h3 className="text-xl font-bold mb-2 text-[#a3b0c2]">3º Clasificado</h3>
-              <p className="text-sm text-white">Premio con un valor máximo orientativo de hasta <span className="font-bold text-secondary">100 €</span>
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tipos de Pack */}
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold text-center mb-4 text-muted-foreground">Tipos de Pack</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Pack Deportivo */}
-            <Card className="shadow-soft border-0 bg-gradient-card hover:shadow-md transition-all duration-300 overflow-hidden">
-              <div className="w-full h-40 overflow-hidden">
-                <img alt="Pack deportivo" className="w-full h-full object-cover" src="/lovable-uploads/ec3ee70f-4317-4c35-84f7-6c1ad2f22304.png" />
-              </div>
-              <CardContent className="pt-4 pb-5 text-center">
-                <h4 className="font-semibold text-foreground mb-2">Pack deportivo</h4>
-                <p className="text-sm text-muted-foreground">
-                  Material deportivo, camisetas, equipaciones u otros artículos similares.
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Pack Experiencia */}
-            <Card className="shadow-soft border-0 bg-gradient-card hover:shadow-md transition-all duration-300 overflow-hidden">
-              <div className="w-full h-40 overflow-hidden">
-                <img src={packExperienciaImg} alt="Pack experiencia" className="w-full h-full object-cover" />
-              </div>
-              <CardContent className="pt-4 pb-5 text-center">
-                <h4 className="font-semibold text-foreground mb-2">Pack experiencia</h4>
-                <p className="text-sm text-muted-foreground">
-                  Actividades de ocio, deportivas, culturales o recreativas.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Aviso legal */}
-        <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-muted/50">
-          <div className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-xs text-primary font-bold">i</span>
-            </div>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p>La composición exacta de los packs, su valor final y los proveedores podrán variar en función de la disponibilidad.</p>
-              <p>La organización contactará con los ganadores para gestionar la elección del pack y los detalles de la entrega.</p>
-              <p>Los premios tienen carácter promocional, no son canjeables por dinero y podrán ser sustituidos por otros de características similares. 
-onal
-
-            </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
 
       <div className="space-y-6">
