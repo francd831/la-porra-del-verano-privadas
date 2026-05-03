@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CreditCard, Plus, Search, Shield, Users } from "lucide-react";
+import { CreditCard, Plus, Search, Shield, Users, Trophy, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -52,9 +52,9 @@ export default function MisLigas() {
   }, [memberships]);
 
   const getErrorMessage = (error: unknown) => {
-    if (!(error instanceof Error)) return "Comprueba el codigo de invitacion.";
+    if (!(error instanceof Error)) return "Comprueba el código de invitación.";
     if (error.message.includes("League member limit reached")) {
-      return "Esta liga ha alcanzado el limite de su plan. El owner debe subirla de plan para aceptar mas miembros.";
+      return "Esta liga ha alcanzado el límite de su plan. El owner debe ampliarla para aceptar más miembros.";
     }
     return error.message;
   };
@@ -163,8 +163,8 @@ export default function MisLigas() {
       if (error) throw error;
 
       toast({
-        title: "Liga encontrada",
-        description: "Te has unido correctamente.",
+        title: "¡Te has unido! 🎉",
+        description: "Ya formas parte de la liga.",
       });
       setInviteCode("");
       navigate(`/ligas/${leagueId}`);
@@ -181,18 +181,19 @@ export default function MisLigas() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="container mx-auto px-4 py-6 max-w-6xl pb-24">
+      {/* Header */}
+      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow">
-            <Users className="h-5 w-5" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/60 shadow-glow">
+            <Trophy className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Mis ligas</h1>
-            <p className="text-sm text-muted-foreground">Ligas privadas donde compites con tus pronosticos.</p>
+            <h1 className="text-2xl md:text-3xl font-bold">Mis ligas</h1>
+            <p className="text-sm text-muted-foreground">Compite con tu grupo en rankings privados</p>
           </div>
         </div>
-        <Button asChild className="gap-2">
+        <Button asChild className="gap-2 rounded-xl h-11 px-6 font-bold bg-gradient-to-r from-primary to-primary/80 shadow-glow hover:shadow-strong transition-all duration-300">
           <Link to="/ligas/crear">
             <Plus className="h-4 w-4" />
             Crear liga
@@ -200,22 +201,25 @@ export default function MisLigas() {
         </Button>
       </div>
 
-      <Card className="mb-6 border-0 bg-gradient-card shadow-soft">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Search className="h-5 w-5 text-primary" />
-            Unirse con codigo
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Join with code */}
+      <Card className="mb-8 border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft overflow-hidden">
+        <CardContent className="p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Search className="h-4 w-4 text-primary" />
+            <span className="font-semibold text-sm">¿Tienes un código de invitación?</span>
+          </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Input
               value={inviteCode}
               onChange={(event) => setInviteCode(event.target.value.toUpperCase())}
-              placeholder="Codigo de invitacion"
-              className="uppercase"
+              placeholder="Ej. ABC123"
+              className="uppercase h-11 bg-muted/30 border-border/50 font-mono text-base tracking-wider"
             />
-            <Button onClick={handleJoinLeague} disabled={joining || !inviteCode.trim()}>
+            <Button
+              onClick={handleJoinLeague}
+              disabled={joining || !inviteCode.trim()}
+              className="h-11 px-6 rounded-xl font-bold shrink-0"
+            >
               {joining ? "Uniendo..." : "Unirse"}
             </Button>
           </div>
@@ -223,16 +227,21 @@ export default function MisLigas() {
       </Card>
 
       {loading ? (
-        <div className="py-12 text-center text-muted-foreground">Cargando ligas...</div>
+        <div className="py-16 text-center">
+          <div className="mx-auto mb-4 h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <p className="text-muted-foreground text-sm">Cargando tus ligas...</p>
+        </div>
       ) : leagues.length === 0 ? (
-        <Card className="border-0 bg-gradient-card shadow-soft">
-          <CardContent className="py-12 text-center">
-            <Users className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <h2 className="mb-2 text-lg font-semibold">Aun no perteneces a ninguna liga</h2>
-            <p className="mx-auto mb-6 max-w-md text-sm text-muted-foreground">
-              Crea una liga privada o usa un codigo de invitacion para competir con tu grupo.
+        <Card className="border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft">
+          <CardContent className="py-16 text-center">
+            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-muted/30 border border-border/50">
+              <Users className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h2 className="mb-2 text-xl font-bold">Aún no tienes ligas</h2>
+            <p className="mx-auto mb-8 max-w-sm text-sm text-muted-foreground leading-relaxed">
+              Crea una liga privada para competir con tus amigos o usa un código de invitación para unirte a una existente.
             </p>
-            <Button asChild>
+            <Button asChild className="rounded-xl h-11 px-8 font-bold bg-gradient-to-r from-primary to-primary/80 shadow-glow">
               <Link to="/ligas/crear">Crear primera liga</Link>
             </Button>
           </CardContent>
@@ -249,51 +258,77 @@ export default function MisLigas() {
             };
             const isFull = stats.memberCount >= league.max_members;
             const needsUpgrade = league.plan === "free" && isFull;
+            const capacityPct = Math.round((stats.memberCount / league.max_members) * 100);
+
             return (
-              <Link key={league.id} to={`/ligas/${league.id}`} className="block">
-                <Card className="h-full border-0 bg-gradient-card shadow-soft transition-all hover:shadow-strong">
-                  <CardHeader>
+              <Link key={league.id} to={`/ligas/${league.id}`} className="block group">
+                <Card className="h-full border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft transition-all duration-300 group-hover:shadow-strong group-hover:border-primary/30 group-hover:scale-[1.01]">
+                  <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-3">
-                      <CardTitle className="text-lg">{league.name}</CardTitle>
-                      <Badge variant="secondary" className="shrink-0 uppercase">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                          <Trophy className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <CardTitle className="text-lg truncate">{league.name}</CardTitle>
+                          {role && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                              {role === "owner" ? <Shield className="h-3 w-3" /> : null}
+                              {role === "owner" ? "Owner" : role === "admin" ? "Admin" : "Miembro"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="shrink-0 uppercase text-[10px] tracking-wider font-bold">
                         {plan.name}
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Miembros</span>
-                      <span className="font-semibold">{stats.memberCount}/{league.max_members}</span>
+                  <CardContent className="space-y-4">
+                    {/* Capacity bar */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Miembros</span>
+                        <span className="font-semibold text-foreground">{stats.memberCount}/{league.max_members}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted/50 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            isFull ? "bg-destructive" : capacityPct > 75 ? "bg-gold" : "bg-primary"
+                          }`}
+                          style={{ width: `${Math.min(capacityPct, 100)}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Tu posicion</span>
-                      <span className="font-semibold">
-                        {stats.userPosition ? `#${stats.userPosition}` : "Sin porra"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Tus puntos</span>
-                      <span className="font-semibold text-primary">{stats.userPoints} pts</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Codigo</span>
-                      <span className="font-mono font-semibold">{league.invite_code}</span>
-                    </div>
-                    {needsUpgrade && (
-                      <div className="flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/5 p-3 text-sm">
-                        <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <div>
-                          <div className="font-medium">Upgrade disponible</div>
-                          <div className="text-xs text-muted-foreground">
-                            Free esta completo. Entra en la liga para subir a Pro en modo testing.
-                          </div>
+
+                    {/* Stats row */}
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 rounded-lg bg-muted/20 p-2.5 text-center">
+                        <div className="text-xs text-muted-foreground mb-0.5">Posición</div>
+                        <div className="font-bold text-sm">
+                          {stats.userPosition ? (
+                            <span className="text-gold">#{stats.userPosition}</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </div>
                       </div>
-                    )}
-                    {role && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Shield className="h-4 w-4" />
-                        <span>{role === "owner" ? "Owner" : role === "admin" ? "Admin" : "Miembro"}</span>
+                      <div className="flex-1 rounded-lg bg-muted/20 p-2.5 text-center">
+                        <div className="text-xs text-muted-foreground mb-0.5">Puntos</div>
+                        <div className="font-bold text-sm text-primary">{stats.userPoints}</div>
+                      </div>
+                      <div className="flex-1 rounded-lg bg-muted/20 p-2.5 text-center">
+                        <div className="text-xs text-muted-foreground mb-0.5">Código</div>
+                        <div className="font-bold text-xs font-mono">{league.invite_code}</div>
+                      </div>
+                    </div>
+
+                    {needsUpgrade && (
+                      <div className="flex items-center gap-2 rounded-xl border border-gold/25 bg-gold/5 p-3 text-xs">
+                        <CreditCard className="h-4 w-4 shrink-0 text-gold" />
+                        <span className="text-muted-foreground">
+                          Liga llena — <span className="text-gold font-semibold">ampliar plan</span>
+                        </span>
                       </div>
                     )}
                   </CardContent>
