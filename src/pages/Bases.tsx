@@ -51,40 +51,36 @@ export default function Bases() {
         </Card>
       </div>
 
-      {/* Acceso a premios */}
+      {/* Ligas privadas */}
       <div className="space-y-6 mb-8">
         <h2 className="text-2xl font-bold flex items-center space-x-2">
-          <Target className="w-6 h-6 text-gold" />
-          <span>Acceso a premios</span>
+          <Users className="w-6 h-6 text-gold" />
+          <span>Ligas Privadas</span>
         </h2>
 
         <Card className="shadow-soft border-0 bg-gradient-card">
           <CardContent className="pt-6">
             <p className="text-foreground leading-relaxed mb-4">
-              Los participantes pueden elegir acceder al sistema de premios mediante el pago de 5€
+              Crea tu propia liga privada e invita a amigos, familia o compañeros para competir juntos.
             </p>
             <ul className="space-y-2 text-foreground">
               <li className="flex items-start gap-2">
                 <span className="w-2 h-2 bg-gold rounded-full mt-2 flex-shrink-0"></span>
-                <span>El pago es 100% voluntario</span>
+                <span>Participación gratuita hasta 10 miembros</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-2 h-2 bg-gold rounded-full mt-2 flex-shrink-0"></span>
-                <span>No da ventajas en el juego</span>
+                <span>Rankings y estadísticas automáticas</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-2 h-2 bg-gold rounded-full mt-2 flex-shrink-0"></span>
-                <span>No modifica puntuaciones ni posiciones</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="w-2 h-2 bg-gold rounded-full mt-2 flex-shrink-0"></span>
-                <span>Sirve para cubrir la adquisición de premios y gastos de gestión</span>
+                <span>Planes premium para ligas más grandes</span>
               </li>
             </ul>
-            <p className="text-foreground leading-relaxed mt-4">El juego tiene las mismas normas para todos. El acceso a premios solo habilita la opción de recibir premios</p>
-            <p className="text-foreground leading-relaxed mt-4">Existe una única clasificación General y un filtro para visualizar la clasificación de los partipantes con acceso a premios
-          </p>
-            
+            <div className="mt-6 p-4 bg-muted/20 rounded-lg border border-muted/30 text-xs text-muted-foreground space-y-1">
+              <p>La plataforma no organiza apuestas, botes ni premios económicos.</p>
+              <p>Cualquier incentivo privado entre miembros de una liga queda fuera de la responsabilidad de la plataforma.</p>
+            </div>
           </CardContent>
         </Card>
       </div>
