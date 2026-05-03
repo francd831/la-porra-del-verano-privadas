@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, Crown, Shield, Trophy, Users } from "lucide-react";
+import { ArrowLeft, Copy, CreditCard, Crown, Shield, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { getLeaguePlan, LEAGUE_PLANS, type LeaguePlanId } from "@/lib/leaguePlans";
 
 interface League {
   id: string;
@@ -56,10 +59,16 @@ export default function LigaDetalle() {
   const [members, setMembers] = useState<Member[]>([]);
   const [rankings, setRankings] = useState<RankingRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingPlan, setUpdatingPlan] = useState(false);
 
   const currentMember = useMemo(() => {
     return members.find((member) => member.user_id === user?.id);
   }, [members, user]);
+
+  const currentPlan = useMemo(() => getLeaguePlan(league?.plan), [league]);
+  const isOwner = league?.owner_id === user?.id;
+  const isLeagueFull = members.length >= (league?.max_members || currentPlan.maxMembers);
+  const shouldShowUpgrade = league?.plan === "free" && isLeagueFull;
 
   const fetchLeague = useCallback(async () => {
     if (!leagueId) return;
@@ -162,6 +171,34 @@ export default function LigaDetalle() {
     }
   };
 
+  const handlePlanChange = async (plan: LeaguePlanId) => {
+    if (!league || !isOwner || updatingPlan) return;
+
+    setUpdatingPlan(true);
+    try {
+      const { data, error } = await supabase.rpc("update_league_plan_for_testing", {
+        p_league_id: league.id,
+        p_plan: plan,
+      });
+
+      if (error) throw error;
+      setLeague(data);
+      toast({
+        title: "Plan actualizado",
+        description: "Cambio manual aplicado para testing. Stripe queda pendiente.",
+      });
+    } catch (error) {
+      console.error("Error updating league plan:", error);
+      toast({
+        variant: "destructive",
+        title: "No se pudo cambiar el plan",
+        description: "Solo el owner puede cambiar el plan manualmente.",
+      });
+    } finally {
+      setUpdatingPlan(false);
+    }
+  };
+
   const roleLabel = (role: string) => {
     if (role === "owner") return "Owner";
     if (role === "admin") return "Admin";
@@ -193,7 +230,7 @@ export default function LigaDetalle() {
           <div>
             <h1 className="text-2xl font-bold">{league.name}</h1>
             <p className="text-sm text-muted-foreground">
-              {members.length}/{league.max_members} miembros - plan {league.plan}
+              {members.length}/{league.max_members} miembros - plan {currentPlan.name}
             </p>
           </div>
         </div>
@@ -207,6 +244,25 @@ export default function LigaDetalle() {
           </Button>
         </div>
       </div>
+
+      {shouldShowUpgrade && (
+        <Alert className="mb-6 border-primary/30 bg-primary/5">
+          <CreditCard className="h-4 w-4" />
+          <AlertTitle>Liga free completa</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <p>
+              Esta liga ya tiene {members.length} de {league.max_members} miembros. Para aceptar nuevas incorporaciones,
+              cambia a Pro o superior. Los cobros reales no estan activos todavia.
+            </p>
+            {isOwner && (
+              <Button className="gap-2" onClick={() => handlePlanChange("pro")} disabled={updatingPlan}>
+                <CreditCard className="h-4 w-4" />
+                {updatingPlan ? "Actualizando..." : "Subir a Pro para testing"}
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <Card className="border-0 bg-gradient-card shadow-strong">
@@ -292,6 +348,64 @@ export default function LigaDetalle() {
               ))}
             </CardContent>
           </Card>
+
+          {isOwner && (
+            <Card className="border-0 bg-gradient-card shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  Planes de liga
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3">
+                  {LEAGUE_PLANS.map((plan) => {
+                    const isActive = plan.id === league.plan;
+                    return (
+                      <div
+                        key={plan.id}
+                        className={`rounded-lg border p-3 ${
+                          isActive ? "border-primary bg-primary/5" : "border-border bg-muted/20"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="font-semibold">{plan.name}</div>
+                            <div className="text-xs text-muted-foreground">Hasta {plan.maxMembers} miembros</div>
+                          </div>
+                          {isActive && <Badge>Actual</Badge>}
+                        </div>
+                        <p className="mt-2 text-xs text-muted-foreground">{plan.description}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Cambio manual para testing</div>
+                  <Select
+                    value={league.plan}
+                    onValueChange={(value) => handlePlanChange(value as LeaguePlanId)}
+                    disabled={updatingPlan}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un plan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LEAGUE_PLANS.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {plan.name} - {plan.maxMembers} miembros
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Preparado para conectar Stripe despues: por ahora no se crea ningun cobro ni checkout.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="border-0 bg-gradient-card shadow-soft">
             <CardContent className="space-y-3 p-5 text-sm">

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search, Shield, Users } from "lucide-react";
+import { CreditCard, Plus, Search, Shield, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { getLeaguePlan } from "@/lib/leaguePlans";
 
 interface League {
   id: string;
@@ -51,7 +52,11 @@ export default function MisLigas() {
   }, [memberships]);
 
   const getErrorMessage = (error: unknown) => {
-    return error instanceof Error ? error.message : "Comprueba el codigo de invitacion.";
+    if (!(error instanceof Error)) return "Comprueba el codigo de invitacion.";
+    if (error.message.includes("League member limit reached")) {
+      return "Esta liga ha alcanzado el limite de su plan. El owner debe subirla de plan para aceptar mas miembros.";
+    }
+    return error.message;
   };
 
   const fetchLeagues = useCallback(async () => {
@@ -236,11 +241,14 @@ export default function MisLigas() {
         <div className="grid gap-4 md:grid-cols-2">
           {leagues.map((league) => {
             const role = roleByLeague.get(league.id);
+            const plan = getLeaguePlan(league.plan);
             const stats = leagueStats[league.id] || {
               memberCount: 0,
               userPosition: null,
               userPoints: 0,
             };
+            const isFull = stats.memberCount >= league.max_members;
+            const needsUpgrade = league.plan === "free" && isFull;
             return (
               <Link key={league.id} to={`/ligas/${league.id}`} className="block">
                 <Card className="h-full border-0 bg-gradient-card shadow-soft transition-all hover:shadow-strong">
@@ -248,7 +256,7 @@ export default function MisLigas() {
                     <div className="flex items-start justify-between gap-3">
                       <CardTitle className="text-lg">{league.name}</CardTitle>
                       <Badge variant="secondary" className="shrink-0 uppercase">
-                        {league.plan}
+                        {plan.name}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -271,6 +279,17 @@ export default function MisLigas() {
                       <span className="text-muted-foreground">Codigo</span>
                       <span className="font-mono font-semibold">{league.invite_code}</span>
                     </div>
+                    {needsUpgrade && (
+                      <div className="flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/5 p-3 text-sm">
+                        <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <div>
+                          <div className="font-medium">Upgrade disponible</div>
+                          <div className="text-xs text-muted-foreground">
+                            Free esta completo. Entra en la liga para subir a Pro en modo testing.
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {role && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Shield className="h-4 w-4" />

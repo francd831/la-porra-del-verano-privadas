@@ -37,6 +37,8 @@ export default function CrearLiga() {
         .insert({
           name: trimmedName,
           owner_id: user.id,
+          plan: "free",
+          max_members: 10,
         })
         .select("id")
         .single();

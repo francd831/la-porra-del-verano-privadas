@@ -1034,6 +1034,14 @@ export type Database = {
         Args: { p_invite_code: string }
         Returns: string
       }
+      league_plan_member_limit: {
+        Args: { p_plan: string }
+        Returns: number
+      }
+      update_league_plan_for_testing: {
+        Args: { p_league_id: string; p_plan: string }
+        Returns: Database["public"]["Tables"]["leagues"]["Row"]
+      }
       update_all_user_points: {
         Args: { p_tournament_id: string }
         Returns: undefined
