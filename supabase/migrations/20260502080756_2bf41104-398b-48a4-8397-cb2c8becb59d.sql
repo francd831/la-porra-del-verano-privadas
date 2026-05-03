@@ -1,0 +1,1 @@
+ALTER TABLE public.tournaments ADD COLUMN rankings_visible boolean NOT NULL DEFAULT false;

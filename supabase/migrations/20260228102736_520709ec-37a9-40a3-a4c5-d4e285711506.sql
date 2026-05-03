@@ -1,0 +1,1 @@
+ALTER TABLE public.notification_outbox ADD COLUMN IF NOT EXISTS delivered_at timestamptz DEFAULT NULL;

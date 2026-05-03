@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Porra Mundial 2026</title>
+    <meta name="description" content="Participa en la porra más emocionante del Mundial de Fútbol 2026. Haz tus pronósticos, compite con otros aficionados y demuestra tus conocimientos futbolísticos.">
+    <link rel="preload" as="image" href="/hero-stadium.webp" type="image/webp" fetchpriority="high" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'" />
+    <meta name="author" content="Porra Mundial 2026" />
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Mundial 2026" />
+    <link rel="apple-touch-icon" href="/mundial-icon-512.png" />
+    
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/worldcup-2026-preview.jpg" />
+    <meta property="og:url" content="https://mundial2026.com" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    
+    
+    <meta name="twitter:image" content="/worldcup-2026-preview.jpg" />
+
+    <link rel="canonical" href="https://mundial2026.com" />
+    <meta property="og:title" content="Porra Mundial 2026">
+  <meta name="twitter:title" content="Porra Mundial 2026">
+  <meta property="og:description" content="Participa en la porra más emocionante del Mundial de Fútbol 2026. Haz tus pronósticos, compite con otros aficionados y demuestra tus conocimientos futbolísticos.">
+  <meta name="twitter:description" content="Participa en la porra más emocionante del Mundial de Fútbol 2026. Haz tus pronósticos, compite con otros aficionados y demuestra tus conocimientos futbolísticos.">
+  <link rel="icon" type="image/png" href="/mundial-icon-512.png" />
+  </head>
+  <body>
+    <div id="splash-screen" style="
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, hsl(222 25% 8%) 0%, hsl(222 25% 14%) 50%, hsl(239 84% 20%) 100%);
+      transition: opacity 0.4s ease-out;
+    ">
+      <img
+        src="/mundial-icon-512.png"
+        alt="Porra Mundial 2026"
+        style="
+          width: min(55vw, 55vh, 280px);
+          height: auto;
+          filter: drop-shadow(0 0 40px hsla(45, 95%, 55%, 0.4));
+          animation: splash-pulse 2s ease-in-out infinite;
+        "
+      />
+      <h1 style="
+        font-family: 'Syne', system-ui, sans-serif;
+        font-weight: 800;
+        font-size: clamp(1.4rem, 5vw, 2rem);
+        color: white;
+        margin-top: 1.5rem;
+        letter-spacing: -0.02em;
+        text-align: center;
+      ">Porra Mundial 2026</h1>
+      <div style="
+        width: 48px;
+        height: 3px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, hsl(239 84% 67%), hsl(45 95% 55%));
+        margin-top: 1rem;
+        animation: splash-bar 1.5s ease-in-out infinite;
+      "></div>
+      <style>
+        @keyframes splash-pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.04); }
+        }
+        @keyframes splash-bar {
+          0%, 100% { opacity: 0.4; width: 48px; }
+          50% { opacity: 1; width: 80px; }
+        }
+      </style>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
