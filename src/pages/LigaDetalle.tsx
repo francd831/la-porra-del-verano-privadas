@@ -19,6 +19,7 @@ interface League {
   plan: string;
   max_members: number;
   created_at: string;
+  tournament_id: string;
 }
 
 interface Member {
