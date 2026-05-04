@@ -3,6 +3,7 @@ import { Trophy, Target, Award, FileText, Home, User, BarChart3, Users } from "l
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { isPrivateLeaguesApp } from "@/lib/appMode";
 export function BottomNav() {
   const location = useLocation();
   const { user } = useAuth();
@@ -36,11 +37,12 @@ export function BottomNav() {
     ? { href: "/pronosticos", icon: BarChart3, label: "Pronósticos" }
     : { href: "/bases", icon: FileText, label: "Bases" };
 
+  const privateLeaguesEnabled = isPrivateLeaguesApp();
   const items = user
     ? isAdmin
       ? [
           { href: "/resultados", icon: Award, label: "Resultados" },
-          { href: "/ligas", icon: Users, label: "Ligas" },
+          ...(privateLeaguesEnabled ? [{ href: "/ligas", icon: Users, label: "Ligas" }] : []),
           { href: "/clasificacion", icon: Trophy, label: "Ranking" },
           basesOrPronosticos,
           { href: "/perfil", icon: User, label: "Perfil" },
@@ -48,7 +50,7 @@ export function BottomNav() {
       : [
           { href: "/dashboard", icon: Home, label: "Inicio" },
           { href: "/mi-porra", icon: Target, label: "Mi Porra" },
-          { href: "/ligas", icon: Users, label: "Ligas" },
+          ...(privateLeaguesEnabled ? [{ href: "/ligas", icon: Users, label: "Ligas" }] : []),
           { href: "/clasificacion", icon: Trophy, label: "Ranking" },
           basesOrPronosticos,
           { href: "/perfil", icon: User, label: "Perfil" },

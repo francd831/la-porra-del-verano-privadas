@@ -4,6 +4,7 @@ import { Target, Award, FileText, User, Menu, X, LogOut, Home, Trophy, Activity,
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { isPrivateLeaguesApp } from "@/lib/appMode";
 
 interface NavItem {
   name: string;
@@ -139,6 +140,7 @@ export function Header() {
   // Filter navigation items based on auth state
   const getVisibleNavItems = () => {
     return navigation.filter(item => {
+      if (item.href.startsWith("/ligas") && !isPrivateLeaguesApp()) return false;
       if (item.adminOnly) return isAdmin;
       if (item.userOnly) return user && !isAdmin;
       if (item.requiresAuth) return !!user;

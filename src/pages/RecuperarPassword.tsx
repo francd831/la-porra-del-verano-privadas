@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { getAuthRedirectUrl } from "@/lib/appMode";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function RecuperarPassword() {
@@ -20,7 +21,7 @@ export default function RecuperarPassword() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: getAuthRedirectUrl("/login"),
       });
 
       if (error) {

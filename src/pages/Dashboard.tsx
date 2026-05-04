@@ -12,6 +12,7 @@ import { es } from "date-fns/locale";
 import CountdownTimer from "@/components/CountdownTimer";
 import MatchStatsDialog from "@/components/MatchStatsDialog";
 import AllMatchesDialog from "@/components/AllMatchesDialog";
+import { isPrivateLeaguesApp } from "@/lib/appMode";
 
 interface UserStats {
   displayName: string;
@@ -130,6 +131,7 @@ export default function Dashboard() {
   const [distributionData, setDistributionData] = useState<{ points: number; participants: number }[]>([]);
   const [distributionLoading, setDistributionLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const privateLeaguesEnabled = isPrivateLeaguesApp();
   
 
   const loadDistribution = async (matchId: string, actualHome: number, actualAway: number) => {
@@ -567,29 +569,31 @@ export default function Dashboard() {
       </section>
 
       <div className="container mx-auto max-w-6xl px-4 py-8 space-y-8">
-        <Card className="border-0 bg-gradient-card shadow-soft">
-          <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow">
-                <Users className="h-5 w-5" />
+        {privateLeaguesEnabled && (
+          <Card className="border-0 bg-gradient-card shadow-soft">
+            <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold">Ligas privadas</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Crea una liga para tu grupo o entra en una existente con codigo de invitacion.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg font-bold">Ligas privadas</h2>
-                <p className="text-sm text-muted-foreground">
-                  Crea una liga para tu grupo o entra en una existente con codigo de invitacion.
-                </p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button asChild>
+                  <Link to="/ligas/crear">Crear liga privada</Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link to="/ligas">Mis ligas</Link>
+                </Button>
               </div>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button asChild>
-                <Link to="/ligas/crear">Crear liga privada</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link to="/ligas">Mis ligas</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Points Breakdown - Always expanded, compact */}
         <div className="grid grid-cols-1 md:grid-cols-[5fr_3fr_2fr] gap-4">

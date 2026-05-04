@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AliasSetupDialog } from '@/components/AliasSetupDialog';
+import { getAuthRedirectUrl } from '@/lib/appMode';
 
 interface AuthContextType {
   user: User | null;
@@ -76,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, metadata?: { display_name?: string; first_name?: string; last_name?: string }) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = getAuthRedirectUrl("/");
     
     const { error } = await supabase.auth.signUp({
       email,
