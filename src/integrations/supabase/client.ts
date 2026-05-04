@@ -2,8 +2,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://qtqxhnlndbypwontwxit.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0cXhobmxuZGJ5cHdvbnR3eGl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczMTg3NjUsImV4cCI6MjA3Mjg5NDc2NX0.3ZjhG1IliF4RrBAQwlNc-gZKGsglwdoxECaK3DpGJLA";
+const LEGACY_SUPABASE_URL = "https://qtqxhnlndbypwontwxit.supabase.co";
+const LEGACY_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0cXhobmxuZGJ5cHdvbnR3eGl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczMTg3NjUsImV4cCI6MjA3Mjg5NDc2NX0.3ZjhG1IliF4RrBAQwlNc-gZKGsglwdoxECaK3DpGJLA";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || LEGACY_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || LEGACY_SUPABASE_PUBLISHABLE_KEY;
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";

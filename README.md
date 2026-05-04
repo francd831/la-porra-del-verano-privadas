@@ -60,6 +60,21 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Environment separation
+
+Use a separate Supabase project for the private leagues app.
+
+Required variables for the new private app:
+
+```sh
+VITE_SUPABASE_URL=https://your-new-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-new-supabase-anon-key
+VITE_APP_MODE=private
+VITE_APP_URL=https://porraprivada.example.com
+```
+
+`laporradelverano.es` can keep using the legacy Supabase project. The code still has a fallback to the current legacy project so the existing site keeps working while the new app is configured with its own environment.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/09635972-a2c2-4b5f-9626-d5f19cc285c0) and click on Share -> Publish.
