@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { User, Edit, Save, Calendar, Gift, ExternalLink, AlertTriangle, CheckCircle, Bell } from "lucide-react";
+import { User, Edit, Save, Calendar, AlertTriangle, CheckCircle, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,43 +33,12 @@ export default function Perfil() {
     participantes: 0,
   });
 
-  const [prizeStatus, setPrizeStatus] = useState({
-    participationRequested: false,
-    paymentCompleted: false
-  });
-
   useEffect(() => {
     if (user) {
       fetchProfile();
       fetchStats();
-      fetchPrizeStatus();
     }
   }, [user]);
-
-  const fetchPrizeStatus = async () => {
-    if (!user) return;
-    try {
-      const { data } = await supabase
-        .from('user_submissions')
-        .select('prize_participation_requested, prize_payment_completed')
-        .eq('user_id', user.id)
-        .eq('tournament_id', '11111111-1111-1111-1111-111111111111')
-        .single();
-      
-      if (data) {
-        setPrizeStatus({
-          participationRequested: data.prize_participation_requested || false,
-          paymentCompleted: data.prize_payment_completed || false
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching prize status:', error);
-    }
-  };
-
-  const handleAccessPrizes = () => {
-    window.open('https://buy.stripe.com/test_00w00j7n3fq4c2z30o43S00', '_blank');
-  };
 
   const fetchProfile = async () => {
     try {
@@ -288,7 +256,7 @@ export default function Perfil() {
 
 
       <Tabs defaultValue="datos" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-muted/30">
+        <TabsList className="grid w-full grid-cols-2 bg-muted/30">
           <TabsTrigger value="datos" className="flex items-center space-x-2">
             <User className="w-4 h-4" />
             <span>Datos</span>
@@ -296,10 +264,6 @@ export default function Perfil() {
           <TabsTrigger value="notificaciones" className="flex items-center space-x-2">
             <Bell className="w-4 h-4" />
             <span>Notificaciones</span>
-          </TabsTrigger>
-          <TabsTrigger value="premios" className="flex items-center space-x-2">
-            <Gift className="w-4 h-4" />
-            <span>Premios</span>
           </TabsTrigger>
         </TabsList>
 
@@ -377,75 +341,6 @@ export default function Perfil() {
         {/* Notificaciones */}
         <TabsContent value="notificaciones" className="space-y-6">
           <NotificationSettings />
-        </TabsContent>
-
-        {/* Acceso a Premios */}
-        <TabsContent value="premios" className="space-y-6">
-          <Card className="shadow-soft border-0 bg-gradient-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Gift className="w-5 h-5 text-gold" />
-                Participación en Premios
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
-                  <div>
-                    <div className="font-semibold">Estado de participación</div>
-                    <div className="text-sm text-muted-foreground">
-                      {prizeStatus.paymentCompleted 
-                        ? "Estás participando en los premios" 
-                        : "No estás participando en los premios"}
-                    </div>
-                  </div>
-                  {prizeStatus.paymentCompleted ? (
-                    <Badge className="bg-primary text-primary-foreground text-sm px-3 py-1">
-                      <Gift className="w-4 h-4 mr-1" />
-                      Activo
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-muted-foreground">
-                      Inactivo
-                    </Badge>
-                  )}
-                </div>
-
-                {!prizeStatus.paymentCompleted && (
-                  <div className="flex flex-col items-center p-6 bg-gold/10 rounded-lg border border-gold/30">
-                    <Gift className="w-12 h-12 text-gold mb-3" />
-                    <h4 className="font-semibold text-lg mb-2">¿Quieres optar a los premios?</h4>
-                    <p className="text-sm text-muted-foreground text-center mb-4">
-                      Por solo <span className="font-bold text-primary">5 €</span> podrás participar en el reparto de premios del concurso.
-                    </p>
-                    <Button 
-                      onClick={handleAccessPrizes}
-                      className="bg-gradient-to-r from-gold to-gold/80 text-gold-foreground hover:opacity-90"
-                    >
-                      <Gift className="w-4 h-4 mr-2" />
-                      Acceder a premios (5 €)
-                      <ExternalLink className="w-3 h-3 ml-2" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Información adicional sobre premios */}
-          <Card className="shadow-soft border-0 bg-gradient-card">
-            <CardHeader>
-              <CardTitle>¿Cómo funcionan los premios?</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <p>• El pago de <span className="font-semibold text-foreground">5 €</span> te da acceso a participar en el reparto de premios.</p>
-                <p>• Los premios se repartirán entre los participantes con mejor puntuación que hayan activado esta opción.</p>
-                <p>• Puedes ver quién participa en premios en la clasificación (icono 🎁).</p>
-                <p>• El pago es único para todo el torneo.</p>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
