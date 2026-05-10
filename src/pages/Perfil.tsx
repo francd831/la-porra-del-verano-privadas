@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { User, Edit, Save, Calendar, Gift, ExternalLink, AlertTriangle, CheckCircle, Bell } from "lucide-react";
+import { User, Edit, Save, Calendar, AlertTriangle, CheckCircle, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,43 +33,12 @@ export default function Perfil() {
     participantes: 0,
   });
 
-  const [prizeStatus, setPrizeStatus] = useState({
-    participationRequested: false,
-    paymentCompleted: false
-  });
-
   useEffect(() => {
     if (user) {
       fetchProfile();
       fetchStats();
-      fetchPrizeStatus();
     }
   }, [user]);
-
-  const fetchPrizeStatus = async () => {
-    if (!user) return;
-    try {
-      const { data } = await supabase
-        .from('user_submissions')
-        .select('prize_participation_requested, prize_payment_completed')
-        .eq('user_id', user.id)
-        .eq('tournament_id', '11111111-1111-1111-1111-111111111111')
-        .single();
-      
-      if (data) {
-        setPrizeStatus({
-          participationRequested: data.prize_participation_requested || false,
-          paymentCompleted: data.prize_payment_completed || false
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching prize status:', error);
-    }
-  };
-
-  const handleAccessPrizes = () => {
-    window.open('https://buy.stripe.com/test_00w00j7n3fq4c2z30o43S00', '_blank');
-  };
 
   const fetchProfile = async () => {
     try {
