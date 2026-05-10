@@ -256,7 +256,7 @@ export default function Perfil() {
 
 
       <Tabs defaultValue="datos" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-muted/30">
+        <TabsList className="grid w-full grid-cols-2 bg-muted/30">
           <TabsTrigger value="datos" className="flex items-center space-x-2">
             <User className="w-4 h-4" />
             <span>Datos</span>
@@ -264,10 +264,6 @@ export default function Perfil() {
           <TabsTrigger value="notificaciones" className="flex items-center space-x-2">
             <Bell className="w-4 h-4" />
             <span>Notificaciones</span>
-          </TabsTrigger>
-          <TabsTrigger value="premios" className="flex items-center space-x-2">
-            <Gift className="w-4 h-4" />
-            <span>Premios</span>
           </TabsTrigger>
         </TabsList>
 
