@@ -1916,15 +1916,10 @@ export default function Pronosticos() {
       }).eq('id', submissionId);
       if (updateError) throw updateError;
 
-      // Mostrar diálogo de confirmación de premios si no ha participado antes
-      if (!existingSubmission?.prize_participation_requested) {
-        setShowPrizeDialog(true);
-      } else {
-        toast({
-          title: "Pronósticos guardados",
-          description: "Tus pronósticos se han guardado correctamente."
-        });
-      }
+      toast({
+        title: "Pronósticos guardados",
+        description: "Tus pronósticos se han guardado correctamente."
+      });
     } catch (error: any) {
       console.error('Error saving predictions:', error);
       toast({
@@ -1937,38 +1932,6 @@ export default function Pronosticos() {
     }
   };
 
-  // Manejar aceptar participación en premios
-  const handleAcceptPrize = async () => {
-    if (!user) return;
-    
-    try {
-      await supabase
-        .from('user_submissions')
-        .update({ prize_participation_requested: true })
-        .eq('user_id', user.id)
-        .eq('tournament_id', '11111111-1111-1111-1111-111111111111');
-      
-      setShowPrizeDialog(false);
-      // Redirigir a Stripe
-      window.open('https://buy.stripe.com/test_00w00j7n3fq4c2z30o43S00', '_blank');
-      
-      toast({
-        title: "Pronósticos guardados",
-        description: "Serás redirigido a la pasarela de pago.",
-      });
-    } catch (error) {
-      console.error('Error updating prize participation:', error);
-    }
-  };
-
-  // Manejar rechazar participación en premios
-  const handleDeclinePrize = () => {
-    setShowPrizeDialog(false);
-    toast({
-      title: "Pronósticos guardados",
-      description: "Tus pronósticos se han guardado correctamente."
-    });
-  };
   if (loadingData) {
     return <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -2388,12 +2351,5 @@ export default function Pronosticos() {
       {/* Diálogo para ver pronósticos de participantes */}
       {selectedMatch && <PredictionsViewerDialog open={viewDialogOpen} onOpenChange={setViewDialogOpen} matchId={selectedMatch.matchId} awardType={selectedMatch.awardType} type={selectedMatch.type} homeTeam={selectedMatch.homeTeam} awayTeam={selectedMatch.awayTeam} title={selectedMatch.title} />}
 
-      {/* Diálogo de confirmación de premios */}
-      <PrizeConfirmationDialog
-        isOpen={showPrizeDialog}
-        onClose={() => setShowPrizeDialog(false)}
-        onAccept={handleAcceptPrize}
-        onDecline={handleDeclinePrize}
-      />
     </div>;
 }
