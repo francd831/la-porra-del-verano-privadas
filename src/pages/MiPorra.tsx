@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import PredictionsViewerDialog from "@/components/PredictionsViewerDialog";
 import PlayoffBracket from "@/components/PlayoffBracket";
-import PrizeConfirmationDialog from "@/components/PrizeConfirmationDialog";
+
 // Interfaces para los datos de la base de datos
 interface Team {
   id: string;
@@ -1644,8 +1644,6 @@ export default function Pronosticos() {
     setActiveTab("premios");
   };
 
-  // Estado para el diálogo de confirmación de premios
-  const [showPrizeDialog, setShowPrizeDialog] = useState(false);
 
   // Función para validar que todos los pronósticos están completos
   const validatePredictions = (): { valid: boolean; message: string } => {
