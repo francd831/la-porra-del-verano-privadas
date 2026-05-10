@@ -143,12 +143,6 @@ export default function Contacto() {
                   </p>
                 </div>
 
-                <div className="p-4 bg-muted/30 rounded-lg">
-                  <h4 className="font-semibold mb-2">¿Hay algún premio para los ganadores?</h4>
-                  <p className="text-sm text-muted-foreground">
-                    El concurso es principalmente por diversión y orgullo. Los premios se anunciarán antes del torneo.
-                  </p>
-                </div>
 
                 <div className="p-4 bg-muted/30 rounded-lg">
                   <h4 className="font-semibold mb-2">¿Qué pasa si hay empate en puntos?</h4>
