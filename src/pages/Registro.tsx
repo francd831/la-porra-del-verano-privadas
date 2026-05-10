@@ -65,7 +65,7 @@ export default function Registro() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: getAuthRedirectUrl("/"),
+          redirectTo: getAuthRedirectUrl("/dashboard"),
         },
       });
       
