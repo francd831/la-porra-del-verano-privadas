@@ -1,4 +1,3 @@
-const PRIVATE_HOST_PARTS = ["porraprivada", "localhost", "127.0.0.1"];
 const CLASSIC_HOST_PARTS = ["laporradelverano.es"];
 
 function getHostname() {
@@ -25,7 +24,7 @@ export function isPrivateLeaguesApp() {
   if (configuredMode === "classic") return false;
 
   const hostname = getHostname();
-  return PRIVATE_HOST_PARTS.some((part) => hostname.includes(part));
+  return !CLASSIC_HOST_PARTS.some((part) => hostname === part || hostname.endsWith(`.${part}`));
 }
 
 export function getAuthRedirectUrl(path = "/") {
