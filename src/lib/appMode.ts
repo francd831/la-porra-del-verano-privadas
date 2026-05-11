@@ -33,6 +33,13 @@ export function getAuthRedirectUrl(path = "/") {
   const configuredUrl = import.meta.env.VITE_APP_URL || import.meta.env.VITE_PUBLIC_APP_URL;
   const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
   const privateApp = isPrivateLeaguesApp();
+
+  // Always prefer the current origin for the private app to keep the OAuth
+  // round-trip on the same host (e.g. porraprivada.lovable.app or preview URLs).
+  if (privateApp && currentOrigin) {
+    return new URL(path, currentOrigin).toString();
+  }
+
   const safeConfiguredUrl =
     privateApp && configuredUrl && isClassicAppUrl(configuredUrl) ? "" : configuredUrl;
   const baseUrl = (privateApp ? privateUrl : "") || safeConfiguredUrl || currentOrigin;
