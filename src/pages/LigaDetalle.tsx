@@ -245,11 +245,8 @@ export default function LigaDetalle() {
             <div>
               <h1 className="text-2xl md:text-3xl font-bold leading-tight">{league.name}</h1>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="uppercase text-[10px] tracking-wider font-bold">
-                  {currentPlan.name}
-                </Badge>
                 <span className="text-xs text-muted-foreground">
-                  {members.length}/{league.max_members} miembros
+                  {members.length} miembros
                 </span>
               </div>
             </div>
@@ -268,37 +265,7 @@ export default function LigaDetalle() {
             </Button>
           </div>
         </div>
-
-        {/* Capacity bar */}
-        <div className="mt-4">
-          <div className="h-1.5 rounded-full bg-muted/50 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                isLeagueFull ? "bg-destructive" : capacityPct > 75 ? "bg-gold" : "bg-primary"
-              }`}
-              style={{ width: `${Math.min(capacityPct, 100)}%` }}
-            />
-          </div>
-        </div>
       </div>
-
-      {shouldShowUpgrade && (
-        <Alert className="mb-6 border-gold/30 bg-gold/5 rounded-xl">
-          <CreditCard className="h-4 w-4 text-gold" />
-          <AlertTitle className="text-gold">Liga completa</AlertTitle>
-          <AlertDescription className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Has alcanzado el límite del plan Free ({league.max_members} miembros). Amplía tu plan para seguir invitando.
-            </p>
-            {isOwner && (
-              <Button className="gap-2 rounded-xl bg-gold text-gold-foreground hover:bg-gold/90" onClick={() => handlePlanChange("pro")} disabled={updatingPlan}>
-                <TrendingUp className="h-4 w-4" />
-                {updatingPlan ? "Actualizando..." : "Ampliar a Pro"}
-              </Button>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         {/* Rankings table */}
