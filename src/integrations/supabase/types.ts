@@ -329,6 +329,7 @@ export type Database = {
       }
       leagues: {
         Row: {
+          comments: string | null
           created_at: string
           id: string
           invite_code: string
@@ -340,6 +341,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          comments?: string | null
           created_at?: string
           id?: string
           invite_code?: string
@@ -351,6 +353,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          comments?: string | null
           created_at?: string
           id?: string
           invite_code?: string

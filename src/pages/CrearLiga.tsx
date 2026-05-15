@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +15,7 @@ export default function CrearLiga() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [name, setName] = useState("");
+  const [comments, setComments] = useState("");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (event: FormEvent) => {
@@ -30,12 +32,14 @@ export default function CrearLiga() {
       return;
     }
 
+    const trimmedComments = comments.trim();
     setSaving(true);
     try {
       const { data, error } = await supabase
         .from("leagues")
         .insert({
           name: trimmedName,
+          comments: trimmedComments || null,
           owner_id: user.id,
           plan: "free",
           max_members: 10,
@@ -98,6 +102,23 @@ export default function CrearLiga() {
               />
               <p className="text-xs text-muted-foreground">
                 Elige algo memorable — tus amigos lo verán al unirse.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="league-comments" className="text-sm font-semibold">
+                Comentarios
+              </Label>
+              <Textarea
+                id="league-comments"
+                value={comments}
+                onChange={(event) => setComments(event.target.value)}
+                placeholder="Ej. Normas del grupo, premio simbólico, fechas importantes..."
+                maxLength={1000}
+                className="min-h-28 resize-none bg-muted/30 border-border/50 focus:border-primary focus:ring-primary/20"
+              />
+              <p className="text-xs text-muted-foreground">
+                Solo los admins pueden editar estos comentarios.
               </p>
             </div>
 

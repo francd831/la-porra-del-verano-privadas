@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, Crown, Shield, Trophy, Users, Medal, Share2 } from "lucide-react";
+import { ArrowLeft, Copy, Crown, Shield, Trophy, Users, Medal, Share2, MessageSquare, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 interface League {
   id: string;
   name: string;
+  comments: string | null;
   invite_code: string;
   owner_id: string;
   plan: string;
@@ -57,11 +59,14 @@ export default function LigaDetalle() {
   const [members, setMembers] = useState<Member[]>([]);
   const [rankings, setRankings] = useState<RankingRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [commentsDraft, setCommentsDraft] = useState("");
+  const [savingComments, setSavingComments] = useState(false);
   const currentMember = useMemo(() => {
     return members.find((member) => member.user_id === user?.id);
   }, [members, user]);
 
   const isOwner = league?.owner_id === user?.id;
+  const canEditLeague = isOwner || currentMember?.role === "admin";
 
   const fetchLeague = useCallback(async () => {
     if (!leagueId) return;
@@ -69,12 +74,13 @@ export default function LigaDetalle() {
     try {
       const { data: leagueData, error: leagueError } = await supabase
         .from("leagues")
-        .select("id, name, invite_code, owner_id, plan, max_members, created_at, tournament_id")
+        .select("id, name, comments, invite_code, owner_id, plan, max_members, created_at, tournament_id")
         .eq("id", leagueId)
         .single();
 
       if (leagueError) throw leagueError;
       setLeague(leagueData);
+      setCommentsDraft(leagueData.comments || "");
 
       const { data: memberData, error: memberError } = await supabase
         .from("league_members")
@@ -161,6 +167,39 @@ export default function LigaDetalle() {
         title: "Código de invitación",
         description: league.invite_code,
       });
+    }
+  };
+
+  const saveComments = async () => {
+    if (!league || !canEditLeague || savingComments) return;
+
+    setSavingComments(true);
+    try {
+      const trimmedComments = commentsDraft.trim();
+      const { data, error } = await supabase
+        .from("leagues")
+        .update({ comments: trimmedComments || null })
+        .eq("id", league.id)
+        .select("comments")
+        .single();
+
+      if (error) throw error;
+
+      setLeague((current) => current ? { ...current, comments: data.comments } : current);
+      setCommentsDraft(data.comments || "");
+      toast({
+        title: "Comentarios guardados",
+        description: "La información de la liga se ha actualizado.",
+      });
+    } catch (error) {
+      console.error("Error saving league comments:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudieron guardar los comentarios.",
+      });
+    } finally {
+      setSavingComments(false);
     }
   };
 
@@ -319,6 +358,46 @@ export default function LigaDetalle() {
         {/* Sidebar */}
         <div className="space-y-5">
           {/* Members */}
+          <Card className="border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft overflow-hidden">
+            <CardHeader className="pb-3 border-b border-border/30">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                Comentarios
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 space-y-3">
+              {canEditLeague ? (
+                <>
+                  <Textarea
+                    value={commentsDraft}
+                    onChange={(event) => setCommentsDraft(event.target.value)}
+                    placeholder="Añade notas, normas o información útil para esta liga..."
+                    maxLength={1000}
+                    className="min-h-28 resize-none bg-muted/30 border-border/50 focus:border-primary focus:ring-primary/20"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="w-full gap-2 rounded-xl"
+                    onClick={saveComments}
+                    disabled={savingComments}
+                  >
+                    <Save className="h-4 w-4" />
+                    {savingComments ? "Guardando..." : "Guardar comentarios"}
+                  </Button>
+                </>
+              ) : league.comments ? (
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                  {league.comments}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Esta liga todavía no tiene comentarios.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft overflow-hidden">
             <CardHeader className="pb-3 border-b border-border/30">
               <CardTitle className="flex items-center justify-between text-base">
