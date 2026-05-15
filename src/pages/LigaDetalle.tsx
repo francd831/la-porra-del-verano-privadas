@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, Crown, Shield, Trophy, Users, Medal, Share2, MessageSquare, Save } from "lucide-react";
+import { ArrowLeft, Copy, Crown, Shield, Trophy, Users, Medal, Share2, MessageSquare, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +61,7 @@ export default function LigaDetalle() {
   const [loading, setLoading] = useState(true);
   const [commentsDraft, setCommentsDraft] = useState("");
   const [savingComments, setSavingComments] = useState(false);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const currentMember = useMemo(() => {
     return members.find((member) => member.user_id === user?.id);
   }, [members, user]);
@@ -200,6 +201,40 @@ export default function LigaDetalle() {
       });
     } finally {
       setSavingComments(false);
+    }
+  };
+
+  const removeMember = async (member: Member) => {
+    if (!league || !isOwner || member.user_id === user?.id || member.role === "owner") return;
+
+    const confirmed = window.confirm(`¿Eliminar a ${member.display_name} de esta liga?`);
+    if (!confirmed) return;
+
+    setRemovingMemberId(member.user_id);
+    try {
+      const { error } = await supabase
+        .from("league_members")
+        .delete()
+        .eq("league_id", league.id)
+        .eq("user_id", member.user_id);
+
+      if (error) throw error;
+
+      setMembers((current) => current.filter((item) => item.user_id !== member.user_id));
+      setRankings((current) => current.filter((item) => item.user_id !== member.user_id));
+      toast({
+        title: "Usuario eliminado",
+        description: `${member.display_name} ya no pertenece a esta liga.`,
+      });
+    } catch (error) {
+      console.error("Error removing league member:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar al usuario de la liga.",
+      });
+    } finally {
+      setRemovingMemberId(null);
     }
   };
 
@@ -411,6 +446,7 @@ export default function LigaDetalle() {
             <CardContent className="p-3 space-y-1.5 max-h-[320px] overflow-y-auto">
               {members.map((member) => {
                 const isMe = member.user_id === user?.id;
+                const canRemoveMember = isOwner && !isMe && member.role !== "owner";
                 return (
                   <div
                     key={member.user_id}
@@ -435,12 +471,28 @@ export default function LigaDetalle() {
                         </div>
                       </div>
                     </div>
-                    {member.role !== "member" && (
-                      <Badge variant={member.role === "owner" ? "default" : "secondary"} className="shrink-0 gap-1 text-[10px]">
-                        {member.role === "owner" ? <Crown className="h-2.5 w-2.5" /> : <Shield className="h-2.5 w-2.5" />}
-                        {roleLabel(member.role)}
-                      </Badge>
-                    )}
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {member.role !== "member" && (
+                        <Badge variant={member.role === "owner" ? "default" : "secondary"} className="gap-1 text-[10px]">
+                          {member.role === "owner" ? <Crown className="h-2.5 w-2.5" /> : <Shield className="h-2.5 w-2.5" />}
+                          {roleLabel(member.role)}
+                        </Badge>
+                      )}
+                      {canRemoveMember && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => removeMember(member)}
+                          disabled={removingMemberId === member.user_id}
+                          aria-label={`Eliminar a ${member.display_name}`}
+                          title={`Eliminar a ${member.display_name}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
