@@ -425,11 +425,6 @@ export default function Clasificacion() {
         </div>
       )}
 
-      {isGlobalRanking && !rankingsVisible && !isAdmin && (
-        <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-xl text-sm text-muted-foreground text-center">
-          La clasificación global completa aún no está disponible. Solo puedes ver tu posición global.
-        </div>
-      )}
 
       {loading ? (
         <div className="text-center py-10 text-muted-foreground">Cargando clasificación...</div>
