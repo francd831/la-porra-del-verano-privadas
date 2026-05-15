@@ -264,12 +264,10 @@ export default function Clasificacion() {
     return "bg-muted/50 text-muted-foreground";
   };
 
-  const visibleRankings = isGlobalRanking && !rankingsVisible && !isAdmin && user
-    ? rankings.filter((r) => r.user_id === user.id)
-    : rankings;
+  const visibleRankings = rankings;
   const topThree = visibleRankings.slice(0, 3);
   const userPosition = user ? rankings.findIndex((r) => r.user_id === user.id) + 1 : 0;
-  const showFullRanking = !isGlobalRanking || rankingsVisible || isAdmin;
+  const showFullRanking = true;
   const rankingTitle = selectedLeague ? selectedLeague.name : "Global";
 
   return (
