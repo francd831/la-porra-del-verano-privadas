@@ -101,28 +101,6 @@ export default function CrearLiga() {
               </p>
             </div>
 
-            {/* Plan info */}
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-sm">Plan inicial: Free</span>
-                <Badge variant="secondary" className="text-xs">Gratis</Badge>
-              </div>
-              <ul className="space-y-1.5 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Users className="h-3.5 w-3.5 text-primary/60" />
-                  Hasta 10 miembros
-                </li>
-                <li className="flex items-center gap-2">
-                  <Trophy className="h-3.5 w-3.5 text-primary/60" />
-                  Ranking y estadísticas completas
-                </li>
-              </ul>
-              <p className="text-xs text-muted-foreground/70 border-t border-border/30 pt-2">
-                Podrás ampliar a Pro, Max o Business después.
-              </p>
-            </div>
-
             <Button
               type="submit"
               className="w-full h-12 gap-2 text-base font-bold rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-glow transition-all duration-300 hover:shadow-strong"
