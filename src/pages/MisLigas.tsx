@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
+const MAX_PRIVATE_LEAGUES = 5;
+
 interface League {
   id: string;
   name: string;
@@ -51,6 +53,9 @@ export default function MisLigas() {
 
   const getErrorMessage = (error: unknown) => {
     if (!(error instanceof Error)) return "Comprueba el código de invitación.";
+    if (error.message.includes("User league limit reached")) {
+      return `Solo puedes pertenecer a ${MAX_PRIVATE_LEAGUES} ligas privadas.`;
+    }
     if (error.message.includes("League member limit reached")) {
       return "Esta liga ha alcanzado el límite de su plan. El owner debe ampliarla para aceptar más miembros.";
     }
@@ -151,6 +156,14 @@ export default function MisLigas() {
   const handleJoinLeague = async () => {
     const normalizedCode = inviteCode.trim().toUpperCase();
     if (!normalizedCode) return;
+    if (leagues.length >= MAX_PRIVATE_LEAGUES) {
+      toast({
+        variant: "destructive",
+        title: "Límite alcanzado",
+        description: `Solo puedes pertenecer a ${MAX_PRIVATE_LEAGUES} ligas privadas.`,
+      });
+      return;
+    }
 
     setJoining(true);
     try {
@@ -206,16 +219,20 @@ export default function MisLigas() {
             <Search className="h-4 w-4 text-primary" />
             <span className="font-semibold text-sm">¿Tienes un código de invitación?</span>
           </div>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Puedes pertenecer a {MAX_PRIVATE_LEAGUES} ligas privadas como máximo. Ahora tienes {leagues.length}.
+          </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Input
               value={inviteCode}
               onChange={(event) => setInviteCode(event.target.value.toUpperCase())}
               placeholder="Ej. ABC123"
               className="uppercase h-11 bg-muted/30 border-border/50 font-mono text-base tracking-wider"
+              disabled={leagues.length >= MAX_PRIVATE_LEAGUES}
             />
             <Button
               onClick={handleJoinLeague}
-              disabled={joining || !inviteCode.trim()}
+              disabled={joining || !inviteCode.trim() || leagues.length >= MAX_PRIVATE_LEAGUES}
               className="h-11 px-6 rounded-xl font-bold shrink-0"
             >
               {joining ? "Uniendo..." : "Unirse"}

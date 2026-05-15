@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 const DEFAULT_TOURNAMENT_ID = "11111111-1111-1111-1111-111111111111";
+const MAX_PRIVATE_LEAGUES = 5;
 
 interface UserRanking {
   user_id: string;
@@ -292,6 +293,14 @@ export default function Clasificacion() {
   const handleJoinLeague = async () => {
     const code = inviteCode.trim().toUpperCase();
     if (!code) return;
+    if (leagues.length >= MAX_PRIVATE_LEAGUES) {
+      toast({
+        variant: "destructive",
+        title: "Límite alcanzado",
+        description: `Solo puedes pertenecer a ${MAX_PRIVATE_LEAGUES} ligas privadas.`,
+      });
+      return;
+    }
     setJoining(true);
     try {
       const { data: leagueId, error } = await supabase.rpc("join_league_by_invite_code", {
@@ -303,7 +312,10 @@ export default function Clasificacion() {
       await fetchUserLeagues();
       if (leagueId) setSelectedLeagueId(leagueId as string);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Comprueba el código.";
+      let msg = e instanceof Error ? e.message : "Comprueba el código.";
+      if (msg.includes("User league limit reached")) {
+        msg = `Solo puedes pertenecer a ${MAX_PRIVATE_LEAGUES} ligas privadas.`;
+      }
       toast({ variant: "destructive", title: "No se pudo unir", description: msg });
     } finally {
       setJoining(false);
@@ -423,7 +435,7 @@ export default function Clasificacion() {
                   <div className="text-xs text-muted-foreground">
                     {leagues.length === 0
                       ? "Crea o únete a una liga para competir con tu grupo"
-                      : `${leagues.length} liga${leagues.length === 1 ? "" : "s"} activa${leagues.length === 1 ? "" : "s"}`}
+                      : `${leagues.length}/${MAX_PRIVATE_LEAGUES} liga${leagues.length === 1 ? "" : "s"} activa${leagues.length === 1 ? "" : "s"}`}
                   </div>
                 </div>
               </div>
@@ -440,7 +452,7 @@ export default function Clasificacion() {
                   </div>
                   <Button
                     onClick={handleJoinLeague}
-                    disabled={joining || !inviteCode.trim()}
+                    disabled={joining || !inviteCode.trim() || leagues.length >= MAX_PRIVATE_LEAGUES}
                     variant="outline"
                     className="h-10 rounded-xl font-semibold"
                   >
