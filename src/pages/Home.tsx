@@ -108,8 +108,8 @@ export default function Home() {
           </h1>
 
           <p className="text-lg md:text-xl lg:text-2xl text-white/90 mb-10 max-w-2xl mx-auto font-light">
-            Predice todos los partidos, suma puntos y compite en la clasificación global.
-            Y si quieres, crea tu liga privada para jugar con los tuyos.
+            <span className="block">Suma puntos en cada partido y mira como subes en la clasificación</span>
+            <span className="block">Y si quieres, crea tu liga privada para competir entre amigos</span>
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
