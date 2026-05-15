@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, CreditCard, Crown, Shield, Trophy, Users, Medal, TrendingUp, Share2 } from "lucide-react";
+import { ArrowLeft, Copy, Crown, Shield, Trophy, Users, Medal, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { getLeaguePlan, LEAGUE_PLANS, type LeaguePlanId } from "@/lib/leaguePlans";
 
 interface League {
   id: string;
@@ -60,16 +57,11 @@ export default function LigaDetalle() {
   const [members, setMembers] = useState<Member[]>([]);
   const [rankings, setRankings] = useState<RankingRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updatingPlan, setUpdatingPlan] = useState(false);
-
   const currentMember = useMemo(() => {
     return members.find((member) => member.user_id === user?.id);
   }, [members, user]);
 
-  const currentPlan = useMemo(() => getLeaguePlan(league?.plan), [league]);
   const isOwner = league?.owner_id === user?.id;
-  const isLeagueFull = members.length >= (league?.max_members || currentPlan.maxMembers);
-  const shouldShowUpgrade = league?.plan === "free" && isLeagueFull;
 
   const fetchLeague = useCallback(async () => {
     if (!leagueId) return;
@@ -172,33 +164,7 @@ export default function LigaDetalle() {
     }
   };
 
-  const handlePlanChange = async (plan: LeaguePlanId) => {
-    if (!league || !isOwner || updatingPlan) return;
 
-    setUpdatingPlan(true);
-    try {
-      const { data, error } = await supabase.rpc("update_league_plan_for_testing", {
-        p_league_id: league.id,
-        p_plan: plan,
-      });
-
-      if (error) throw error;
-      setLeague(data);
-      toast({
-        title: "Plan actualizado ✅",
-        description: "Cambio aplicado para testing.",
-      });
-    } catch (error) {
-      console.error("Error updating league plan:", error);
-      toast({
-        variant: "destructive",
-        title: "No se pudo cambiar el plan",
-        description: "Solo el owner puede cambiar el plan.",
-      });
-    } finally {
-      setUpdatingPlan(false);
-    }
-  };
 
   const roleLabel = (role: string) => {
     if (role === "owner") return "Owner";
@@ -226,7 +192,7 @@ export default function LigaDetalle() {
 
   if (!league) return null;
 
-  const capacityPct = Math.round((members.length / league.max_members) * 100);
+  
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl pb-24">
@@ -245,11 +211,8 @@ export default function LigaDetalle() {
             <div>
               <h1 className="text-2xl md:text-3xl font-bold leading-tight">{league.name}</h1>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="uppercase text-[10px] tracking-wider font-bold">
-                  {currentPlan.name}
-                </Badge>
                 <span className="text-xs text-muted-foreground">
-                  {members.length}/{league.max_members} miembros
+                  {members.length} miembros
                 </span>
               </div>
             </div>
@@ -268,37 +231,7 @@ export default function LigaDetalle() {
             </Button>
           </div>
         </div>
-
-        {/* Capacity bar */}
-        <div className="mt-4">
-          <div className="h-1.5 rounded-full bg-muted/50 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                isLeagueFull ? "bg-destructive" : capacityPct > 75 ? "bg-gold" : "bg-primary"
-              }`}
-              style={{ width: `${Math.min(capacityPct, 100)}%` }}
-            />
-          </div>
-        </div>
       </div>
-
-      {shouldShowUpgrade && (
-        <Alert className="mb-6 border-gold/30 bg-gold/5 rounded-xl">
-          <CreditCard className="h-4 w-4 text-gold" />
-          <AlertTitle className="text-gold">Liga completa</AlertTitle>
-          <AlertDescription className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Has alcanzado el límite del plan Free ({league.max_members} miembros). Amplía tu plan para seguir invitando.
-            </p>
-            {isOwner && (
-              <Button className="gap-2 rounded-xl bg-gold text-gold-foreground hover:bg-gold/90" onClick={() => handlePlanChange("pro")} disabled={updatingPlan}>
-                <TrendingUp className="h-4 w-4" />
-                {updatingPlan ? "Actualizando..." : "Ampliar a Pro"}
-              </Button>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         {/* Rankings table */}
@@ -453,70 +386,6 @@ export default function LigaDetalle() {
               </Button>
             </CardContent>
           </Card>
-
-          {/* Owner plan management */}
-          {isOwner && (
-            <Card className="border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft overflow-hidden">
-              <CardHeader className="pb-3 border-b border-border/30">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <CreditCard className="h-4 w-4 text-primary" />
-                  Plan de liga
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 space-y-4">
-                <div className="grid gap-2">
-                  {LEAGUE_PLANS.map((plan) => {
-                    const isActive = plan.id === league.plan;
-                    return (
-                      <div
-                        key={plan.id}
-                        className={`rounded-xl border p-3 transition-all ${
-                          isActive
-                            ? "border-primary/40 bg-primary/8 shadow-sm"
-                            : "border-border/30 bg-muted/10 opacity-70"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div>
-                            <span className="font-semibold text-sm">{plan.name}</span>
-                            <span className="text-xs text-muted-foreground ml-2">
-                              {plan.maxMembers} miembros
-                            </span>
-                          </div>
-                          {isActive && (
-                            <Badge className="text-[10px] bg-primary/20 text-primary border-0">Actual</Badge>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="space-y-2 pt-2 border-t border-border/30">
-                  <label className="text-xs font-medium text-muted-foreground">Cambiar plan (testing)</label>
-                  <Select
-                    value={league.plan}
-                    onValueChange={(value) => handlePlanChange(value as LeaguePlanId)}
-                    disabled={updatingPlan}
-                  >
-                    <SelectTrigger className="rounded-xl bg-muted/20 border-border/50">
-                      <SelectValue placeholder="Selecciona un plan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LEAGUE_PLANS.map((plan) => (
-                        <SelectItem key={plan.id} value={plan.id}>
-                          {plan.name} — {plan.maxMembers} miembros
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground/60">
-                    Sin cobros reales por ahora. Stripe pendiente de integración.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Info card */}
           <Card className="border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft overflow-hidden">

@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CreditCard, Plus, Search, Shield, Users, Trophy, TrendingUp } from "lucide-react";
+import { Plus, Search, Shield, Users, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { getLeaguePlan } from "@/lib/leaguePlans";
 
 interface League {
   id: string;
@@ -250,15 +248,11 @@ export default function MisLigas() {
         <div className="grid gap-4 md:grid-cols-2">
           {leagues.map((league) => {
             const role = roleByLeague.get(league.id);
-            const plan = getLeaguePlan(league.plan);
             const stats = leagueStats[league.id] || {
               memberCount: 0,
               userPosition: null,
               userPoints: 0,
             };
-            const isFull = stats.memberCount >= league.max_members;
-            const needsUpgrade = league.plan === "free" && isFull;
-            const capacityPct = Math.round((stats.memberCount / league.max_members) * 100);
 
             return (
               <Link key={league.id} to={`/ligas/${league.id}`} className="block group">
@@ -279,29 +273,13 @@ export default function MisLigas() {
                           )}
                         </div>
                       </div>
-                      <Badge variant="secondary" className="shrink-0 uppercase text-[10px] tracking-wider font-bold">
-                        {plan.name}
-                      </Badge>
+                      <div className="shrink-0 flex items-center gap-1 text-xs text-muted-foreground">
+                        <Users className="h-3.5 w-3.5" />
+                        {stats.memberCount}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Capacity bar */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Miembros</span>
-                        <span className="font-semibold text-foreground">{stats.memberCount}/{league.max_members}</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted/50 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            isFull ? "bg-destructive" : capacityPct > 75 ? "bg-gold" : "bg-primary"
-                          }`}
-                          style={{ width: `${Math.min(capacityPct, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Stats row */}
                     <div className="flex items-center gap-4">
                       <div className="flex-1 rounded-lg bg-muted/20 p-2.5 text-center">
                         <div className="text-xs text-muted-foreground mb-0.5">Posición</div>
@@ -322,15 +300,6 @@ export default function MisLigas() {
                         <div className="font-bold text-xs font-mono">{league.invite_code}</div>
                       </div>
                     </div>
-
-                    {needsUpgrade && (
-                      <div className="flex items-center gap-2 rounded-xl border border-gold/25 bg-gold/5 p-3 text-xs">
-                        <CreditCard className="h-4 w-4 shrink-0 text-gold" />
-                        <span className="text-muted-foreground">
-                          Liga llena — <span className="text-gold font-semibold">ampliar plan</span>
-                        </span>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </Link>
