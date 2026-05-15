@@ -32,6 +32,11 @@ interface LeagueOption {
   name: string;
 }
 
+interface LeagueMemberPositionRow {
+  league_id: string;
+  user_id: string;
+}
+
 interface SubmissionRow {
   user_id: string;
   points_total: number | null;
@@ -59,6 +64,7 @@ export default function Clasificacion() {
   const [rankingsVisible, setRankingsVisible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [leagues, setLeagues] = useState<LeagueOption[]>([]);
+  const [rankingPositions, setRankingPositions] = useState<Record<string, number | null>>({});
   const [selectedLeagueId, setSelectedLeagueId] = useState("global");
   const [inviteCode, setInviteCode] = useState("");
   const [joining, setJoining] = useState(false);
@@ -90,9 +96,70 @@ export default function Clasificacion() {
     checkAdmin();
   }, [user]);
 
+  const fetchRankingPositions = useCallback(async (leagueOptions: LeagueOption[]) => {
+    if (!user) {
+      setRankingPositions({});
+      return;
+    }
+
+    try {
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+      const adminIds = new Set((adminRoles || []).map((r) => r.user_id));
+
+      const { data: submissionsData, error: submissionsError } = await supabase
+        .from("user_submissions")
+        .select("user_id, points_total")
+        .eq("tournament_id", DEFAULT_TOURNAMENT_ID);
+      if (submissionsError) throw submissionsError;
+
+      const pointsRows = (submissionsData || []) as Pick<SubmissionRow, "user_id" | "points_total">[];
+      const pointsByUser = new Map(pointsRows.map((row) => [row.user_id, row.points_total || 0]));
+      const globalRanking = pointsRows
+        .filter((row) => !adminIds.has(row.user_id))
+        .sort((a, b) => (b.points_total || 0) - (a.points_total || 0));
+
+      const globalPosition = globalRanking.findIndex((row) => row.user_id === user.id);
+      const positions: Record<string, number | null> = {
+        global: globalPosition >= 0 ? globalPosition + 1 : null,
+      };
+
+      if (leagueOptions.length > 0) {
+        const { data: memberRows, error: membersError } = await supabase
+          .from("league_members")
+          .select("league_id, user_id")
+          .in("league_id", leagueOptions.map((league) => league.id));
+        if (membersError) throw membersError;
+
+        const membersByLeague = new Map<string, string[]>();
+        ((memberRows || []) as LeagueMemberPositionRow[]).forEach((member) => {
+          const current = membersByLeague.get(member.league_id) || [];
+          current.push(member.user_id);
+          membersByLeague.set(member.league_id, current);
+        });
+
+        leagueOptions.forEach((league) => {
+          const leagueRanking = (membersByLeague.get(league.id) || [])
+            .filter((memberId) => !adminIds.has(memberId))
+            .sort((a, b) => (pointsByUser.get(b) || 0) - (pointsByUser.get(a) || 0));
+          const leaguePosition = leagueRanking.findIndex((memberId) => memberId === user.id);
+          positions[league.id] = leaguePosition >= 0 ? leaguePosition + 1 : null;
+        });
+      }
+
+      setRankingPositions(positions);
+    } catch (e) {
+      console.error("Error loading ranking positions:", e);
+      setRankingPositions({});
+    }
+  }, [user]);
+
   const fetchUserLeagues = useCallback(async () => {
     if (!user) {
       setLeagues([]);
+      setRankingPositions({});
       return;
     }
     const { data: memberData, error: memberError } = await supabase
@@ -106,6 +173,7 @@ export default function Clasificacion() {
     const leagueIds = (memberData || []).map((m) => m.league_id);
     if (leagueIds.length === 0) {
       setLeagues([]);
+      await fetchRankingPositions([]);
       return;
     }
     const { data: leaguesData, error: leaguesError } = await supabase
@@ -117,8 +185,10 @@ export default function Clasificacion() {
       console.error("Error loading leagues:", leaguesError);
       return;
     }
-    setLeagues(leaguesData || []);
-  }, [user]);
+    const loadedLeagues = leaguesData || [];
+    setLeagues(loadedLeagues);
+    await fetchRankingPositions(loadedLeagues);
+  }, [fetchRankingPositions, user]);
 
   useEffect(() => {
     fetchUserLeagues();
@@ -267,23 +337,39 @@ export default function Clasificacion() {
   const visibleRankings = rankings;
   const topThree = visibleRankings.slice(0, 3);
   const userPosition = user ? rankings.findIndex((r) => r.user_id === user.id) + 1 : 0;
+  const currentUserPoints = user ? rankings.find((r) => r.user_id === user.id)?.points_total || 0 : 0;
   const showFullRanking = true;
   const rankingTitle = selectedLeague ? selectedLeague.name : "Global";
+  const getSelectorPosition = (scopeId: string) => {
+    const position = rankingPositions[scopeId];
+    return position ? `#${position}` : "-";
+  };
+  const getSelectorPositionClass = (active: boolean) =>
+    active
+      ? "bg-primary-foreground/20 text-primary-foreground border-primary-foreground/20"
+      : "bg-muted/70 text-muted-foreground border-border/40";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl pb-24">
       {/* Header */}
-      <div className="mb-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-gradient-hero rounded-xl flex items-center justify-center shadow-glow">
-          {selectedLeague ? <Users className="w-5 h-5 text-primary-foreground" /> : <Trophy className="w-5 h-5 text-primary-foreground" />}
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-hero rounded-xl flex items-center justify-center shadow-glow">
+            {selectedLeague ? <Users className="w-5 h-5 text-primary-foreground" /> : <Trophy className="w-5 h-5 text-primary-foreground" />}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Clasificación</h1>
+            <p className="text-sm text-muted-foreground">
+              {selectedLeague ? `Liga privada: ${rankingTitle}` : "Clasificación global"}
+              {userPosition > 0 && ` · tu posición #${userPosition}`}
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Clasificación</h1>
-          <p className="text-sm text-muted-foreground">
-            {selectedLeague ? `Liga privada: ${rankingTitle}` : "Clasificación global"}
-            {userPosition > 0 && ` · tu posición #${userPosition}`}
-          </p>
-        </div>
+        {user && (
+          <Badge className="shrink-0 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary">
+            {currentUserPoints} pts
+          </Badge>
+        )}
       </div>
 
       {/* Selector de ranking: Global + ligas privadas */}
@@ -297,7 +383,12 @@ export default function Clasificacion() {
           }`}
         >
           <Trophy className="w-4 h-4" />
-          Global
+          <span>Global</span>
+          {user && (
+            <span className={`rounded-full border px-2 py-0.5 text-[11px] leading-none ${getSelectorPositionClass(isGlobalRanking)}`}>
+              {getSelectorPosition("global")}
+            </span>
+          )}
         </button>
         {leagues.map((league) => (
           <button
@@ -310,7 +401,10 @@ export default function Clasificacion() {
             }`}
           >
             <Users className="w-4 h-4" />
-            {league.name}
+            <span>{league.name}</span>
+            <span className={`rounded-full border px-2 py-0.5 text-[11px] leading-none ${getSelectorPositionClass(selectedLeagueId === league.id)}`}>
+              {getSelectorPosition(league.id)}
+            </span>
           </button>
         ))}
       </div>
