@@ -264,12 +264,10 @@ export default function Clasificacion() {
     return "bg-muted/50 text-muted-foreground";
   };
 
-  const visibleRankings = isGlobalRanking && !rankingsVisible && !isAdmin && user
-    ? rankings.filter((r) => r.user_id === user.id)
-    : rankings;
+  const visibleRankings = rankings;
   const topThree = visibleRankings.slice(0, 3);
   const userPosition = user ? rankings.findIndex((r) => r.user_id === user.id) + 1 : 0;
-  const showFullRanking = !isGlobalRanking || rankingsVisible || isAdmin;
+  const showFullRanking = true;
   const rankingTitle = selectedLeague ? selectedLeague.name : "Global";
 
   return (
@@ -427,11 +425,6 @@ export default function Clasificacion() {
         </div>
       )}
 
-      {isGlobalRanking && !rankingsVisible && !isAdmin && (
-        <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-xl text-sm text-muted-foreground text-center">
-          La clasificación global completa aún no está disponible. Solo puedes ver tu posición global.
-        </div>
-      )}
 
       {loading ? (
         <div className="text-center py-10 text-muted-foreground">Cargando clasificación...</div>
