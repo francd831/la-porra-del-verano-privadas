@@ -5,9 +5,12 @@ import { isPrivateLeaguesApp } from '@/lib/appMode';
 
 const LEGACY_SUPABASE_URL = "https://qtqxhnlndbypwontwxit.supabase.co";
 const LEGACY_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0cXhobmxuZGJ5cHdvbnR3eGl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczMTg3NjUsImV4cCI6MjA3Mjg5NDc2NX0.3ZjhG1IliF4RrBAQwlNc-gZKGsglwdoxECaK3DpGJLA";
+const PRIVATE_SUPABASE_URL =
+  import.meta.env.VITE_PRIVATE_SUPABASE_URL || "https://jiwkapljlilerezmhsyc.supabase.co";
+const PRIVATE_SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_PRIVATE_SUPABASE_PUBLISHABLE_KEY ||
+  "sb_publishable_4r0CTScWq9A6Hk50hWvKIw_YR-qaXc8";
 
-const PRIVATE_SUPABASE_URL = import.meta.env.VITE_PRIVATE_SUPABASE_URL;
-const PRIVATE_SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_PRIVATE_SUPABASE_PUBLISHABLE_KEY;
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const privateApp = isPrivateLeaguesApp();
@@ -18,12 +21,6 @@ const resolvedSupabaseUrl = privateApp
 const resolvedSupabasePublishableKey = privateApp
   ? PRIVATE_SUPABASE_PUBLISHABLE_KEY || SUPABASE_PUBLISHABLE_KEY
   : SUPABASE_PUBLISHABLE_KEY || LEGACY_SUPABASE_PUBLISHABLE_KEY;
-
-if (privateApp && (!resolvedSupabaseUrl || !resolvedSupabasePublishableKey)) {
-  throw new Error(
-    "Porra Privada necesita su propia configuración de Supabase. Define VITE_PRIVATE_SUPABASE_URL y VITE_PRIVATE_SUPABASE_PUBLISHABLE_KEY, o VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY."
-  );
-}
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
