@@ -164,33 +164,7 @@ export default function LigaDetalle() {
     }
   };
 
-  const handlePlanChange = async (plan: LeaguePlanId) => {
-    if (!league || !isOwner || updatingPlan) return;
 
-    setUpdatingPlan(true);
-    try {
-      const { data, error } = await supabase.rpc("update_league_plan_for_testing", {
-        p_league_id: league.id,
-        p_plan: plan,
-      });
-
-      if (error) throw error;
-      setLeague(data);
-      toast({
-        title: "Plan actualizado ✅",
-        description: "Cambio aplicado para testing.",
-      });
-    } catch (error) {
-      console.error("Error updating league plan:", error);
-      toast({
-        variant: "destructive",
-        title: "No se pudo cambiar el plan",
-        description: "Solo el owner puede cambiar el plan.",
-      });
-    } finally {
-      setUpdatingPlan(false);
-    }
-  };
 
   const roleLabel = (role: string) => {
     if (role === "owner") return "Owner";
