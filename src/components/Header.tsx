@@ -16,7 +16,7 @@ interface NavItem {
 }
 
 const navigation: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: Home, userOnly: true },
+  { name: "Inicio", href: "/dashboard", icon: Home, userOnly: true },
   { name: "Mi Porra", href: "/mi-porra", icon: Target, userOnly: true },
   { name: "Mis ligas", href: "/ligas", icon: Users, requiresAuth: true },
   { name: "Pronósticos", href: "/pronosticos", icon: Target, requiresAuth: true },

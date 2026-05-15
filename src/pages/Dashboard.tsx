@@ -579,16 +579,13 @@ export default function Dashboard() {
                 <div>
                   <h2 className="text-lg font-bold">Ligas privadas</h2>
                   <p className="text-sm text-muted-foreground">
-                    Crea una liga para tu grupo o entra en una existente con codigo de invitacion.
+                    Gestiona tus ligas, crea una nueva o únete con código desde un único sitio.
                   </p>
                 </div>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button asChild>
-                  <Link to="/ligas/crear">Crear liga privada</Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link to="/ligas">Mis ligas</Link>
+                  <Link to="/ligas">Ir a Mis ligas</Link>
                 </Button>
               </div>
             </CardContent>

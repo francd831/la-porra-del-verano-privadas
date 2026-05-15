@@ -1,16 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp, Medal, Plus, Search, Star, Trophy, Users } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ChevronDown, ChevronUp, Medal, Star, Trophy, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 
 const DEFAULT_TOURNAMENT_ID = "11111111-1111-1111-1111-111111111111";
-const MAX_PRIVATE_LEAGUES = 5;
 
 interface UserRanking {
   user_id: string;
@@ -67,11 +63,7 @@ export default function Clasificacion() {
   const [leagues, setLeagues] = useState<LeagueOption[]>([]);
   const [rankingPositions, setRankingPositions] = useState<Record<string, number | null>>({});
   const [selectedLeagueId, setSelectedLeagueId] = useState("global");
-  const [inviteCode, setInviteCode] = useState("");
-  const [joining, setJoining] = useState(false);
   const { user } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
 
   const selectedLeague = useMemo(
     () => leagues.find((league) => league.id === selectedLeagueId) || null,
@@ -290,38 +282,6 @@ export default function Clasificacion() {
     fetchRankings();
   }, [fetchRankings]);
 
-  const handleJoinLeague = async () => {
-    const code = inviteCode.trim().toUpperCase();
-    if (!code) return;
-    if (leagues.length >= MAX_PRIVATE_LEAGUES) {
-      toast({
-        variant: "destructive",
-        title: "Límite alcanzado",
-        description: `Solo puedes pertenecer a ${MAX_PRIVATE_LEAGUES} ligas privadas.`,
-      });
-      return;
-    }
-    setJoining(true);
-    try {
-      const { data: leagueId, error } = await supabase.rpc("join_league_by_invite_code", {
-        p_invite_code: code,
-      });
-      if (error) throw error;
-      toast({ title: "¡Te has unido!", description: "Ya formas parte de la liga." });
-      setInviteCode("");
-      await fetchUserLeagues();
-      if (leagueId) setSelectedLeagueId(leagueId as string);
-    } catch (e: unknown) {
-      let msg = e instanceof Error ? e.message : "Comprueba el código.";
-      if (msg.includes("User league limit reached")) {
-        msg = `Solo puedes pertenecer a ${MAX_PRIVATE_LEAGUES} ligas privadas.`;
-      }
-      toast({ variant: "destructive", title: "No se pudo unir", description: msg });
-    } finally {
-      setJoining(false);
-    }
-  };
-
   const toggleRow = (userId: string) => {
     setExpandedRows((prev) => {
       const next = new Set(prev);
@@ -421,68 +381,25 @@ export default function Clasificacion() {
         ))}
       </div>
 
-      {/* Gestión de ligas privadas */}
-      {user && (
+      {/* Empty state for private rankings */}
+      {user && leagues.length === 0 && (
         <Card className="mb-6 border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
-                  <Users className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="font-semibold text-sm">Tus ligas privadas</div>
-                  <div className="text-xs text-muted-foreground">
-                    {leagues.length === 0
-                      ? "Crea o únete a una liga para competir con tu grupo"
-                      : `${leagues.length}/${MAX_PRIVATE_LEAGUES} liga${leagues.length === 1 ? "" : "s"} activa${leagues.length === 1 ? "" : "s"}`}
-                  </div>
-                </div>
+          <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                <Users className="h-5 w-5 text-primary" />
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="flex gap-2">
-                  <div className="relative flex-1 sm:flex-none">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      value={inviteCode}
-                      onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                      placeholder="Código"
-                      className="uppercase h-10 pl-9 font-mono tracking-wider sm:w-[140px]"
-                    />
-                  </div>
-                  <Button
-                    onClick={handleJoinLeague}
-                    disabled={joining || !inviteCode.trim() || leagues.length >= MAX_PRIVATE_LEAGUES}
-                    variant="outline"
-                    className="h-10 rounded-xl font-semibold"
-                  >
-                    {joining ? "Uniendo..." : "Unirse"}
-                  </Button>
-                </div>
-                <Button
-                  onClick={() => navigate("/ligas/crear")}
-                  className="h-10 rounded-xl font-semibold gap-2 bg-gradient-to-r from-primary to-primary/80 shadow-glow"
-                >
-                  <Plus className="h-4 w-4" />
-                  Crear liga
-                </Button>
+              <div>
+                <div className="font-semibold text-sm">Aún no tienes ligas privadas</div>
+                <div className="text-xs text-muted-foreground">Crea una liga o únete con código desde Mis ligas.</div>
               </div>
             </div>
-
-            {leagues.length > 0 && (
-              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {leagues.map((league) => (
-                  <Link
-                    key={league.id}
-                    to={`/ligas/${league.id}`}
-                    className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 px-3 py-2 hover:border-primary/40 hover:bg-muted/30 transition-all group"
-                  >
-                    <span className="font-medium text-sm truncate">{league.name}</span>
-                    <span className="text-xs text-muted-foreground group-hover:text-primary">Ver →</span>
-                  </Link>
-                ))}
-              </div>
-            )}
+            <Link
+              to="/ligas"
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-border/60 px-4 text-sm font-semibold transition-colors hover:bg-muted/50"
+            >
+              Ir a Mis ligas
+            </Link>
           </CardContent>
         </Card>
       )}
