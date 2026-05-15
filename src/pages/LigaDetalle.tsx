@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, CreditCard, Crown, Shield, Trophy, Users, Medal, TrendingUp, Share2 } from "lucide-react";
+import { ArrowLeft, Copy, Crown, Shield, Trophy, Users, Medal, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { getLeaguePlan, LEAGUE_PLANS, type LeaguePlanId } from "@/lib/leaguePlans";
 
 interface League {
   id: string;
