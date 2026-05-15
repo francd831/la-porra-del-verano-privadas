@@ -57,16 +57,11 @@ export default function LigaDetalle() {
   const [members, setMembers] = useState<Member[]>([]);
   const [rankings, setRankings] = useState<RankingRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updatingPlan, setUpdatingPlan] = useState(false);
-
   const currentMember = useMemo(() => {
     return members.find((member) => member.user_id === user?.id);
   }, [members, user]);
 
-  const currentPlan = useMemo(() => getLeaguePlan(league?.plan), [league]);
   const isOwner = league?.owner_id === user?.id;
-  const isLeagueFull = members.length >= (league?.max_members || currentPlan.maxMembers);
-  const shouldShowUpgrade = league?.plan === "free" && isLeagueFull;
 
   const fetchLeague = useCallback(async () => {
     if (!leagueId) return;
