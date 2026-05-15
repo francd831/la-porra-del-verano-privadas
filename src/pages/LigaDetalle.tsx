@@ -192,7 +192,7 @@ export default function LigaDetalle() {
 
   if (!league) return null;
 
-  const capacityPct = Math.round((members.length / league.max_members) * 100);
+  
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl pb-24">
