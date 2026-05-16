@@ -26,8 +26,8 @@ export default function Bases() {
                 <div className="flex items-center space-x-3 p-4 bg-gold/10 rounded-lg border border-gold/20">
                   <Trophy className="w-8 h-8 text-gold" />
                   <div>
-                    <h4 className="font-semibold">Juego gratuito</h4>
-                    <p className="text-sm text-muted-foreground">Crea tu liga sin coste</p>
+                    <h4 className="font-semibold">Ligas privadas</h4>
+                    <p className="text-sm text-muted-foreground">Compite con tus amigos</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
@@ -64,15 +64,19 @@ export default function Bases() {
             <ul className="space-y-2 text-foreground">
               <li className="flex items-start gap-2">
                 <span className="w-2 h-2 bg-gold rounded-full mt-2 flex-shrink-0"></span>
-                <span>Participación gratuita hasta 10 miembros</span>
+                <span>Crea una liga privada para tu grupo</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-2 h-2 bg-gold rounded-full mt-2 flex-shrink-0"></span>
-                <span>Rankings y estadísticas automáticas</span>
+                <span>Únete a ligas mediante código de invitación</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-2 h-2 bg-gold rounded-full mt-2 flex-shrink-0"></span>
-                <span>Planes premium para ligas más grandes</span>
+                <span>Cada liga tiene su propia clasificación privada</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-2 h-2 bg-gold rounded-full mt-2 flex-shrink-0"></span>
+                <span>Tus predicciones son únicas y cuentan para todas tus ligas</span>
               </li>
             </ul>
             <div className="mt-6 p-4 bg-muted/20 rounded-lg border border-muted/30 text-xs text-muted-foreground space-y-1">
