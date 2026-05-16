@@ -103,13 +103,12 @@ export default function Home() {
           </Badge>
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight tracking-tight font-heading">
-            Haz tu porra
-            <span className="block text-gold mt-2">del Mundial 2026</span>
+            Haz tu porra del
+            <span className="block text-gold mt-2">Mundial 2026</span>
           </h1>
 
           <p className="text-lg md:text-xl lg:text-2xl text-white/90 mb-10 max-w-2xl mx-auto font-light">
-            <span className="block">Suma puntos en cada partido y demuestra lo que sabes</span>
-            <span className="block">Crea ligas privadas para competir entre amigos</span>
+            Demuestra lo que sabes y sé el mejor de tus amigos
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -119,14 +118,6 @@ export default function Home() {
               asChild
             >
               <Link to="/registro">Empezar mi porra</Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-white/50 text-white hover:bg-white/10 font-bold text-lg px-10 py-6 rounded-full transition-all duration-300"
-              asChild
-            >
-              <a href="#ligas">Crear liga privada</a>
             </Button>
           </div>
         </div>
