@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, ChevronUp, Medal, Plus, Search, Star, Trophy, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Crown, Medal, MessageSquare, Plus, Search, Star, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,12 @@ interface UserRanking {
 interface LeagueOption {
   id: string;
   name: string;
+  comments: string | null;
+  invite_code: string;
+  owner_id: string;
+  plan: string;
+  max_members: number;
+  member_count: number;
 }
 
 interface LeagueMemberPositionRow {
@@ -178,14 +184,25 @@ export default function Clasificacion() {
     }
     const { data: leaguesData, error: leaguesError } = await supabase
       .from("leagues")
-      .select("id, name")
+      .select("id, name, comments, invite_code, owner_id, plan, max_members")
       .in("id", leagueIds)
       .order("created_at", { ascending: false });
     if (leaguesError) {
       console.error("Error loading leagues:", leaguesError);
       return;
     }
-    const loadedLeagues = leaguesData || [];
+    const { data: countRows } = await supabase
+      .from("league_members")
+      .select("league_id, user_id")
+      .in("league_id", leagueIds);
+    const countsByLeague = new Map<string, number>();
+    (countRows || []).forEach((row) => {
+      countsByLeague.set(row.league_id, (countsByLeague.get(row.league_id) || 0) + 1);
+    });
+    const loadedLeagues = (leaguesData || []).map((league) => ({
+      ...league,
+      member_count: countsByLeague.get(league.id) || 0,
+    }));
     setLeagues(loadedLeagues);
     await fetchRankingPositions(loadedLeagues);
   }, [fetchRankingPositions, user]);
@@ -259,6 +276,22 @@ export default function Clasificacion() {
       });
     } finally {
       setJoiningLeague(false);
+    }
+  };
+
+  const copySelectedLeagueInviteCode = async () => {
+    if (!selectedLeague) return;
+    try {
+      await navigator.clipboard.writeText(selectedLeague.invite_code);
+      toast({
+        title: "Código copiado",
+        description: "Ya puedes compartirlo con quien quieras invitar.",
+      });
+    } catch {
+      toast({
+        title: "Código de invitación",
+        description: selectedLeague.invite_code,
+      });
     }
   };
 
@@ -387,6 +420,7 @@ export default function Clasificacion() {
   const currentUserPoints = user ? rankings.find((r) => r.user_id === user.id)?.points_total || 0 : 0;
   const showFullRanking = true;
   const rankingTitle = selectedLeague ? selectedLeague.name : "General";
+  const selectedLeagueIsOwner = !!selectedLeague && selectedLeague.owner_id === user?.id;
   const getSelectorPosition = (scopeId: string) => {
     const position = rankingPositions[scopeId];
     return position ? `#${position}` : "-";
@@ -502,6 +536,79 @@ export default function Clasificacion() {
                 </Button>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedLeague && (
+        <Card className="mb-6 border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              {selectedLeagueIsOwner ? (
+                <Crown className="h-5 w-5 text-gold" />
+              ) : (
+                <MessageSquare className="h-5 w-5 text-primary" />
+              )}
+              <span>{selectedLeague.name}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {selectedLeagueIsOwner ? (
+              <>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
+                    <div className="text-xs text-muted-foreground">Miembros</div>
+                    <div className="text-xl font-black text-primary">
+                      {selectedLeague.member_count}/{selectedLeague.max_members}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
+                    <div className="text-xs text-muted-foreground">Plan</div>
+                    <div className="text-xl font-black uppercase text-primary">{selectedLeague.plan}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={copySelectedLeagueInviteCode}
+                    className="rounded-xl border border-border/50 bg-muted/20 p-3 text-left transition-colors hover:bg-muted/40"
+                  >
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Copy className="h-3 w-3" />
+                      Código
+                    </div>
+                    <div className="font-mono text-xl font-black tracking-widest text-primary">
+                      {selectedLeague.invite_code}
+                    </div>
+                  </button>
+                </div>
+                <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Comentarios de la liga
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm text-foreground">
+                    {selectedLeague.comments || "Todavía no hay comentarios para esta liga."}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button asChild className="rounded-xl font-bold">
+                    <Link to={`/ligas/${selectedLeague.id}`}>
+                      Gestionar liga
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="rounded-xl" onClick={copySelectedLeagueInviteCode}>
+                    Copiar código
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Comentario del admin
+                </div>
+                <p className="whitespace-pre-wrap text-sm text-foreground">
+                  {selectedLeague.comments || "El admin todavía no ha añadido comentarios a esta liga."}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

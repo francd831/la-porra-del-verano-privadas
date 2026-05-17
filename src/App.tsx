@@ -29,10 +29,8 @@ import Perfil from "./pages/Perfil";
 
 import MonitorCola from "./pages/MonitorCola";
 import NotFound from "./pages/NotFound";
-import { isPrivateLeaguesApp } from "./lib/appMode";
 
 const queryClient = new QueryClient();
-const privateLeaguesEnabled = isPrivateLeaguesApp();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -53,13 +51,9 @@ const App = () => (
               <Route path="/registro" element={<Registro />} />
               <Route path="/recuperar-password" element={<RecuperarPassword />} />
               <Route path="/mi-porra" element={<UserGuard><MiPorra /></UserGuard>} />
-              {privateLeaguesEnabled && (
-                <>
-                  <Route path="/ligas" element={<AuthGuard><MisLigas /></AuthGuard>} />
-                  <Route path="/ligas/crear" element={<AuthGuard><CrearLiga /></AuthGuard>} />
-                  <Route path="/ligas/:leagueId" element={<AuthGuard><LigaDetalle /></AuthGuard>} />
-                </>
-              )}
+              <Route path="/ligas" element={<AuthGuard><MisLigas /></AuthGuard>} />
+              <Route path="/ligas/crear" element={<AuthGuard><CrearLiga /></AuthGuard>} />
+              <Route path="/ligas/:leagueId" element={<AuthGuard><LigaDetalle /></AuthGuard>} />
               <Route path="/pronosticos" element={<AuthGuard><Pronosticos /></AuthGuard>} />
               <Route path="/resultados" element={<AdminGuard><Resultados /></AdminGuard>} />
               <Route path="/clasificacion" element={<AuthGuard><Clasificacion /></AuthGuard>} />
