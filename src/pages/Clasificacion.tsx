@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, ChevronUp, Copy, Crown, Medal, MessageSquare, Plus, Search, Star, Trophy, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, Crown, Medal, MessageSquare, Plus, Search, Star, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -279,22 +279,6 @@ export default function Clasificacion() {
     }
   };
 
-  const copySelectedLeagueInviteCode = async () => {
-    if (!selectedLeague) return;
-    try {
-      await navigator.clipboard.writeText(selectedLeague.invite_code);
-      toast({
-        title: "Código copiado",
-        description: "Ya puedes compartirlo con quien quieras invitar.",
-      });
-    } catch {
-      toast({
-        title: "Código de invitación",
-        description: selectedLeague.invite_code,
-      });
-    }
-  };
-
   const fetchRankings = useCallback(async () => {
     setLoading(true);
     try {
@@ -554,51 +538,11 @@ export default function Clasificacion() {
           </CardHeader>
           <CardContent className="space-y-4">
             {selectedLeagueIsOwner ? (
-              <>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-                    <div className="text-xs text-muted-foreground">Miembros</div>
-                    <div className="text-xl font-black text-primary">
-                      {selectedLeague.member_count}/{selectedLeague.max_members}
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-                    <div className="text-xs text-muted-foreground">Plan</div>
-                    <div className="text-xl font-black uppercase text-primary">{selectedLeague.plan}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={copySelectedLeagueInviteCode}
-                    className="rounded-xl border border-border/50 bg-muted/20 p-3 text-left transition-colors hover:bg-muted/40"
-                  >
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Copy className="h-3 w-3" />
-                      Código
-                    </div>
-                    <div className="font-mono text-xl font-black tracking-widest text-primary">
-                      {selectedLeague.invite_code}
-                    </div>
-                  </button>
-                </div>
-                <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
-                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Comentarios de la liga
-                  </div>
-                  <p className="whitespace-pre-wrap text-sm text-foreground">
-                    {selectedLeague.comments || "Todavía no hay comentarios para esta liga."}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button asChild className="rounded-xl font-bold">
-                    <Link to={`/ligas/${selectedLeague.id}`}>
-                      Gestionar liga
-                    </Link>
-                  </Button>
-                  <Button variant="outline" className="rounded-xl" onClick={copySelectedLeagueInviteCode}>
-                    Copiar código
-                  </Button>
-                </div>
-              </>
+              <Button asChild className="rounded-xl font-bold">
+                <Link to={`/ligas/${selectedLeague.id}`}>
+                  Gestionar liga
+                </Link>
+              </Button>
             ) : (
               <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
                 <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
