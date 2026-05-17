@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Target, Award, FileText, User, Menu, X, LogOut, Home, Trophy, LucideIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,6 +32,7 @@ export function Header() {
   const [isAtTop, setIsAtTop] = useState(true);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
   useEffect(() => {
@@ -115,8 +116,11 @@ export function Header() {
         console.error('Error signing out:', error);
       }
       setIsMenuOpen(false);
+      navigate("/", { replace: true });
     } catch (error) {
       console.error('Error during sign out:', error);
+      setIsMenuOpen(false);
+      navigate("/", { replace: true });
     }
   };
 
