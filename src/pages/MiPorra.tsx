@@ -1987,7 +1987,8 @@ export default function Pronosticos() {
         {/* Fase de Grupos */}
         <TabsContent value="grupos" className="space-y-4 relative">
           {/* Botón flotante para guardar pronósticos */}
-          {!predictionsLocked && <div className="fixed top-20 right-4 z-50">
+          <div className="fixed top-20 right-4 z-50 flex flex-col items-end gap-2 sm:flex-row">
+            {!predictionsLocked && (
               <Button onClick={handleGuardarPronosticos} disabled={isLoading} className="bg-gradient-hero shadow-strong" size="sm">
                 {isLoading ? <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1997,7 +1998,12 @@ export default function Pronosticos() {
                     Guardar Pronósticos
                   </>}
               </Button>
-            </div>}
+            )}
+            <Button onClick={handleGoToPlayoffs} className="bg-gradient-hero shadow-strong hover:opacity-90" size="sm">
+              <span>Ir a Fase Final</span>
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </div>
           
           {/* Botón para generar resultados aleatorios */}
           {!predictionsLocked && <div className="flex justify-end">
@@ -2222,18 +2228,24 @@ export default function Pronosticos() {
             </CardContent>
           </Card>
           </div>
-          
-          {/* Botón para ir a eliminatorias */}
-          <div className="flex justify-center mt-8">
-            <Button size="lg" onClick={handleGoToPlayoffs} className="bg-gradient-hero hover:opacity-90">
-              <span>Ir a Fase Eliminatoria</span>
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-          </div>
         </TabsContent>
 
         {/* Fase Eliminatoria */}
         <TabsContent value="eliminatorias" className="space-y-6">
+          {!predictionsLocked && (
+            <div className="fixed top-20 right-4 z-50">
+              <Button onClick={handleGuardarPronosticos} disabled={isLoading || !user} className="bg-gradient-hero shadow-strong" size="sm">
+                {isLoading ? <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Guardando...
+                  </> : <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Guardar Pronósticos
+                  </>}
+              </Button>
+            </div>
+          )}
+
           <Card className="shadow-soft border-0 bg-gradient-card">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -2332,19 +2344,6 @@ export default function Pronosticos() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Botón Guardar Pronósticos */}
-          <div className="flex justify-center mt-8">
-            <Button size="lg" className="flex items-center space-x-2 shadow-glow bg-gradient-hero hover:opacity-90" onClick={handleGuardarPronosticos} disabled={isLoading || !user || predictionsLocked}>
-              {isLoading ? <>
-                  <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
-                  <span>Guardando...</span>
-                </> : <>
-                  <Save className="w-5 h-5" />
-                  <span>Guardar Todos los Pronósticos</span>
-                </>}
-            </Button>
-          </div>
         </TabsContent>
       </Tabs>
 
