@@ -5,6 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +73,7 @@ export default function LigaDetalle() {
   const [commentsDraft, setCommentsDraft] = useState("");
   const [savingComments, setSavingComments] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [deletingLeague, setDeletingLeague] = useState(false);
   const currentMember = useMemo(() => {
     return members.find((member) => member.user_id === user?.id);
   }, [members, user]);
@@ -243,6 +255,35 @@ export default function LigaDetalle() {
       });
     } finally {
       setRemovingMemberId(null);
+    }
+  };
+
+  const deleteLeague = async () => {
+    if (!league || !isOwner || deletingLeague) return;
+
+    setDeletingLeague(true);
+    try {
+      const { error } = await supabase
+        .from("leagues")
+        .delete()
+        .eq("id", league.id)
+        .eq("owner_id", user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Liga eliminada",
+        description: "La liga y sus miembros se han eliminado correctamente.",
+      });
+      navigate("/clasificacion", { replace: true });
+    } catch (error) {
+      console.error("Error deleting league:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar la liga.",
+      });
+      setDeletingLeague(false);
     }
   };
 
@@ -538,6 +579,53 @@ export default function LigaDetalle() {
               </p>
             </CardContent>
           </Card>
+
+          {isOwner && (
+            <Card className="border border-destructive/30 bg-destructive/5 backdrop-blur-xl shadow-soft overflow-hidden">
+              <CardHeader className="pb-3 border-b border-destructive/20">
+                <CardTitle className="flex items-center gap-2 text-base text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  Zona peligrosa
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-3">
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Eliminar la liga quitará también la lista de miembros. Los pronósticos personales de cada usuario no se borran.
+                </p>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="w-full gap-2 rounded-xl"
+                      disabled={deletingLeague}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {deletingLeague ? "Eliminando..." : "Eliminar liga"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Eliminar esta liga?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción eliminará “{league.name}” y expulsará a todos sus miembros de la liga. Los pronósticos de los usuarios se conservarán.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={deletingLeague}>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={deleteLeague}
+                        disabled={deletingLeague}
+                      >
+                        {deletingLeague ? "Eliminando..." : "Sí, eliminar liga"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
