@@ -51,8 +51,43 @@ interface EstadisticasEquipo {
   diferencia: number;
 }
 
-// Jugadores ficticios para los premios
-const jugadores = ["Lionel Messi", "Kylian Mbappé", "Erling Haaland", "Karim Benzema", "Vinicius Jr.", "Kevin De Bruyne", "Sadio Mané", "Harry Kane", "Pedri", "Jamal Musiala", "Bukayo Saka", "Rafael Leão"];
+const BALON_ORO_OPTIONS = [
+  "Harry Kane",
+  "Lamine Yamal",
+  "Kylian Mbappé",
+  "Michael Olise",
+  "Lionel Messi",
+  "Vinícius Junior",
+  "Bruno Fernandes",
+  "Raphinha",
+  "Jude Bellingham",
+  "Ousmane Dembélé",
+  "Rayan Cherki",
+  "Declan Rice",
+  "Rodri",
+  "Pedri",
+  "Erling Haaland",
+  "OTRO",
+];
+
+const BOTA_ORO_OPTIONS = [
+  "Kylian Mbappé",
+  "Harry Kane",
+  "Erling Haaland",
+  "Lionel Messi",
+  "Lamine Yamal",
+  "Vinícius Junior",
+  "Cristiano Ronaldo",
+  "Ousmane Dembélé",
+  "Raphinha",
+  "Lautaro Martínez",
+  "Mikel Oyarzabal",
+  "Romelu Lukaku",
+  "Alexander Isak",
+  "Viktor Gyökeres",
+  "Bukayo Saka",
+  "OTRO",
+];
 
 // Interfaz para resultados reales de partidos
 interface RealMatchResult {
@@ -2294,7 +2329,7 @@ export default function Pronosticos() {
                       <SelectValue placeholder="Selecciona el mejor jugador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {jugadores.map(jugador => <SelectItem key={jugador} value={jugador}>
+                      {BALON_ORO_OPTIONS.map(jugador => <SelectItem key={jugador} value={jugador}>
                           {jugador}
                         </SelectItem>)}
                     </SelectContent>
@@ -2324,7 +2359,7 @@ export default function Pronosticos() {
                       <SelectValue placeholder="Selecciona el máximo goleador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {jugadores.map(jugador => <SelectItem key={jugador} value={jugador}>
+                      {BOTA_ORO_OPTIONS.map(jugador => <SelectItem key={jugador} value={jugador}>
                           {jugador}
                         </SelectItem>)}
                     </SelectContent>
