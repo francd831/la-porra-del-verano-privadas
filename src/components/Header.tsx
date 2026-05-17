@@ -160,7 +160,7 @@ export function Header() {
             <Link to={user ? "/dashboard" : "/"} className="flex items-center space-x-2 group">
               <img src="/mundial-icon-64.webp" alt="Mundial 2026" width={40} height={40} className="w-10 h-10 rounded-full shadow-glow group-hover:shadow-strong transition-all duration-300" />
               <span className="font-bold text-lg bg-gradient-hero bg-clip-text text-transparent">
-                Ligas Mundial 2026
+                Mundial 2026
               </span>
             </Link>
 
