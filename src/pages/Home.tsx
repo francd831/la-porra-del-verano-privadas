@@ -102,8 +102,8 @@ export default function Home() {
             ⚽ Mundial 2026 · USA, México y Canadá
           </Badge>
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight tracking-tight font-heading">
-            Haz tu porra del
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight tracking-tight font-heading">
+            <span className="block text-white">Haz tu porra del</span>
             <span className="block text-gold mt-2">Mundial 2026</span>
           </h1>
 
@@ -188,16 +188,6 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="text-center">
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-gold/50 text-gold hover:bg-gold/10 font-bold rounded-full px-8"
-              asChild
-            >
-              <a href="#planes">Ver planes de liga</a>
-            </Button>
-          </div>
         </div>
       </section>
 
