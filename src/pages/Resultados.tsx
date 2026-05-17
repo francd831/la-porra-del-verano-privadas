@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Trophy, Save, Target, Users, Zap, Lock, LockOpen, Loader2, AlertCircle, Trash2, ChevronUp, ChevronDown, Bell, RefreshCw } from "lucide-react";
+import { Trophy, Save, Target, Users, Zap, Lock, LockOpen, Loader2, AlertCircle, Trash2, ChevronUp, ChevronDown, RefreshCw } from "lucide-react";
 import { Eye, EyeOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
 import PlayoffBracket from "@/components/PlayoffBracket";
 
 interface Team {
@@ -187,25 +186,6 @@ export default function Resultados() {
       console.error('Error:', error);
       setIsAdmin(false);
       setLoading(false);
-    }
-  };
-
-  const queueNotificationEvent = async (event: { type: string; entity_id: string; payload: Record<string, unknown> }) => {
-    const { error: queueError } = await supabase
-      .from('events_queue')
-      .insert(event as any);
-
-    if (queueError) {
-      throw queueError;
-    }
-
-    // Intento inmediato (el cron sigue como respaldo)
-    const { error: processError } = await supabase.functions.invoke('process-events', {
-      body: {},
-    });
-
-    if (processError) {
-      console.error('Error invoking process-events:', processError);
     }
   };
 
@@ -425,7 +405,7 @@ export default function Resultados() {
       const matchGroup = Object.keys(groupMatches).find(g =>
         groupMatches[g].some(m => m.id === matchId));
 
-      // ── STEP 1: Auto-sort group standings BEFORE notifications ──
+      // ── STEP 1: Auto-sort group standings ──
       if (matchGroup) {
         const autoClasificacion = (() => {
           const estadisticas: Record<string, EstadisticasEquipo> = {};
@@ -478,19 +458,6 @@ export default function Resultados() {
       // ── STEP 2: Update R32 teams ──
       await updateRoundOf32Teams();
 
-      // ── STEP 3: Queue match_result notification (after sorting) ──
-      await queueNotificationEvent({
-        type: 'match_result',
-        entity_id: matchId,
-        payload: {
-          match_id: matchId,
-          home_team_id: match?.home_team_id ?? null,
-          away_team_id: match?.away_team_id ?? null,
-          home_goals: resultado.local,
-          away_goals: resultado.visitante,
-        },
-      });
-
       if (showToast) {
         // Recalcular puntos
         const { error: recalcError } = await supabase.rpc('update_all_user_points', {
@@ -503,35 +470,8 @@ export default function Resultados() {
 
         toast({
           title: "Resultado guardado",
-          description: "Puntos recalculados. Notificaciones en cola.",
+          description: "Puntos recalculados.",
         });
-      }
-
-      // ── STEP 4: Queue R32 qualification notifications if group complete ──
-      if (matchGroup && isGroupComplete(matchGroup)) {
-        const clasificacion = calcularClasificacionGrupo(matchGroup);
-        const partidosGrupo = groupMatches[matchGroup] || [];
-        
-        for (let i = 0; i < 2 && i < clasificacion.length; i++) {
-          const tName = clasificacion[i].equipo;
-          let qualTeam: Team | null = null;
-          for (const m of partidosGrupo) {
-            if (m.home_team?.name === tName) { qualTeam = m.home_team; break; }
-            if (m.away_team?.name === tName) { qualTeam = m.away_team; break; }
-          }
-          if (qualTeam) {
-            await queueNotificationEvent({
-              type: 'knockout_result',
-              entity_id: `GROUP_${matchGroup}_${qualTeam.id}`,
-              payload: {
-                match_id: `R32_qual_${matchGroup}_${i + 1}`,
-                team_id: qualTeam.id,
-                team_name: qualTeam.name,
-                round_name: 'Dieciseisavos de Final',
-              },
-            });
-          }
-        }
       }
 
       return true;
@@ -1192,26 +1132,6 @@ export default function Resultados() {
           }, { onConflict: 'tournament_id' });
       }
 
-      // Queue knockout_result notification event
-      // round_name = the round the team qualifies TO (not the current round)
-      const nextRoundMap: Record<string, string> = {
-        'Dieciseisavos de Final': 'Octavos de Final',
-        'Octavos de Final': 'Cuartos de Final',
-        'Cuartos de Final': 'Semifinales',
-        'Semifinales': 'Final',
-        'Final': 'Campeón',
-      };
-      await queueNotificationEvent({
-        type: 'knockout_result',
-        entity_id: matchId,
-        payload: {
-          match_id: matchId,
-          team_id: teamId,
-          team_name: teamName,
-          round_name: nextRoundMap[round] || round,
-        },
-      });
-
       // Recargar datos para reflejar los cambios en el estado
       await fetchData();
 
@@ -1320,16 +1240,9 @@ export default function Resultados() {
         throw recalcError;
       }
 
-      // Queue event for notification pipeline
-      await queueNotificationEvent({
-        type: 'knockout_result',
-        entity_id: 'playoff_save',
-        payload: { round_name: 'Eliminatorias' },
-      });
-
       toast({
         title: "Clasificados guardados",
-        description: "Puntos recalculados. Notificaciones en cola.",
+        description: "Puntos recalculados.",
       });
     } catch (error) {
       console.error('Error saving playoff classified:', error);
@@ -1506,16 +1419,9 @@ export default function Resultados() {
         console.error('Error recalculating points:', recalcError);
       }
 
-      // Queue event
-      await queueNotificationEvent({
-        type: 'knockout_result',
-        entity_id: 'champion',
-        payload: { team_id: teamId, round_name: 'Campeón' },
-      });
-
       toast({
         title: "Campeón guardado",
-        description: "Puntos recalculados. Notificaciones en cola.",
+        description: "Puntos recalculados.",
       });
     } catch (error) {
       console.error('Error saving champion:', error);
@@ -1588,25 +1494,9 @@ export default function Resultados() {
         console.error('Error recalculating points:', recalcError);
       }
 
-      // Queue events for each award
-      if (balonOro) {
-        await queueNotificationEvent({
-          type: 'award_result',
-          entity_id: 'balon_oro',
-          payload: { award_name: 'Balón de Oro', winner: balonOro },
-        });
-      }
-      if (botaOro) {
-        await queueNotificationEvent({
-          type: 'award_result',
-          entity_id: 'bota_oro',
-          payload: { award_name: 'Bota de Oro', winner: botaOro },
-        });
-      }
-
       toast({
         title: "Premios guardados",
-        description: "Puntos recalculados. Notificaciones en cola.",
+        description: "Puntos recalculados.",
       });
     } catch (error) {
       console.error('Error saving awards:', error);
@@ -1738,12 +1628,6 @@ export default function Resultados() {
               </>
             )}
           </Button>
-          <Link to="/plantillas-notificaciones">
-            <Button variant="outline" size="sm" className="flex items-center gap-1">
-              <Bell className="w-4 h-4" />
-              <span className="hidden sm:inline">Plantillas</span>
-            </Button>
-          </Link>
           <Button
             onClick={toggleRankingsVisibility}
             disabled={updatingRankingsVisibility}

@@ -108,7 +108,7 @@ export function PWAInstallBanner() {
               <>
                 <p className="text-sm font-semibold mb-1">Instala la app</p>
                 <p className="text-xs text-muted-foreground">
-                  Recibe notificaciones y accede más rápido
+                  Accede más rápido desde tu pantalla de inicio
                 </p>
               </>
             )}

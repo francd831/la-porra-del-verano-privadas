@@ -26,7 +26,6 @@ import Clasificacion from "./pages/Clasificacion";
 import Bases from "./pages/Bases";
 
 import Perfil from "./pages/Perfil";
-import PlantillasNotificaciones from "./pages/PlantillasNotificaciones";
 
 import MonitorCola from "./pages/MonitorCola";
 import NotFound from "./pages/NotFound";
@@ -67,7 +66,6 @@ const App = () => (
               <Route path="/bases" element={<Bases />} />
               
               <Route path="/perfil" element={<AuthGuard><Perfil /></AuthGuard>} />
-              <Route path="/plantillas-notificaciones" element={<AdminGuard><PlantillasNotificaciones /></AdminGuard>} />
               
               <Route path="/monitor-cola" element={<AdminGuard><MonitorCola /></AdminGuard>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

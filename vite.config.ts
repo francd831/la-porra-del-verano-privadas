@@ -15,11 +15,10 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["mundial-icon-512.png", "sw-push.js"],
+      includeAssets: ["mundial-icon-512.png"],
       workbox: {
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/~oauth/],
-        importScripts: ["/sw-push.js"],
       },
       manifest: {
         name: "Porra Mundial 2026",

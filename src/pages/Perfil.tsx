@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
-import { User, Edit, Save, Calendar, AlertTriangle, CheckCircle, Bell } from "lucide-react";
+import { User, Edit, Save, Calendar, AlertTriangle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { NotificationSettings } from "@/components/NotificationSettings";
 
 export default function Perfil() {
   const [isEditing, setIsEditing] = useState(false);
@@ -255,20 +253,7 @@ export default function Perfil() {
       </div>
 
 
-      <Tabs defaultValue="datos" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 bg-muted/30">
-          <TabsTrigger value="datos" className="flex items-center space-x-2">
-            <User className="w-4 h-4" />
-            <span>Datos</span>
-          </TabsTrigger>
-          <TabsTrigger value="notificaciones" className="flex items-center space-x-2">
-            <Bell className="w-4 h-4" />
-            <span>Notificaciones</span>
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Datos Personales */}
-        <TabsContent value="datos" className="space-y-6">
+      <div className="space-y-6">
           <Card className="shadow-soft border-0 bg-gradient-card">
             <CardHeader>
               <CardTitle>Información Personal</CardTitle>
@@ -336,13 +321,7 @@ export default function Perfil() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* Notificaciones */}
-        <TabsContent value="notificaciones" className="space-y-6">
-          <NotificationSettings />
-        </TabsContent>
-      </Tabs>
+      </div>
     </div>
   );
 }
