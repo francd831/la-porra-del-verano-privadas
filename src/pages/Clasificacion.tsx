@@ -1,12 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, ChevronUp, Medal, Star, Trophy, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, Medal, Plus, Search, Star, Trophy, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const DEFAULT_TOURNAMENT_ID = "11111111-1111-1111-1111-111111111111";
+const MAX_PRIVATE_LEAGUES = 5;
 
 interface UserRanking {
   user_id: string;
@@ -63,7 +67,10 @@ export default function Clasificacion() {
   const [leagues, setLeagues] = useState<LeagueOption[]>([]);
   const [rankingPositions, setRankingPositions] = useState<Record<string, number | null>>({});
   const [selectedLeagueId, setSelectedLeagueId] = useState("global");
+  const [inviteCode, setInviteCode] = useState("");
+  const [joiningLeague, setJoiningLeague] = useState(false);
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const selectedLeague = useMemo(
     () => leagues.find((league) => league.id === selectedLeagueId) || null,
@@ -186,6 +193,74 @@ export default function Clasificacion() {
   useEffect(() => {
     fetchUserLeagues();
   }, [fetchUserLeagues]);
+
+  const getJoinErrorMessage = (error: unknown) => {
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === "object" && error !== null && "message" in error
+          ? String((error as { message?: unknown }).message || "")
+          : "";
+
+    if (message.includes("User league limit reached")) {
+      return `Solo puedes pertenecer a ${MAX_PRIVATE_LEAGUES} ligas privadas.`;
+    }
+    if (message.includes("League member limit reached")) {
+      return "Esta liga ha alcanzado el límite de miembros.";
+    }
+    return message || "Comprueba el código de invitación.";
+  };
+
+  const handleJoinLeague = async () => {
+    const normalizedCode = inviteCode.trim().toUpperCase();
+    if (!normalizedCode) return;
+
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Inicia sesión",
+        description: "Necesitas entrar con tu cuenta para unirte a una liga.",
+      });
+      return;
+    }
+
+    if (leagues.length >= MAX_PRIVATE_LEAGUES) {
+      toast({
+        variant: "destructive",
+        title: "Límite alcanzado",
+        description: `Solo puedes pertenecer a ${MAX_PRIVATE_LEAGUES} ligas privadas.`,
+      });
+      return;
+    }
+
+    setJoiningLeague(true);
+    try {
+      const { data: leagueId, error } = await supabase.rpc("join_league_by_invite_code", {
+        p_invite_code: normalizedCode,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Te has unido a la liga",
+        description: "La clasificación privada ya está disponible aquí.",
+      });
+      setInviteCode("");
+      await fetchUserLeagues();
+      if (typeof leagueId === "string") {
+        setSelectedLeagueId(leagueId);
+      }
+    } catch (error: unknown) {
+      console.error("Error joining league:", error);
+      toast({
+        variant: "destructive",
+        title: "No se pudo unir",
+        description: getJoinErrorMessage(error),
+      });
+    } finally {
+      setJoiningLeague(false);
+    }
+  };
 
   const fetchRankings = useCallback(async () => {
     setLoading(true);
@@ -311,15 +386,15 @@ export default function Clasificacion() {
   const userPosition = user ? rankings.findIndex((r) => r.user_id === user.id) + 1 : 0;
   const currentUserPoints = user ? rankings.find((r) => r.user_id === user.id)?.points_total || 0 : 0;
   const showFullRanking = true;
-  const rankingTitle = selectedLeague ? selectedLeague.name : "Global";
+  const rankingTitle = selectedLeague ? selectedLeague.name : "General";
   const getSelectorPosition = (scopeId: string) => {
     const position = rankingPositions[scopeId];
     return position ? `#${position}` : "-";
   };
   const getSelectorPositionClass = (active: boolean) =>
     active
-      ? "bg-primary-foreground/20 text-primary-foreground border-primary-foreground/20"
-      : "bg-muted/70 text-muted-foreground border-border/40";
+      ? "text-primary-foreground"
+      : "text-muted-foreground";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl pb-24">
@@ -332,7 +407,7 @@ export default function Clasificacion() {
           <div>
             <h1 className="text-2xl font-bold">Clasificación</h1>
             <p className="text-sm text-muted-foreground">
-              {selectedLeague ? `Liga privada: ${rankingTitle}` : "Clasificación global"}
+              {selectedLeague ? `Liga privada: ${rankingTitle}` : "Clasificación general"}
               {userPosition > 0 && ` · tu posición #${userPosition}`}
             </p>
           </div>
@@ -344,62 +419,89 @@ export default function Clasificacion() {
         )}
       </div>
 
-      {/* Selector de ranking: Global + ligas privadas */}
+      {/* Selector de ranking: General + ligas privadas */}
       <div className="mb-6 flex flex-wrap gap-2">
         <button
           onClick={() => setSelectedLeagueId("global")}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 border ${
+          className={`min-h-[68px] min-w-[124px] px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center gap-3 border ${
             isGlobalRanking
               ? "bg-primary text-primary-foreground border-primary shadow-neon"
               : "bg-secondary/60 text-foreground border-border/50 hover:bg-muted/50"
           }`}
         >
-          <Trophy className="w-4 h-4" />
-          <span>Global</span>
-          {user && (
-            <span className={`rounded-full border px-2 py-0.5 text-[11px] leading-none ${getSelectorPositionClass(isGlobalRanking)}`}>
-              {getSelectorPosition("global")}
-            </span>
-          )}
+          <Trophy className="w-4 h-4 shrink-0" />
+          <span className="flex min-w-0 flex-col items-start leading-tight">
+            <span className="truncate">General</span>
+            {user && (
+              <span className={`mt-1 text-2xl font-black leading-none ${getSelectorPositionClass(isGlobalRanking)}`}>
+                {getSelectorPosition("global")}
+              </span>
+            )}
+          </span>
         </button>
         {leagues.map((league) => (
           <button
             key={league.id}
             onClick={() => setSelectedLeagueId(league.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 border ${
+            className={`min-h-[68px] min-w-[124px] max-w-[180px] px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center gap-3 border ${
               selectedLeagueId === league.id
                 ? "bg-primary text-primary-foreground border-primary shadow-neon"
                 : "bg-secondary/60 text-foreground border-border/50 hover:bg-muted/50"
             }`}
           >
-            <Users className="w-4 h-4" />
-            <span>{league.name}</span>
-            <span className={`rounded-full border px-2 py-0.5 text-[11px] leading-none ${getSelectorPositionClass(selectedLeagueId === league.id)}`}>
-              {getSelectorPosition(league.id)}
+            <Users className="w-4 h-4 shrink-0" />
+            <span className="flex min-w-0 flex-col items-start leading-tight">
+              <span className="max-w-full truncate">{league.name}</span>
+              {user && (
+                <span className={`mt-1 text-2xl font-black leading-none ${getSelectorPositionClass(selectedLeagueId === league.id)}`}>
+                  {getSelectorPosition(league.id)}
+                </span>
+              )}
             </span>
           </button>
         ))}
       </div>
 
-      {/* Empty state for private rankings */}
-      {user && leagues.length === 0 && (
+      {user && (
         <Card className="mb-6 border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft">
-          <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <CardContent className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-end">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
                 <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <div className="font-semibold text-sm">Aún no tienes ligas privadas</div>
-                <div className="text-xs text-muted-foreground">Crea una liga o únete con código desde Mis ligas.</div>
+                <div className="font-semibold text-sm">Ligas privadas</div>
+                <div className="text-xs text-muted-foreground">
+                  Crea una liga o únete con código. Puedes pertenecer a {MAX_PRIVATE_LEAGUES} ligas como máximo.
+                </div>
               </div>
             </div>
-            <Link
-              to="/ligas"
-              className="inline-flex h-10 items-center justify-center rounded-xl border border-border/60 px-4 text-sm font-semibold transition-colors hover:bg-muted/50"
-            >
-              Ir a Mis ligas
-            </Link>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button asChild className="h-11 gap-2 rounded-xl font-bold">
+                <Link to="/ligas/crear">
+                  <Plus className="h-4 w-4" />
+                  Crear liga
+                </Link>
+              </Button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  value={inviteCode}
+                  onChange={(event) => setInviteCode(event.target.value.toUpperCase())}
+                  placeholder="Código"
+                  className="h-11 min-w-[150px] uppercase bg-muted/30 font-mono tracking-wider"
+                  disabled={joiningLeague || leagues.length >= MAX_PRIVATE_LEAGUES}
+                />
+                <Button
+                  variant="outline"
+                  className="h-11 gap-2 rounded-xl"
+                  onClick={handleJoinLeague}
+                  disabled={joiningLeague || !inviteCode.trim() || leagues.length >= MAX_PRIVATE_LEAGUES}
+                >
+                  <Search className="h-4 w-4" />
+                  {joiningLeague ? "Uniendo..." : "Unirse"}
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -456,7 +558,7 @@ export default function Clasificacion() {
           <CardHeader className="py-3">
             <CardTitle className="flex items-center space-x-2 text-base">
               <Trophy className="w-5 h-5 text-gold" />
-              <span>{selectedLeague ? `Liga: ${selectedLeague.name}` : "Clasificación global"}</span>
+              <span>{selectedLeague ? `Liga: ${selectedLeague.name}` : "Clasificación general"}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">

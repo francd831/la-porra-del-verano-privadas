@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Target, Award, FileText, User, Menu, X, LogOut, Home, Trophy, Activity, LucideIcon, Users } from "lucide-react";
+import { Target, Award, FileText, User, Menu, X, LogOut, Home, Trophy, Activity, LucideIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +18,6 @@ interface NavItem {
 const navigation: NavItem[] = [
   { name: "Inicio", href: "/dashboard", icon: Home, userOnly: true },
   { name: "Mi Porra", href: "/mi-porra", icon: Target, userOnly: true },
-  { name: "Mis ligas", href: "/ligas", icon: Users, requiresAuth: true },
   { name: "Pronósticos", href: "/pronosticos", icon: Target, requiresAuth: true },
   { name: "Resultados", href: "/resultados", icon: Award, adminOnly: true },
   { name: "Clasificación", href: "/clasificacion", icon: Trophy, requiresAuth: true },

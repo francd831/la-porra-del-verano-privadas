@@ -270,9 +270,9 @@ export default function LigaDetalle() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl pb-24">
-      <Button variant="ghost" className="mb-4 gap-2 -ml-2 text-muted-foreground hover:text-foreground" onClick={() => navigate("/ligas")}>
+      <Button variant="ghost" className="mb-4 gap-2 -ml-2 text-muted-foreground hover:text-foreground" onClick={() => navigate("/clasificacion")}>
         <ArrowLeft className="h-4 w-4" />
-        Mis ligas
+        Clasificación
       </Button>
 
       {/* League header */}

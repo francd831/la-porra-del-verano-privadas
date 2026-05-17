@@ -579,13 +579,13 @@ export default function Dashboard() {
                 <div>
                   <h2 className="text-lg font-bold">Ligas privadas</h2>
                   <p className="text-sm text-muted-foreground">
-                    Gestiona tus ligas, crea una nueva o únete con código desde un único sitio.
+                    Crea una nueva liga o únete con código desde la clasificación.
                   </p>
                 </div>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button asChild>
-                  <Link to="/ligas">Ir a Mis ligas</Link>
+                  <Link to="/clasificacion">Ir a Clasificación</Link>
                 </Button>
               </div>
             </CardContent>
