@@ -92,6 +92,11 @@ export default function LigaDetalle() {
       if (memberError) throw memberError;
 
       const memberRows = memberData || [];
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+      const adminIds = new Set((adminRoles || []).map((role) => role.user_id));
       const userIds = memberRows.map((member) => member.user_id);
       const { data: profilesData } = userIds.length
         ? await supabase.rpc("get_user_display_names", { p_user_ids: userIds })
@@ -108,12 +113,15 @@ export default function LigaDetalle() {
       }));
       setMembers(formattedMembers);
 
-      const { data: submissionsData, error: submissionsError } = userIds.length
+      const rankingMembers = formattedMembers.filter((member) => !adminIds.has(member.user_id));
+      const rankingUserIds = rankingMembers.map((member) => member.user_id);
+
+      const { data: submissionsData, error: submissionsError } = rankingUserIds.length
         ? await supabase
             .from("user_submissions")
             .select("user_id, points_total, points_groups, points_playoffs, points_awards")
             .eq("tournament_id", leagueData.tournament_id)
-            .in("user_id", userIds)
+            .in("user_id", rankingUserIds)
             .order("points_total", { ascending: false })
         : { data: [], error: null };
 
@@ -123,7 +131,7 @@ export default function LigaDetalle() {
         ((submissionsData || []) as SubmissionRow[]).map((submission) => [submission.user_id, submission])
       );
 
-      setRankings(formattedMembers
+      setRankings(rankingMembers
         .map((member) => {
           const submission = submissionsMap.get(member.user_id);
           return {
