@@ -1,5 +1,5 @@
 import { Link, Navigate } from "react-router-dom";
-import { Target, Trophy, BarChart3, Users, Send, Check, Shield, Zap, Crown, Building2 } from "lucide-react";
+import { Target, Trophy, BarChart3, Users, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,49 +38,6 @@ const leagueSteps = [
     icon: Trophy,
     title: "Ranking exclusivo",
     description: "Tendréis vuestra clasificación privada además del ranking global.",
-  },
-];
-
-const plans = [
-  {
-    name: "Gratis",
-    price: "0 €",
-    period: "",
-    participants: "Hasta 10 participantes",
-    features: ["Predicciones completas", "Clasificación automática", "Estadísticas básicas"],
-    cta: "Crear liga gratis",
-    highlight: false,
-    badge: null,
-  },
-  {
-    name: "Liga Pro",
-    price: "9,99 €",
-    period: "/ liga",
-    participants: "Hasta 50 participantes",
-    features: ["Todo lo del plan Gratis", "Estadísticas avanzadas", "Rankings por jornada", "Personalización de liga"],
-    cta: "Elegir Pro",
-    highlight: true,
-    badge: "Popular",
-  },
-  {
-    name: "Liga Max",
-    price: "19,99 €",
-    period: "/ liga",
-    participants: "Hasta 150 participantes",
-    features: ["Todo lo del plan Pro", "Múltiples administradores", "Exportación de datos", "Soporte prioritario"],
-    cta: "Elegir Max",
-    highlight: false,
-    badge: null,
-  },
-  {
-    name: "Empresa / Peña",
-    price: "49 €",
-    period: "/ liga",
-    participants: "Hasta 500 participantes",
-    features: ["Todo lo del plan Max", "Branding personalizado", "Gestión de equipos", "Soporte dedicado"],
-    cta: "Contactar",
-    highlight: false,
-    badge: null,
   },
 ];
 
@@ -188,78 +145,6 @@ export default function Home() {
             ))}
           </div>
 
-        </div>
-      </section>
-
-      {/* Planes */}
-      <section id="planes" className="py-20 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold font-heading mb-3">Planes de liga privada</h2>
-            <p className="text-muted-foreground text-lg">Jugar la porra es siempre gratis. Los planes son solo para crear ligas.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {plans.map((plan, i) => (
-              <Card
-                key={i}
-                className={`shadow-soft border-0 relative transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${
-                  plan.highlight
-                    ? "bg-primary/5 border-2 border-primary/40 ring-1 ring-primary/20"
-                    : "bg-gradient-card"
-                }`}
-              >
-                {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-primary text-primary-foreground px-4 py-1 text-xs font-bold shadow-glow">
-                      {plan.badge}
-                    </Badge>
-                  </div>
-                )}
-                <CardContent className="pt-8 pb-6 px-5 flex flex-col h-full">
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    {i === 3 ? (
-                      <Building2 className="w-5 h-5 text-gold" />
-                    ) : i === 2 ? (
-                      <Crown className="w-5 h-5 text-gold" />
-                    ) : i === 1 ? (
-                      <Zap className="w-5 h-5 text-primary" />
-                    ) : (
-                      <Shield className="w-5 h-5 text-muted-foreground" />
-                    )}
-                    <h3 className="text-lg font-bold">{plan.name}</h3>
-                  </div>
-
-                  <div className="text-center my-4">
-                    <span className="text-3xl font-bold">{plan.price}</span>
-                    {plan.period && <span className="text-sm text-muted-foreground">{plan.period}</span>}
-                  </div>
-
-                  <p className="text-sm text-muted-foreground text-center mb-5 font-medium">{plan.participants}</p>
-
-                  <ul className="space-y-2.5 mb-6 flex-1">
-                    {plan.features.map((f, fi) => (
-                      <li key={fi} className="flex items-start gap-2 text-sm">
-                        <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Button
-                    className={`w-full rounded-full font-bold ${
-                      plan.highlight
-                        ? "bg-primary hover:bg-primary/90"
-                        : "bg-muted hover:bg-muted/80 text-foreground"
-                    }`}
-                    asChild
-                  >
-                    <Link to="/registro">{plan.cta}</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
         </div>
       </section>
 
