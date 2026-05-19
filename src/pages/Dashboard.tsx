@@ -249,7 +249,7 @@ export default function Dashboard() {
           setRecentMatches(matchesWithPoints);
         }
 
-        // Load next 5 upcoming matches from current date
+        // Load all upcoming matches from current date
         const now = new Date().toISOString();
         const {
           data: upcomingMatchesData
@@ -260,7 +260,7 @@ export default function Dashboard() {
             away_team:teams!matches_away_team_id_fkey(name)
           `).eq('tournament_id', '11111111-1111-1111-1111-111111111111').neq('status', 'completed').gte('match_date', now).not('match_date', 'is', null).order('match_date', {
           ascending: true
-        }).limit(5);
+        });
         if (upcomingMatchesData && upcomingMatchesData.length > 0) {
           const matchIds = upcomingMatchesData.map((m) => m.id);
           const {
@@ -684,19 +684,19 @@ export default function Dashboard() {
 
         {/* Recent and Upcoming Matches Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Next 5 Upcoming Matches */}
+          {/* Upcoming Matches */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-primary" />
                 Próximos Partidos
               </CardTitle>
-              <Link to="/mi-porra">
-                
-              </Link>
+              {upcomingMatches.length > 0 && (
+                <Badge variant="secondary">{upcomingMatches.length}</Badge>
+              )}
             </CardHeader>
             <CardContent>
-              {upcomingMatches.length > 0 ? <div className="space-y-3">
+              {upcomingMatches.length > 0 ? <div className="max-h-[460px] space-y-3 overflow-y-auto pr-1">
                   {upcomingMatches.map((match) => <div key={match.id} className="p-3 bg-muted/30 rounded-lg border">
                       <div className="flex items-center justify-between mb-2">
                         <Badge variant="outline" className="text-xs">
