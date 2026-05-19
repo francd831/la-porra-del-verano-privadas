@@ -406,6 +406,7 @@ export type Database = {
           home_team_id: string | null
           id: string
           match_date: string | null
+          matchday: number | null
           match_type: string
           round: string | null
           status: string
@@ -423,6 +424,7 @@ export type Database = {
           home_team_id?: string | null
           id: string
           match_date?: string | null
+          matchday?: number | null
           match_type: string
           round?: string | null
           status?: string
@@ -440,6 +442,7 @@ export type Database = {
           home_team_id?: string | null
           id?: string
           match_date?: string | null
+          matchday?: number | null
           match_type?: string
           round?: string | null
           status?: string
@@ -892,6 +895,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_score_events: {
+        Row: {
+          calculated_at: string
+          event_key: string
+          event_label: string
+          event_type: string
+          id: string
+          metadata: Json
+          points: number
+          rank: number | null
+          tournament_id: string
+          user_id: string
+        }
+        Insert: {
+          calculated_at?: string
+          event_key: string
+          event_label: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          points?: number
+          rank?: number | null
+          tournament_id: string
+          user_id: string
+        }
+        Update: {
+          calculated_at?: string
+          event_key?: string
+          event_label?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          points?: number
+          rank?: number | null
+          tournament_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_score_events_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_submissions: {
         Row: {
           awards_predicted: boolean | null
@@ -1030,6 +1080,10 @@ export type Database = {
       join_league_by_invite_code: {
         Args: { p_invite_code: string }
         Returns: string
+      }
+      refresh_score_events: {
+        Args: { p_tournament_id: string }
+        Returns: undefined
       }
       update_all_user_points: {
         Args: { p_tournament_id: string }

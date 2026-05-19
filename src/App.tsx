@@ -23,6 +23,7 @@ import LigaDetalle from "./pages/LigaDetalle";
 import Pronosticos from "./pages/Pronosticos";
 import Resultados from "./pages/Resultados";
 import Clasificacion from "./pages/Clasificacion";
+import HallOfFame from "./pages/HallOfFame";
 import Bases from "./pages/Bases";
 import PoliticaPrivacidad from "./pages/PoliticaPrivacidad";
 import CondicionesServicio from "./pages/CondicionesServicio";
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/pronosticos" element={<AuthGuard><Pronosticos /></AuthGuard>} />
               <Route path="/resultados" element={<AdminGuard><Resultados /></AdminGuard>} />
               <Route path="/clasificacion" element={<AuthGuard><Clasificacion /></AuthGuard>} />
+              <Route path="/hall-of-fame" element={<AuthGuard><HallOfFame /></AuthGuard>} />
               <Route path="/bases" element={<Bases />} />
               <Route path="/politica-privacidad" element={<PoliticaPrivacidad />} />
               <Route path="/condiciones-servicio" element={<CondicionesServicio />} />
