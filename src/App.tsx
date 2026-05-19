@@ -11,6 +11,7 @@ import { Header } from "./components/Header";
 import { BottomNav } from "./components/BottomNav";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { PWAInstallBanner } from "./components/PWAInstallBanner";
+import { AppVersionGate } from "./components/AppVersionGate";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
@@ -45,6 +46,7 @@ const App = () => (
             <BottomNav />
             <ScrollToTop />
             <PWAInstallBanner />
+            <AppVersionGate />
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />

@@ -17,6 +17,9 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["mundial-icon-512.png"],
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        globIgnores: ["**/version.json"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/~oauth/],
       },
