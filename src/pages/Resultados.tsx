@@ -53,10 +53,42 @@ interface EstadisticasEquipo {
   diferencia: number;
 }
 
-const jugadores = [
-  "Lionel Messi", "Kylian Mbappé", "Erling Haaland", "Karim Benzema",
-  "Vinicius Jr.", "Kevin De Bruyne", "Sadio Mané", "Harry Kane",
-  "Pedri", "Jamal Musiala", "Bukayo Saka", "Rafael Leão"
+const BALON_ORO_OPTIONS = [
+  "Harry Kane",
+  "Lamine Yamal",
+  "Kylian Mbappé",
+  "Michael Olise",
+  "Lionel Messi",
+  "Vinícius Junior",
+  "Bruno Fernandes",
+  "Raphinha",
+  "Jude Bellingham",
+  "Ousmane Dembélé",
+  "Rayan Cherki",
+  "Declan Rice",
+  "Rodri",
+  "Pedri",
+  "Erling Haaland",
+  "OTRO",
+];
+
+const BOTA_ORO_OPTIONS = [
+  "Kylian Mbappé",
+  "Harry Kane",
+  "Erling Haaland",
+  "Lionel Messi",
+  "Lamine Yamal",
+  "Vinícius Junior",
+  "Cristiano Ronaldo",
+  "Ousmane Dembélé",
+  "Raphinha",
+  "Lautaro Martínez",
+  "Mikel Oyarzabal",
+  "Romelu Lukaku",
+  "Alexander Isak",
+  "Viktor Gyökeres",
+  "Bukayo Saka",
+  "OTRO",
 ];
 
 // Función para asegurar que existen todos los partidos de eliminatorias en la BD (helper estático)
@@ -1927,7 +1959,7 @@ export default function Resultados() {
                       <SelectValue placeholder="Selecciona jugador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {jugadores.map((jugador) => (
+                      {BALON_ORO_OPTIONS.map((jugador) => (
                         <SelectItem key={jugador} value={jugador}>
                           {jugador}
                         </SelectItem>
@@ -1943,7 +1975,7 @@ export default function Resultados() {
                       <SelectValue placeholder="Selecciona jugador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {jugadores.map((jugador) => (
+                      {BOTA_ORO_OPTIONS.map((jugador) => (
                         <SelectItem key={jugador} value={jugador}>
                           {jugador}
                         </SelectItem>
