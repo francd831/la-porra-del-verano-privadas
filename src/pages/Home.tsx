@@ -19,7 +19,7 @@ const porraSteps = [
   {
     icon: Trophy,
     title: "Sube en la clasificación",
-    description: "Compite en el ranking global y mira tu posición en tiempo real.",
+    description: "Compite en la clasificación general y mira tu posición en tiempo real.",
   },
 ];
 
@@ -37,7 +37,7 @@ const leagueSteps = [
   {
     icon: Trophy,
     title: "Ranking exclusivo",
-    description: "Tendréis vuestra clasificación privada además del ranking global.",
+    description: "Tendréis vuestra clasificación privada además de la general.",
   },
 ];
 
@@ -127,7 +127,7 @@ export default function Home() {
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Crea una liga privada e invita a tu grupo. Tendréis vuestra propia clasificación,
-              además del ranking global.
+              además de la general.
             </p>
           </div>
 

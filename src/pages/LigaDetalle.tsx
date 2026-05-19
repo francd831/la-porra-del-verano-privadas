@@ -26,8 +26,6 @@ interface League {
   comments: string | null;
   invite_code: string;
   owner_id: string;
-  plan: string;
-  max_members: number;
   created_at: string;
   tournament_id: string;
 }
@@ -87,7 +85,7 @@ export default function LigaDetalle() {
     try {
       const { data: leagueData, error: leagueError } = await supabase
         .from("leagues")
-        .select("id, name, comments, invite_code, owner_id, plan, max_members, created_at, tournament_id")
+        .select("id, name, comments, invite_code, owner_id, created_at, tournament_id")
         .eq("id", leagueId)
         .single();
 

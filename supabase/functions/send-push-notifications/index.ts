@@ -451,7 +451,7 @@ serve(async (req) => {
 
       let title = "";
       let body = "";
-      let notifType = event.type;
+      const notifType = event.type;
 
       // ── Build notification content from templates ──
       if (event.type === "match_result") {

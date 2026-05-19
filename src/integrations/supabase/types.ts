@@ -333,10 +333,8 @@ export type Database = {
           created_at: string
           id: string
           invite_code: string
-          max_members: number
           name: string
           owner_id: string
-          plan: string
           tournament_id: string
           updated_at: string
         }
@@ -345,10 +343,8 @@ export type Database = {
           created_at?: string
           id?: string
           invite_code?: string
-          max_members?: number
           name: string
           owner_id: string
-          plan?: string
           tournament_id?: string
           updated_at?: string
         }
@@ -357,10 +353,8 @@ export type Database = {
           created_at?: string
           id?: string
           invite_code?: string
-          max_members?: number
           name?: string
           owner_id?: string
-          plan?: string
           tournament_id?: string
           updated_at?: string
         }
@@ -1036,14 +1030,6 @@ export type Database = {
       join_league_by_invite_code: {
         Args: { p_invite_code: string }
         Returns: string
-      }
-      league_plan_member_limit: {
-        Args: { p_plan: string }
-        Returns: number
-      }
-      update_league_plan_for_testing: {
-        Args: { p_league_id: string; p_plan: string }
-        Returns: Database["public"]["Tables"]["leagues"]["Row"]
       }
       update_all_user_points: {
         Args: { p_tournament_id: string }

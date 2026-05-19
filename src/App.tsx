@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AuthGuard } from "./components/AuthGuard";
 import { AdminGuard } from "./components/AdminGuard";
@@ -17,7 +17,6 @@ import Login from "./pages/Login";
 import Registro from "./pages/Registro";
 import RecuperarPassword from "./pages/RecuperarPassword";
 import MiPorra from "./pages/MiPorra";
-import MisLigas from "./pages/MisLigas";
 import CrearLiga from "./pages/CrearLiga";
 import LigaDetalle from "./pages/LigaDetalle";
 import Pronosticos from "./pages/Pronosticos";
@@ -53,7 +52,7 @@ const App = () => (
               <Route path="/registro" element={<Registro />} />
               <Route path="/recuperar-password" element={<RecuperarPassword />} />
               <Route path="/mi-porra" element={<UserGuard><MiPorra /></UserGuard>} />
-              <Route path="/ligas" element={<AuthGuard><MisLigas /></AuthGuard>} />
+              <Route path="/ligas" element={<Navigate to="/clasificacion" replace />} />
               <Route path="/ligas/crear" element={<AuthGuard><CrearLiga /></AuthGuard>} />
               <Route path="/ligas/:leagueId" element={<AuthGuard><LigaDetalle /></AuthGuard>} />
               <Route path="/pronosticos" element={<AuthGuard><Pronosticos /></AuthGuard>} />

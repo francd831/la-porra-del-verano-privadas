@@ -41,8 +41,6 @@ export default function CrearLiga() {
           name: trimmedName,
           comments: trimmedComments || null,
           owner_id: user.id,
-          plan: "free",
-          max_members: 10,
         })
         .select("id")
         .single();

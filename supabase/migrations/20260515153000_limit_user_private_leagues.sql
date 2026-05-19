@@ -6,7 +6,6 @@ SET search_path = public
 AS $$
 DECLARE
   v_league public.leagues%ROWTYPE;
-  v_member_count integer;
   v_user_league_count integer;
 BEGIN
   IF auth.uid() IS NULL THEN
@@ -30,16 +29,6 @@ BEGIN
   IF v_user_league_count >= 5
      AND NOT public.is_league_member(v_league.id, auth.uid()) THEN
     RAISE EXCEPTION 'User league limit reached';
-  END IF;
-
-  SELECT count(*)
-  INTO v_member_count
-  FROM public.league_members
-  WHERE league_id = v_league.id;
-
-  IF v_member_count >= v_league.max_members
-     AND NOT public.is_league_member(v_league.id, auth.uid()) THEN
-    RAISE EXCEPTION 'League member limit reached. Upgrade required.';
   END IF;
 
   INSERT INTO public.league_members (league_id, user_id, role)

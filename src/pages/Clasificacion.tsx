@@ -34,8 +34,6 @@ interface LeagueOption {
   comments: string | null;
   invite_code: string;
   owner_id: string;
-  plan: string;
-  max_members: number;
   member_count: number;
 }
 
@@ -72,7 +70,7 @@ export default function Clasificacion() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [leagues, setLeagues] = useState<LeagueOption[]>([]);
   const [rankingPositions, setRankingPositions] = useState<Record<string, number | null>>({});
-  const [selectedLeagueId, setSelectedLeagueId] = useState("global");
+  const [selectedLeagueId, setSelectedLeagueId] = useState("general");
   const [inviteCode, setInviteCode] = useState("");
   const [joiningLeague, setJoiningLeague] = useState(false);
   const { user } = useAuth();
@@ -83,7 +81,7 @@ export default function Clasificacion() {
     [leagues, selectedLeagueId]
   );
 
-  const isGlobalRanking = selectedLeagueId === "global";
+  const isGeneralRanking = selectedLeagueId === "general";
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -123,13 +121,13 @@ export default function Clasificacion() {
 
       const pointsRows = (submissionsData || []) as Pick<SubmissionRow, "user_id" | "points_total">[];
       const pointsByUser = new Map(pointsRows.map((row) => [row.user_id, row.points_total || 0]));
-      const globalRanking = pointsRows
+      const generalRanking = pointsRows
         .filter((row) => !adminIds.has(row.user_id))
         .sort((a, b) => (b.points_total || 0) - (a.points_total || 0));
 
-      const globalPosition = globalRanking.findIndex((row) => row.user_id === user.id);
+      const generalPosition = generalRanking.findIndex((row) => row.user_id === user.id);
       const positions: Record<string, number | null> = {
-        global: globalPosition >= 0 ? globalPosition + 1 : null,
+        general: generalPosition >= 0 ? generalPosition + 1 : null,
       };
 
       if (leagueOptions.length > 0) {
@@ -184,7 +182,7 @@ export default function Clasificacion() {
     }
     const { data: leaguesData, error: leaguesError } = await supabase
       .from("leagues")
-      .select("id, name, comments, invite_code, owner_id, plan, max_members")
+      .select("id, name, comments, invite_code, owner_id")
       .in("id", leagueIds)
       .order("created_at", { ascending: false });
     if (leaguesError) {
@@ -221,9 +219,6 @@ export default function Clasificacion() {
 
     if (message.includes("User league limit reached")) {
       return `Solo puedes pertenecer a ${MAX_PRIVATE_LEAGUES} ligas privadas.`;
-    }
-    if (message.includes("League member limit reached")) {
-      return "Esta liga ha alcanzado el límite de miembros.";
     }
     return message || "Comprueba el código de invitación.";
   };
@@ -296,7 +291,7 @@ export default function Clasificacion() {
       const adminIds = new Set((adminRoles || []).map((r) => r.user_id));
 
       let leagueMemberIds: Set<string> | null = null;
-      if (!isGlobalRanking) {
+      if (!isGeneralRanking) {
         const { data: leagueMembers, error } = await supabase
           .from("league_members")
           .select("user_id")
@@ -368,7 +363,7 @@ export default function Clasificacion() {
     } finally {
       setLoading(false);
     }
-  }, [isGlobalRanking, selectedLeagueId]);
+  }, [isGeneralRanking, selectedLeagueId]);
 
   useEffect(() => {
     fetchRankings();
@@ -377,7 +372,11 @@ export default function Clasificacion() {
   const toggleRow = (userId: string) => {
     setExpandedRows((prev) => {
       const next = new Set(prev);
-      next.has(userId) ? next.delete(userId) : next.add(userId);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
       return next;
     });
   };
@@ -440,9 +439,9 @@ export default function Clasificacion() {
       {/* Selector de ranking: General + ligas privadas */}
       <div className="mb-6 flex flex-wrap gap-2">
         <button
-          onClick={() => setSelectedLeagueId("global")}
+          onClick={() => setSelectedLeagueId("general")}
           className={`min-h-[68px] min-w-[124px] px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center gap-3 border ${
-            isGlobalRanking
+            isGeneralRanking
               ? "bg-primary text-primary-foreground border-primary shadow-neon"
               : "bg-secondary/60 text-foreground border-border/50 hover:bg-muted/50"
           }`}
@@ -451,8 +450,8 @@ export default function Clasificacion() {
           <span className="flex min-w-0 flex-col items-start leading-tight">
             <span className="truncate">General</span>
             {user && (
-              <span className={`mt-1 text-2xl font-black leading-none ${getSelectorPositionClass(isGlobalRanking)}`}>
-                {getSelectorPosition("global")}
+              <span className={`mt-1 text-2xl font-black leading-none ${getSelectorPositionClass(isGeneralRanking)}`}>
+                {getSelectorPosition("general")}
               </span>
             )}
           </span>

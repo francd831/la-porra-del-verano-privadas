@@ -7,8 +7,6 @@ CREATE TABLE IF NOT EXISTS public.leagues (
   invite_code text NOT NULL UNIQUE DEFAULT upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8)),
   owner_id uuid NOT NULL,
   tournament_id uuid NOT NULL DEFAULT '11111111-1111-1111-1111-111111111111',
-  plan text NOT NULL DEFAULT 'free' CHECK (plan IN ('free')),
-  max_members integer NOT NULL DEFAULT 10 CHECK (max_members > 0),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -105,7 +103,6 @@ SET search_path = public
 AS $$
 DECLARE
   v_league public.leagues%ROWTYPE;
-  v_member_count integer;
 BEGIN
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
@@ -118,16 +115,6 @@ BEGIN
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Invalid invite code';
-  END IF;
-
-  SELECT count(*)
-  INTO v_member_count
-  FROM public.league_members
-  WHERE league_id = v_league.id;
-
-  IF v_member_count >= v_league.max_members
-     AND NOT public.is_league_member(v_league.id, auth.uid()) THEN
-    RAISE EXCEPTION 'League member limit reached';
   END IF;
 
   INSERT INTO public.league_members (league_id, user_id, role)
