@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -696,7 +697,8 @@ export default function Dashboard() {
               )}
             </CardHeader>
             <CardContent>
-              {upcomingMatches.length > 0 ? <div className="max-h-[460px] space-y-3 overflow-y-auto pr-1">
+              {upcomingMatches.length > 0 ? <ScrollArea className="h-[460px] pr-3">
+                <div className="space-y-3 pr-3">
                   {upcomingMatches.map((match) => <div key={match.id} className="p-3 bg-muted/30 rounded-lg border">
                       <div className="flex items-center justify-between mb-2">
                         <Badge variant="outline" className="text-xs">
@@ -737,7 +739,8 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>)}
-                </div> : <div className="text-center py-8 text-muted-foreground">
+                </div>
+              </ScrollArea> : <div className="text-center py-8 text-muted-foreground">
                   <Calendar className="w-10 h-10 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">No hay próximos partidos programados</p>
                 </div>}
