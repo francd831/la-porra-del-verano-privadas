@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
-import { Target, Save, Trophy, Users, Flag, Loader2, Zap, ArrowRight, Eye, Shuffle, Trash2 } from "lucide-react";
+import { Target, Save, Trophy, Flag, Loader2, Zap, ArrowRight, ArrowLeft, Eye, Shuffle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle } from "lucide-react";
@@ -1712,6 +1712,10 @@ export default function Pronosticos() {
     setActiveTab("eliminatorias");
   };
 
+  const handleBackToGroups = () => {
+    setActiveTab("grupos");
+  };
+
   // Función para ir a premios individuales
   const handleGoToAwards = () => {
     // Verificar que se hayan seleccionado todos los ganadores de playoffs
@@ -2030,16 +2034,6 @@ export default function Pronosticos() {
         </Alert>}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="grupos" className="flex items-center space-x-2">
-            <Users className="w-4 h-4" />
-            <span>Fase de Grupos</span>
-          </TabsTrigger>
-          <TabsTrigger value="eliminatorias" className="flex items-center space-x-2">
-            <Zap className="w-4 h-4" />
-            <span>Fase final</span>
-          </TabsTrigger>
-        </TabsList>
 
         {/* Fase de Grupos */}
         <TabsContent value="grupos" className="space-y-4 relative">
@@ -2294,7 +2288,7 @@ export default function Pronosticos() {
         {/* Fase Eliminatoria */}
         <TabsContent value="eliminatorias" className="space-y-6">
           {!predictionsLocked && (
-            <div className="fixed top-20 right-4 z-50">
+            <div className="fixed top-20 right-4 z-50 flex flex-col items-end gap-2 sm:flex-row">
               <Button onClick={handleGuardarPronosticos} disabled={isLoading || !user} className="bg-gradient-hero shadow-strong" size="sm">
                 {isLoading ? <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -2303,6 +2297,10 @@ export default function Pronosticos() {
                     <Save className="w-4 h-4 mr-2" />
                     Guardar Pronósticos
                   </>}
+              </Button>
+              <Button onClick={handleBackToGroups} className="bg-gradient-hero shadow-strong hover:opacity-90" size="sm">
+                <ArrowLeft className="mr-2 w-4 h-4" />
+                <span>Volver a Fase de Grupos</span>
               </Button>
             </div>
           )}
