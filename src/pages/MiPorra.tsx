@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Target, Save, Trophy, Users, Flag, Loader2, Zap, ArrowRight, Eye, Shuffle } from "lucide-react";
+import { Target, Save, Trophy, Users, Flag, Loader2, Zap, ArrowRight, Eye, Shuffle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1383,6 +1383,62 @@ export default function Pronosticos() {
     setPlayoffMatches(resetPlayoffMatches);
   };
 
+  const handleClearGroupResults = () => {
+    if (!confirm('¿Quieres borrar todos los resultados de la fase de grupos? También se reiniciará la fase final generada a partir de esos resultados.')) {
+      return;
+    }
+
+    setPartidosGrupos({});
+    setPlayoffWinners({});
+    setCampeon('');
+    setPlayoffMatches({
+      'Dieciseisavos de Final': [],
+      'Octavos de Final': Array.from({
+        length: 8
+      }, (_, i) => ({
+        id: `R16_${i + 1}`,
+        home_team_id: '',
+        away_team_id: '',
+        group_id: '',
+        round: 'Octavos de Final',
+        match_date: ''
+      })) as Match[],
+      'Cuartos de Final': Array.from({
+        length: 4
+      }, (_, i) => ({
+        id: `QF_${i + 1}`,
+        home_team_id: '',
+        away_team_id: '',
+        group_id: '',
+        round: 'Cuartos de Final',
+        match_date: ''
+      })) as Match[],
+      'Semifinales': Array.from({
+        length: 2
+      }, (_, i) => ({
+        id: `SF_${i + 1}`,
+        home_team_id: '',
+        away_team_id: '',
+        group_id: '',
+        round: 'Semifinales',
+        match_date: ''
+      })) as Match[],
+      'Final': [{
+        id: 'FINAL_1',
+        home_team_id: '',
+        away_team_id: '',
+        group_id: '',
+        round: 'Final',
+        match_date: ''
+      }] as Match[]
+    });
+
+    toast({
+      title: "Resultados borrados",
+      description: "Se han limpiado los resultados de la fase de grupos. Pulsa guardar para conservar el cambio."
+    });
+  };
+
   // Función para manejar cambios en marcadores de playoffs
   const handlePlayoffChange = (matchId: string, tipo: 'local' | 'visitante', valor: string) => {
     let numeroValor: number | null = null;
@@ -1808,7 +1864,19 @@ export default function Pronosticos() {
       console.log('Group predictions to save:', uniquePredictions.length);
       console.log('Playoff predictions to save:', playoffPredictionsList.length);
 
-      // Upsert predicciones de partidos de grupos (insertar o actualizar si ya existen)
+      // Reemplazar predicciones de grupos para que los resultados borrados no queden guardados.
+      const groupMatchIds = Object.values(groupMatches).flat().map(match => match.id);
+      if (groupMatchIds.length > 0) {
+        const { error: deleteGroupError } = await supabase
+          .from('predictions')
+          .delete()
+          .eq('user_id', user.id)
+          .in('match_id', groupMatchIds);
+
+        if (deleteGroupError) throw deleteGroupError;
+      }
+
+      // Insertar predicciones de partidos de grupos completas
       if (uniquePredictions.length > 0) {
         const {
           data: upsertedData,
@@ -1987,7 +2055,11 @@ export default function Pronosticos() {
           </div>
           
           {/* Botón para generar resultados aleatorios */}
-          {!predictionsLocked && <div className="flex justify-end">
+          {!predictionsLocked && <div className="flex flex-wrap justify-end gap-2">
+              <Button variant="destructive" size="sm" onClick={handleClearGroupResults} className="gap-2">
+                <Trash2 className="w-4 h-4" />
+                <span>Borrar resultados</span>
+              </Button>
               <Button variant="outline" size="sm" onClick={() => {
             // Generar resultados aleatorios realistas para todos los partidos de grupos
             const generateRandomScore = (): number => {
