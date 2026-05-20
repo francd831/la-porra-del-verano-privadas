@@ -316,8 +316,8 @@ export default function Bases() {
                 <p className="text-sm text-muted-foreground">Escríbenos a nuestro email</p>
               </div>
             </div>
-            <a href="mailto:info@laporradelverano.es" className="text-primary hover:underline font-medium">
-              info@laporradelverano.es
+            <a href="mailto:laporradelverano@gmail.com" className="text-primary hover:underline font-medium">
+              laporradelverano@gmail.com
             </a>
           </CardContent>
         </Card>

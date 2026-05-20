@@ -94,7 +94,7 @@ export default function CondicionesServicio() {
             <h2 className="text-lg font-semibold text-foreground">10. Contacto</h2>
             <p>
               Para consultas sobre estas condiciones puedes escribir a
-              <a className="ml-1 text-primary underline-offset-4 hover:underline" href="mailto:hola@laporradelverano.es">hola@laporradelverano.es</a>.
+              <a className="ml-1 text-primary underline-offset-4 hover:underline" href="mailto:laporradelverano@gmail.com">laporradelverano@gmail.com</a>.
             </p>
           </section>
         </CardContent>

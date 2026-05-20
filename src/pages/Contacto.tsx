@@ -64,7 +64,7 @@ export default function Contacto() {
                   </div>
                   <div>
                     <h4 className="font-semibold">Email</h4>
-                    <p className="text-sm text-muted-foreground">info@laporradelverano.es</p>
+                    <p className="text-sm text-muted-foreground">laporradelverano@gmail.com</p>
                   </div>
                 </div>
 

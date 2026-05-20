@@ -23,7 +23,7 @@ export default function PoliticaPrivacidad() {
             <h2 className="text-lg font-semibold text-foreground">1. Responsable</h2>
             <p>
               La Porra del Verano es una plataforma online para crear pronósticos del Mundial 2026 y competir en clasificaciones generales o ligas privadas.
-              Para cualquier consulta sobre privacidad puedes escribir a <a className="text-primary underline-offset-4 hover:underline" href="mailto:hola@laporradelverano.es">hola@laporradelverano.es</a>.
+              Para cualquier consulta sobre privacidad puedes escribir a <a className="text-primary underline-offset-4 hover:underline" href="mailto:laporradelverano@gmail.com">laporradelverano@gmail.com</a>.
             </p>
           </section>
 
@@ -82,7 +82,7 @@ export default function PoliticaPrivacidad() {
             <h2 className="text-lg font-semibold text-foreground">8. Derechos</h2>
             <p>
               Puedes solicitar acceso, rectificación, eliminación, oposición, limitación o portabilidad de tus datos escribiendo a
-              <a className="ml-1 text-primary underline-offset-4 hover:underline" href="mailto:hola@laporradelverano.es">hola@laporradelverano.es</a>.
+              <a className="ml-1 text-primary underline-offset-4 hover:underline" href="mailto:laporradelverano@gmail.com">laporradelverano@gmail.com</a>.
             </p>
           </section>
 
