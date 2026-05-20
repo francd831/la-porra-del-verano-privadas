@@ -1732,66 +1732,9 @@ export default function Pronosticos() {
       return;
     }
 
-    // Validar que todo esté completo
+    // Validar si todo está completo, pero permitir guardar borradores.
     const validation = validatePredictions();
-    
-    // Check specifically if group results are incomplete (warn but don't block)
-    const allGroupMatchesFilled = Object.values(groupMatches).every(matches => 
-      matches.every(match => {
-        const prediction = partidosGrupos[match.id];
-        return prediction && prediction.local !== null && prediction.visitante !== null;
-      })
-    );
-    const groupsIncomplete = !allGroupMatchesFilled;
-
-    // Block only if non-group validations fail (playoffs, champion, awards)
-    if (!validation.valid && !groupsIncomplete) {
-      toast({
-        variant: "destructive",
-        title: "Pronósticos incompletos",
-        description: validation.message
-      });
-      return;
-    }
-    
-    // If only groups are incomplete, check if the rest is also incomplete
-    if (!validation.valid && groupsIncomplete) {
-      // Check if the error is ONLY about groups - if so, warn and continue
-      // Re-validate skipping groups
-      const allRounds = ['Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'];
-      let nonGroupError = false;
-      for (const round of allRounds) {
-        const roundMatches = playoffMatches[round] || [];
-        for (const match of roundMatches) {
-          if (!playoffWinners[match.id]) {
-            nonGroupError = true;
-            break;
-          }
-        }
-        if (nonGroupError) break;
-      }
-      if (!nonGroupError && !campeon) nonGroupError = true;
-      if (!nonGroupError && !balonOro) nonGroupError = true;
-      if (!nonGroupError && !botaOro) nonGroupError = true;
-      
-      if (nonGroupError) {
-        toast({
-          variant: "destructive",
-          title: "Pronósticos incompletos",
-          description: validation.message
-        });
-        return;
-      }
-    }
-    
-    // Show warning if groups are incomplete but still save
-    if (groupsIncomplete) {
-      toast({
-        variant: "destructive",
-        title: "Resultados incompletos",
-        description: "Algunos resultados de la fase de grupos están sin completar. Se guardarán los pronósticos igualmente."
-      });
-    }
+    const draftIsIncomplete = !validation.valid;
 
     setIsLoading(true);
     try {
@@ -1947,14 +1890,16 @@ export default function Pronosticos() {
         total_predictions: matchPredictions.length,
         champion_predicted: championPredicted,
         awards_predicted: awardsPredicted,
-        is_complete: matchPredictions.length > 0 || championPredicted || awardsPredicted,
+        is_complete: validation.valid,
         updated_at: new Date().toISOString()
       }).eq('id', submissionId);
       if (updateError) throw updateError;
 
       toast({
-        title: "Pronósticos guardados",
-        description: "Tus pronósticos se han guardado correctamente."
+        title: draftIsIncomplete ? "Borrador guardado" : "Pronósticos guardados",
+        description: draftIsIncomplete
+          ? "Hemos guardado lo que llevas. Aún faltan pronósticos por completar."
+          : "Tus pronósticos se han guardado correctamente."
       });
     } catch (error: any) {
       console.error('Error saving predictions:', error);
