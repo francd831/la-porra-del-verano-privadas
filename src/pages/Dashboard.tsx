@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, ArrowRight, Medal, TrendingUp, ChevronDown, ChevronUp, Trophy, Target, Award, BarChart3, Loader2, Users } from "lucide-react";
+import { Calendar, ArrowRight, Medal, TrendingUp, ChevronDown, ChevronUp, Trophy, Target, Award, BarChart3, Loader2, Users, Shield } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,6 +71,18 @@ interface AwardPoints {
   botaDeOro: number;
   balonDeOro: number;
 }
+
+const demoPodiumBadges = [
+  { category: "Mejor general", position: 1 },
+  { category: "Jornada 1", position: 2 },
+  { category: "Grupo A", position: 3 },
+];
+
+const podiumShieldClasses = [
+  "fill-gold text-gold drop-shadow-[0_0_8px_hsl(var(--gold)/0.35)]",
+  "fill-slate-300 text-slate-300",
+  "fill-amber-700 text-amber-700",
+];
 
 // Helper function to calculate points for a single match
 function calculateMatchPoints(prediction: {
@@ -540,6 +552,28 @@ export default function Dashboard() {
               <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                 ¡Hola, {stats?.displayName}!
               </h1>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {demoPodiumBadges.map((badge) => {
+                  const shieldIndex = badge.position - 1;
+
+                  return (
+                    <div
+                      key={`${badge.category}-${badge.position}`}
+                      className="flex w-20 flex-col items-center gap-1 rounded-lg border border-border/60 bg-card/60 px-2 py-2 shadow-soft"
+                    >
+                      <div className="relative flex h-9 w-9 items-center justify-center">
+                        <Shield className={`h-8 w-8 ${podiumShieldClasses[shieldIndex]}`} />
+                        <span className={`absolute text-[11px] font-black ${badge.position === 1 ? "text-gold-foreground" : "text-background"}`}>
+                          {badge.position}
+                        </span>
+                      </div>
+                      <span className="line-clamp-2 min-h-[2rem] text-center text-[11px] font-medium leading-tight text-muted-foreground">
+                        {badge.category}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Compact Position and Score Cards */}
