@@ -16,6 +16,7 @@ export default function RecuperarPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const [recoveryError, setRecoveryError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -28,6 +29,18 @@ export default function RecuperarPassword() {
       hashParams.get("type") === "recovery" ||
       urlParams.has("code") ||
       hashParams.has("access_token");
+    const authErrorCode = urlParams.get("error_code") || hashParams.get("error_code");
+
+    if (authErrorCode) {
+      setIsRecoveryMode(false);
+      setRecoveryError(
+        authErrorCode === "otp_expired"
+          ? "El enlace ha caducado o ya se ha usado. Solicita uno nuevo para cambiar tu contraseña."
+          : "El enlace de recuperación no es válido. Solicita uno nuevo para cambiar tu contraseña."
+      );
+      window.history.replaceState(null, "", "/recuperar-password");
+      return;
+    }
 
     if (isRecoveryUrl) {
       setIsRecoveryMode(true);
@@ -153,6 +166,12 @@ export default function RecuperarPassword() {
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {recoveryError && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {recoveryError}
+              </div>
+            )}
+
             {isRecoveryMode ? (
               <form onSubmit={handleUpdatePassword} className="space-y-4">
                 <div className="space-y-2">

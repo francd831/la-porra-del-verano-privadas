@@ -26,10 +26,25 @@ export default function Login() {
   const from = location.state?.from?.pathname || '/';
 
   useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const hashParams = new URLSearchParams(location.hash.replace(/^#/, ""));
+    const hasAuthRecoveryParams =
+      urlParams.get("type") === "recovery" ||
+      hashParams.get("type") === "recovery" ||
+      urlParams.has("code") ||
+      hashParams.has("access_token") ||
+      urlParams.has("error_code") ||
+      hashParams.has("error_code");
+
+    if (hasAuthRecoveryParams) {
+      navigate(`/recuperar-password${location.search}${location.hash}`, { replace: true });
+      return;
+    }
+
     if (user) {
       navigate(from, { replace: true });
     }
-  }, [user, navigate, from]);
+  }, [user, navigate, from, location.search, location.hash]);
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
