@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import PredictionsViewerDialog from "@/components/PredictionsViewerDialog";
 import PlayoffBracket from "@/components/PlayoffBracket";
+import { sortStandingsByFifaCriteria, sortThirdPlacedByFifaCriteria } from "@/lib/fifaStandings";
 
 // Interfaces para los datos de la base de datos
 interface Team {
@@ -508,14 +509,20 @@ export default function Pronosticos() {
       });
 
       // Ordenar y mapear a Teams
-      const clasificacion = Object.values(estadisticas).map(e => ({
+      const standingsWithDifference = Object.values(estadisticas).map(e => ({
         ...e,
         diferencia: e.golesFavor - e.golesContra
-      })).sort((a, b) => {
-        if (b.puntos !== a.puntos) return b.puntos - a.puntos;
-        if (b.diferencia !== a.diferencia) return b.diferencia - a.diferencia;
-        return b.golesFavor - a.golesFavor;
-      });
+      }));
+      const clasificacion = sortStandingsByFifaCriteria(
+        standingsWithDifference,
+        partidosGrupo,
+        (match) => match.home_team?.name || match.home_team_id,
+        (match) => match.away_team?.name || match.away_team_id,
+        (match) => {
+          const resultado = groupPredictionsMap[match.id];
+          return resultado ? { home: resultado.local, away: resultado.visitante } : null;
+        }
+      );
       standings[groupId] = clasificacion.map(est => {
         for (const match of partidosGrupo) {
           if (match.home_team?.name === est.equipo) return match.home_team;
@@ -568,11 +575,7 @@ export default function Pronosticos() {
         }
       }
     });
-    const mejoresTerceras = terceros.sort((a, b) => {
-      if (b.puntos !== a.puntos) return b.puntos - a.puntos;
-      if (b.diferencia !== a.diferencia) return b.diferencia - a.diferencia;
-      return b.golesFavor - a.golesFavor;
-    }).slice(0, 8);
+    const mejoresTerceras = sortThirdPlacedByFifaCriteria(terceros).slice(0, 8);
     const getTerceroPorGrupo = (grupo: string): Team | undefined => {
       const tercero = mejoresTerceras.find(t => t.grupo === grupo);
       if (!tercero) return undefined;
@@ -1058,14 +1061,21 @@ export default function Pronosticos() {
     });
 
     // Calcular diferencia de goles y ordenar
-    return Object.values(estadisticas).map(equipo => ({
+    const standingsWithDifference = Object.values(estadisticas).map(equipo => ({
       ...equipo,
       diferencia: equipo.golesFavor - equipo.golesContra
-    })).sort((a, b) => {
-      if (b.puntos !== a.puntos) return b.puntos - a.puntos;
-      if (b.diferencia !== a.diferencia) return b.diferencia - a.diferencia;
-      return b.golesFavor - a.golesFavor;
-    });
+    }));
+
+    return sortStandingsByFifaCriteria(
+      standingsWithDifference,
+      partidosGrupo,
+      (match) => match.home_team?.name || match.home_team_id,
+      (match) => match.away_team?.name || match.away_team_id,
+      (match) => {
+        const resultado = partidosGrupos[match.id];
+        return resultado ? { home: resultado.local, away: resultado.visitante } : null;
+      }
+    );
   };
 
   // Función para calcular las 8 mejores terceras clasificadas según criterios FIFA
@@ -1090,16 +1100,7 @@ export default function Pronosticos() {
     });
 
     // Ordenar según criterios FIFA para terceros lugares
-    return terceros.sort((a, b) => {
-      // a) más puntos obtenidos en todos los partidos de grupo
-      if (b.puntos !== a.puntos) return b.puntos - a.puntos;
-      // b) diferencia de goles en todos los partidos de grupo
-      if (b.diferencia !== a.diferencia) return b.diferencia - a.diferencia;
-      // c) más goles marcados en todos los partidos de grupo
-      if (b.golesFavor !== a.golesFavor) return b.golesFavor - a.golesFavor;
-      // Si siguen empatados, mantener orden alfabético por grupo
-      return a.grupo.localeCompare(b.grupo);
-    }); // Devolver todos los 12 terceros
+    return sortThirdPlacedByFifaCriteria(terceros); // Devolver todos los 12 terceros
   };
 
   // Función para calcular los puntos ganados por un partido de grupo

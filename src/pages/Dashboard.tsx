@@ -14,6 +14,7 @@ import CountdownTimer from "@/components/CountdownTimer";
 import MatchStatsDialog from "@/components/MatchStatsDialog";
 import AllMatchesDialog from "@/components/AllMatchesDialog";
 import { isPrivateLeaguesApp } from "@/lib/appMode";
+import { sortStandingsByFifaCriteria } from "@/lib/fifaStandings";
 
 interface UserStats {
   displayName: string;
@@ -369,14 +370,21 @@ export default function Dashboard() {
               }
             }
 
-            // Sort teams by points, then GD, then GF
-            const sortedTeams = Array.from(teamStats.entries()).
-            sort((a, b) => {
-              if (b[1].points !== a[1].points) return b[1].points - a[1].points;
-              if (b[1].gd !== a[1].gd) return b[1].gd - a[1].gd;
-              return b[1].gf - a[1].gf;
-            }).
-            map(([teamId]) => teamId);
+            const sortedTeams = sortStandingsByFifaCriteria(
+              Array.from(teamStats.entries()).map(([teamId, stats]) => ({
+                equipo: teamId,
+                puntos: stats.points,
+                golesFavor: stats.gf,
+                diferencia: stats.gd,
+              })),
+              groupMatches,
+              (match) => match.home_team_id,
+              (match) => match.away_team_id,
+              (match) => {
+                const pred = predMap.get(match.id);
+                return pred ? { home: pred.home_goals, away: pred.away_goals } : null;
+              }
+            ).map((team) => team.equipo);
 
             userGroupOrder.set(group.id, sortedTeams);
           }
@@ -444,13 +452,18 @@ export default function Dashboard() {
                 }
               }
 
-              const sortedTeams = Array.from(teamStats.entries()).
-              sort((a, b) => {
-                if (b[1].points !== a[1].points) return b[1].points - a[1].points;
-                if (b[1].gd !== a[1].gd) return b[1].gd - a[1].gd;
-                return b[1].gf - a[1].gf;
-              }).
-              map(([teamId]) => teamId);
+              const sortedTeams = sortStandingsByFifaCriteria(
+                Array.from(teamStats.entries()).map(([teamId, stats]) => ({
+                  equipo: teamId,
+                  puntos: stats.points,
+                  golesFavor: stats.gf,
+                  diferencia: stats.gd,
+                })),
+                groupMatches,
+                (match) => match.home_team_id,
+                (match) => match.away_team_id,
+                (match) => ({ home: match.home_goals, away: match.away_goals })
+              ).map((team) => team.equipo);
 
               actualGroupOrder.set(group.id, sortedTeams);
             }

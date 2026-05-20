@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import PlayoffBracket from "@/components/PlayoffBracket";
+import { sortStandingsByFifaCriteria, sortThirdPlacedByFifaCriteria } from "@/lib/fifaStandings";
 
 interface Team {
   id: string;
@@ -460,7 +461,17 @@ export default function Resultados() {
               else { estadisticas[homeTeam].partidosEmpatados++; estadisticas[awayTeam].partidosEmpatados++; estadisticas[homeTeam].puntos += 1; estadisticas[awayTeam].puntos += 1; }
             }
           });
-          return Object.values(estadisticas).map(e => ({ ...e, diferencia: e.golesFavor - e.golesContra })).sort((a, b) => { if (b.puntos !== a.puntos) return b.puntos - a.puntos; if (b.diferencia !== a.diferencia) return b.diferencia - a.diferencia; return b.golesFavor - a.golesFavor; });
+          const standingsWithDifference = Object.values(estadisticas).map(e => ({ ...e, diferencia: e.golesFavor - e.golesContra }));
+          return sortStandingsByFifaCriteria(
+            standingsWithDifference,
+            partidosGrupo,
+            (m) => m.home_team?.name || m.home_team_id,
+            (m) => m.away_team?.name || m.away_team_id,
+            (m) => {
+              const res = resultadosGrupos[m.id];
+              return res ? { home: res.local, away: res.visitante } : null;
+            }
+          );
         })();
         const partidosGrupoAuto = groupMatches[matchGroup] || [];
         const teamOrder = autoClasificacion.map(equipo => {
@@ -720,16 +731,20 @@ export default function Resultados() {
       }
     });
 
-    let sorted = Object.values(estadisticas)
+    let sorted = sortStandingsByFifaCriteria(
+      Object.values(estadisticas)
       .map(equipo => ({
         ...equipo,
         diferencia: equipo.golesFavor - equipo.golesContra
-      }))
-      .sort((a, b) => {
-        if (b.puntos !== a.puntos) return b.puntos - a.puntos;
-        if (b.diferencia !== a.diferencia) return b.diferencia - a.diferencia;
-        return b.golesFavor - a.golesFavor;
-      });
+      })),
+      partidosGrupo,
+      (match) => match.home_team?.name || match.home_team_id,
+      (match) => match.away_team?.name || match.away_team_id,
+      (match) => {
+        const resultado = resultadosGrupos[match.id];
+        return resultado ? { home: resultado.local, away: resultado.visitante } : null;
+      }
+    );
 
     // Si hay un orden manual guardado para este grupo, usar ese orden
     const manualOrder = manualGroupOrders[groupId];
@@ -870,17 +885,7 @@ export default function Resultados() {
     });
 
     // Ordenar según criterios FIFA para terceros lugares
-    return terceros
-      .sort((a, b) => {
-        // a) más puntos obtenidos en todos los partidos de grupo
-        if (b.puntos !== a.puntos) return b.puntos - a.puntos;
-        // b) diferencia de goles en todos los partidos de grupo
-        if (b.diferencia !== a.diferencia) return b.diferencia - a.diferencia;
-        // c) más goles marcados en todos los partidos de grupo
-        if (b.golesFavor !== a.golesFavor) return b.golesFavor - a.golesFavor;
-        // Si siguen empatados, mantener orden alfabético por grupo
-        return a.grupo.localeCompare(b.grupo);
-      }); // Devolver todos los 12 terceros
+    return sortThirdPlacedByFifaCriteria(terceros); // Devolver todos los 12 terceros
   };
 
   const updateRoundOf32Teams = async () => {

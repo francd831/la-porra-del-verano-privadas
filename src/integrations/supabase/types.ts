@@ -1064,6 +1064,14 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_fifa_group_order: {
+        Args: {
+          p_group_id: string
+          p_tournament_id: string
+          p_user_id?: string | null
+        }
+        Returns: string[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
