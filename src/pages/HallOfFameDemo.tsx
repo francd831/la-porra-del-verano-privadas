@@ -5,13 +5,14 @@ import { Badge } from "@/components/ui/badge";
 type DemoEntry = {
   rank: number;
   name: string;
-  points: number;
+  value: number;
 };
 
 type DemoGroup = {
   eventType: string;
   eventKey: string;
   eventLabel: string;
+  metricLabel?: string;
   entries: DemoEntry[];
 };
 
@@ -41,191 +42,138 @@ const sectionConfig = [
     types: ["round"],
   },
   {
-    title: "Premios",
-    description: "Aciertos de Balón de Oro y Bota de Oro.",
+    title: "Premios Individuales",
+    description: "Suma conjunta de Balón de Oro y Bota de Oro.",
     icon: Award,
     types: ["award"],
   },
   {
-    title: "Partidos perfectos",
-    description: "Top 3 de algunos partidos destacados.",
+    title: "Reyes del signo",
+    description: "Los usuarios que más veces han acertado el signo 1X2.",
     icon: Sparkles,
-    types: ["match"],
+    types: ["signs"],
   },
 ];
+
+const names = [
+  "Laia Mundialista",
+  "Fran 2026",
+  "Capitán Pronóstico",
+  "Marta Goles",
+  "Pablo Exacto",
+  "Nuria VAR",
+  "Sergio Tabla",
+  "Ana Tiebreak",
+  "Diego Fixture",
+];
+
+function podium(a: number, b: number, c: number, offset = 0): DemoEntry[] {
+  return [
+    { rank: 1, name: names[offset % names.length], value: a },
+    { rank: 2, name: names[(offset + 1) % names.length], value: b },
+    { rank: 3, name: names[(offset + 2) % names.length], value: c },
+  ];
+}
+
+const groupLetters = Array.from({ length: 12 }, (_, index) => String.fromCharCode(65 + index));
 
 const demoGroups: DemoGroup[] = [
   {
     eventType: "overall",
     eventKey: "total",
     eventLabel: "Mejor general",
-    entries: [
-      { rank: 1, name: "Laia Mundialista", points: 486 },
-      { rank: 2, name: "Fran 2026", points: 472 },
-      { rank: 3, name: "Capitán Pronóstico", points: 461 },
-    ],
+    entries: podium(486, 472, 461, 0),
   },
   {
     eventType: "overall",
     eventKey: "groups",
     eventLabel: "Mejor fase de grupos",
-    entries: [
-      { rank: 1, name: "Marta Goles", points: 248 },
-      { rank: 2, name: "Pablo Exacto", points: 239 },
-      { rank: 3, name: "Nuria VAR", points: 231 },
-    ],
+    entries: podium(248, 239, 231, 3),
   },
   {
     eventType: "overall",
-    eventKey: "group_order",
-    eventLabel: "Maestro de grupos",
-    entries: [
-      { rank: 1, name: "Sergio Tabla", points: 80 },
-      { rank: 1, name: "Ana Tiebreak", points: 80 },
-      { rank: 3, name: "Diego Fixture", points: 60 },
-    ],
+    eventKey: "playoffs_master",
+    eventLabel: "Maestro de eliminatorias",
+    entries: podium(218, 206, 198, 6),
   },
   {
     eventType: "matchday",
     eventKey: "group_md_1",
     eventLabel: "Jornada 1",
-    entries: [
-      { rank: 1, name: "Pablo Exacto", points: 91 },
-      { rank: 2, name: "Nuria VAR", points: 86 },
-      { rank: 3, name: "Laia Mundialista", points: 83 },
-    ],
+    entries: podium(91, 86, 83, 4),
   },
   {
     eventType: "matchday",
     eventKey: "group_md_2",
     eventLabel: "Jornada 2",
-    entries: [
-      { rank: 1, name: "Fran 2026", points: 88 },
-      { rank: 2, name: "Marta Goles", points: 84 },
-      { rank: 3, name: "Capitán Pronóstico", points: 82 },
-    ],
+    entries: podium(88, 84, 82, 1),
   },
   {
     eventType: "matchday",
     eventKey: "group_md_3",
     eventLabel: "Jornada 3",
-    entries: [
-      { rank: 1, name: "Sergio Tabla", points: 96 },
-      { rank: 2, name: "Ana Tiebreak", points: 92 },
-      { rank: 3, name: "Diego Fixture", points: 89 },
-    ],
+    entries: podium(96, 92, 89, 6),
   },
-  {
+  ...groupLetters.map((letter, index) => ({
     eventType: "group",
-    eventKey: "A",
-    eventLabel: "Grupo A",
-    entries: [
-      { rank: 1, name: "Marta Goles", points: 64 },
-      { rank: 2, name: "Fran 2026", points: 58 },
-      { rank: 3, name: "Nuria VAR", points: 57 },
-    ],
-  },
-  {
-    eventType: "group",
-    eventKey: "B",
-    eventLabel: "Grupo B",
-    entries: [
-      { rank: 1, name: "Laia Mundialista", points: 61 },
-      { rank: 2, name: "Capitán Pronóstico", points: 59 },
-      { rank: 3, name: "Sergio Tabla", points: 55 },
-    ],
-  },
-  {
-    eventType: "group",
-    eventKey: "C",
-    eventLabel: "Grupo C",
-    entries: [
-      { rank: 1, name: "Pablo Exacto", points: 67 },
-      { rank: 2, name: "Ana Tiebreak", points: 62 },
-      { rank: 3, name: "Diego Fixture", points: 58 },
-    ],
-  },
+    eventKey: letter,
+    eventLabel: `Grupo ${letter}`,
+    entries: podium(67 - (index % 5), 62 - (index % 4), 58 - (index % 3), index + 2),
+  })),
   {
     eventType: "round",
     eventKey: "r32",
     eventLabel: "Dieciseisavos",
-    entries: [
-      { rank: 1, name: "Capitán Pronóstico", points: 130 },
-      { rank: 2, name: "Laia Mundialista", points: 120 },
-      { rank: 3, name: "Fran 2026", points: 110 },
-    ],
+    entries: podium(130, 120, 110, 2),
   },
   {
     eventType: "round",
     eventKey: "r16",
     eventLabel: "Octavos",
-    entries: [
-      { rank: 1, name: "Nuria VAR", points: 105 },
-      { rank: 2, name: "Marta Goles", points: 90 },
-      { rank: 3, name: "Sergio Tabla", points: 90 },
-    ],
+    entries: podium(105, 90, 90, 5),
+  },
+  {
+    eventType: "round",
+    eventKey: "qf",
+    eventLabel: "Cuartos",
+    entries: podium(80, 75, 70, 7),
+  },
+  {
+    eventType: "round",
+    eventKey: "sf",
+    eventLabel: "Semifinales",
+    entries: podium(60, 45, 45, 1),
   },
   {
     eventType: "round",
     eventKey: "final",
     eventLabel: "Final",
-    entries: [
-      { rank: 1, name: "Fran 2026", points: 40 },
-      { rank: 1, name: "Laia Mundialista", points: 40 },
-      { rank: 3, name: "Pablo Exacto", points: 0 },
-    ],
+    entries: podium(40, 40, 0, 0),
+  },
+  {
+    eventType: "round",
+    eventKey: "champion",
+    eventLabel: "Campeón",
+    entries: podium(50, 50, 0, 3),
   },
   {
     eventType: "award",
-    eventKey: "balon_oro",
-    eventLabel: "Balón de Oro",
-    entries: [
-      { rank: 1, name: "Ana Tiebreak", points: 30 },
-      { rank: 1, name: "Marta Goles", points: 30 },
-      { rank: 1, name: "Diego Fixture", points: 30 },
-    ],
+    eventKey: "individual_awards",
+    eventLabel: "Premios Individuales",
+    entries: podium(60, 30, 30, 7),
   },
   {
-    eventType: "award",
-    eventKey: "bota_oro",
-    eventLabel: "Bota de Oro",
-    entries: [
-      { rank: 1, name: "Capitán Pronóstico", points: 30 },
-      { rank: 1, name: "Fran 2026", points: 30 },
-      { rank: 1, name: "Nuria VAR", points: 30 },
-    ],
-  },
-  {
-    eventType: "match",
-    eventKey: "match_1",
-    eventLabel: "España - Brasil",
-    entries: [
-      { rank: 1, name: "Pablo Exacto", points: 19 },
-      { rank: 2, name: "Marta Goles", points: 14 },
-      { rank: 3, name: "Laia Mundialista", points: 9 },
-    ],
-  },
-  {
-    eventType: "match",
-    eventKey: "match_2",
-    eventLabel: "Argentina - Francia",
-    entries: [
-      { rank: 1, name: "Fran 2026", points: 18 },
-      { rank: 2, name: "Sergio Tabla", points: 13 },
-      { rank: 3, name: "Ana Tiebreak", points: 8 },
-    ],
-  },
-  {
-    eventType: "match",
-    eventKey: "match_3",
-    eventLabel: "Portugal - Alemania",
-    entries: [
-      { rank: 1, name: "Nuria VAR", points: 17 },
-      { rank: 2, name: "Diego Fixture", points: 12 },
-      { rank: 3, name: "Capitán Pronóstico", points: 7 },
-    ],
+    eventType: "signs",
+    eventKey: "signs_total",
+    eventLabel: "Más signos acertados",
+    metricLabel: "aciertos",
+    entries: podium(42, 39, 37, 4),
   },
 ];
+
+function formatMetric(group: DemoGroup, value: number) {
+  return group.metricLabel ? `${value} ${group.metricLabel}` : `${value} pts`;
+}
 
 function EventCard({ group }: { group: DemoGroup }) {
   const winner = group.entries[0];
@@ -236,25 +184,43 @@ function EventCard({ group }: { group: DemoGroup }) {
         <div className="flex items-start justify-between gap-3">
           <CardTitle className="text-base leading-tight">{group.eventLabel}</CardTitle>
           <Badge className="shrink-0 bg-primary/15 text-primary border border-primary/25">
-            {winner.points} pts
+            {formatMetric(group, winner.value)}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        {group.entries.map((entry) => (
-          <div
-            key={`${group.eventKey}-${entry.rank}-${entry.name}`}
-            className="flex items-center justify-between gap-3 rounded-lg bg-muted/25 px-3 py-2"
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                #{entry.rank}
+        {group.entries.map((entry, index) => {
+          const isWinner = index === 0;
+
+          return (
+            <div
+              key={`${group.eventKey}-${entry.rank}-${entry.name}`}
+              className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition-colors ${
+                isWinner
+                  ? "border border-gold/40 bg-gold/20 shadow-[0_0_22px_hsl(var(--gold)/0.12)]"
+                  : "bg-muted/25"
+              }`}
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <div
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                    isWinner
+                      ? "bg-gold text-gold-foreground"
+                      : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  #{entry.rank}
+                </div>
+                <span className={`truncate text-sm ${isWinner ? "font-bold" : "font-medium"}`}>
+                  {entry.name}
+                </span>
               </div>
-              <span className="truncate text-sm font-medium">{entry.name}</span>
+              <span className={`shrink-0 text-sm ${isWinner ? "font-black text-gold" : "font-bold"}`}>
+                {formatMetric(group, entry.value)}
+              </span>
             </div>
-            <span className="shrink-0 text-sm font-bold">{entry.points}</span>
-          </div>
-        ))}
+          );
+        })}
       </CardContent>
     </Card>
   );
