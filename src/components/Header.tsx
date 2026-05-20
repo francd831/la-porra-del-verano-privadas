@@ -24,6 +24,7 @@ const navigation: NavItem[] = [
   { name: "Pronósticos", href: "/pronosticos", icon: Target, requiresAuth: true },
   { name: "Resultados", href: "/resultados", icon: Award, adminOnly: true },
   { name: "Clasificación", href: "/clasificacion", icon: Trophy, requiresAuth: true },
+  { name: "Prueba", href: "/hall-of-fame-demo", icon: Medal, requiresAuth: true },
   { name: "Hall of Fame", href: "/hall-of-fame", icon: Medal, requiresAuth: true, availableFrom: WORLD_CUP_START_DATE },
   { name: "¿Cómo funciona?", href: "/bases", icon: FileText },
 ];
