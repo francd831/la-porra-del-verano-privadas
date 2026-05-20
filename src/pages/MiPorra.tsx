@@ -1665,10 +1665,13 @@ export default function Pronosticos() {
 
     // Eliminar predicciones de playoffs de la BD
     try {
-      const playoffMatchIds = [...(playoffMatches['Dieciseisavos de Final'] || []).map(m => m.id), ...(playoffMatches['Octavos de Final'] || []).map(m => m.id), ...(playoffMatches['Cuartos de Final'] || []).map(m => m.id), ...(playoffMatches['Semifinales'] || []).map(m => m.id), ...(playoffMatches['Final'] || []).map(m => m.id)];
-      if (playoffMatchIds.length > 0) {
-        await supabase.from('predictions').delete().eq('user_id', user.id).in('match_id', playoffMatchIds);
-      }
+      const { error: deletePlayoffError } = await supabase
+        .from('predictions')
+        .delete()
+        .eq('user_id', user.id)
+        .not('playoff_round', 'is', null);
+
+      if (deletePlayoffError) throw deletePlayoffError;
 
       // También eliminar predicción de campeón
       await supabase.from('champion_predictions').delete().eq('user_id', user.id).eq('tournament_id', '11111111-1111-1111-1111-111111111111');
@@ -1889,10 +1892,15 @@ export default function Pronosticos() {
       }
 
       // Guardar predicciones de playoffs (eliminar y volver a insertar)
-      if (playoffPredictionsList.length > 0) {
-        // Primero eliminar predicciones de playoff existentes del usuario
-        await supabase.from('predictions').delete().eq('user_id', user.id).not('playoff_round', 'is', null);
+      const { error: deletePlayoffError } = await supabase
+        .from('predictions')
+        .delete()
+        .eq('user_id', user.id)
+        .not('playoff_round', 'is', null);
 
+      if (deletePlayoffError) throw deletePlayoffError;
+
+      if (playoffPredictionsList.length > 0) {
         // Insertar nuevas predicciones de playoff
         const {
           error: playoffError
@@ -1903,11 +1911,11 @@ export default function Pronosticos() {
 
       // Guardar predicción del campeón
       let championPredicted = false;
+      await supabase.from('champion_predictions').delete().eq('user_id', user.id).eq('tournament_id', tournamentId);
       if (campeon) {
         // Buscar el ID del equipo por nombre
         const teamId = teams.find(t => t.name === campeon)?.id;
         if (teamId) {
-          await supabase.from('champion_predictions').delete().eq('user_id', user.id).eq('tournament_id', tournamentId);
           const {
             error: championError
           } = await supabase.from('champion_predictions').insert({
