@@ -13,10 +13,7 @@ interface NavItem {
   userOnly?: boolean;
   requiresAuth?: boolean;
   adminOnly?: boolean;
-  availableFrom?: string;
 }
-
-const WORLD_CUP_START_DATE = "2026-06-11";
 
 const navigation: NavItem[] = [
   { name: "Inicio", href: "/dashboard", icon: Home, userOnly: true },
@@ -24,8 +21,7 @@ const navigation: NavItem[] = [
   { name: "Pronósticos", href: "/pronosticos", icon: Target, requiresAuth: true },
   { name: "Resultados", href: "/resultados", icon: Award, adminOnly: true },
   { name: "Clasificación", href: "/clasificacion", icon: Trophy, requiresAuth: true },
-  { name: "Prueba", href: "/hall-of-fame-demo", icon: Medal, requiresAuth: true },
-  { name: "Hall of Fame", href: "/hall-of-fame", icon: Medal, requiresAuth: true, availableFrom: WORLD_CUP_START_DATE },
+  { name: "Hall of Fame", href: "/hall-of-fame", icon: Medal, requiresAuth: true },
   { name: "¿Cómo funciona?", href: "/bases", icon: FileText },
 ];
 
@@ -146,11 +142,8 @@ export function Header() {
 
   // Filter navigation items based on auth state
   const getVisibleNavItems = () => {
-    const today = new Date().toISOString().slice(0, 10);
-
     return navigation.filter(item => {
       if (item.href.startsWith("/ligas") && !isPrivateLeaguesApp()) return false;
-      if (item.availableFrom && today < item.availableFrom) return false;
       if (item.adminOnly) return isAdmin;
       if (item.userOnly) return user && !isAdmin;
       if (item.requiresAuth) return !!user;
