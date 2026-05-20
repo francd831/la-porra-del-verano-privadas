@@ -1,4 +1,4 @@
-import { Award, CalendarDays, Medal, Sparkles, Target, Trophy, Users } from "lucide-react";
+import { Award, CalendarDays, Medal, Shield, Sparkles, Target, Trophy, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -24,6 +24,12 @@ const sectionConfig = [
     types: ["overall"],
   },
   {
+    title: "Reyes de los resultados",
+    description: "Quienes más signos y resultados exactos han acertado.",
+    icon: Sparkles,
+    types: ["results"],
+  },
+  {
     title: "Jornadas",
     description: "Los mejores pronosticadores de cada jornada de grupos.",
     icon: CalendarDays,
@@ -46,12 +52,6 @@ const sectionConfig = [
     description: "Suma conjunta de Balón de Oro y Bota de Oro.",
     icon: Award,
     types: ["award"],
-  },
-  {
-    title: "Reyes del signo",
-    description: "Los usuarios que más veces han acertado el signo 1X2.",
-    icon: Sparkles,
-    types: ["signs"],
   },
 ];
 
@@ -163,11 +163,18 @@ const demoGroups: DemoGroup[] = [
     entries: podium(60, 30, 30, 7),
   },
   {
-    eventType: "signs",
+    eventType: "results",
     eventKey: "signs_total",
     eventLabel: "Más signos acertados",
     metricLabel: "aciertos",
     entries: podium(42, 39, 37, 4),
+  },
+  {
+    eventType: "results",
+    eventKey: "exact_scores_total",
+    eventLabel: "Más resultados exactos",
+    metricLabel: "exactos",
+    entries: podium(16, 14, 13, 1),
   },
 ];
 
@@ -177,6 +184,11 @@ function formatMetric(group: DemoGroup, value: number) {
 
 function EventCard({ group }: { group: DemoGroup }) {
   const winner = group.entries[0];
+  const shieldClasses = [
+    "fill-gold text-gold drop-shadow-[0_0_8px_hsl(var(--gold)/0.35)]",
+    "fill-slate-300 text-slate-300",
+    "fill-amber-700 text-amber-700",
+  ];
 
   return (
     <Card className="border-border/50 bg-card/70 shadow-soft">
@@ -202,14 +214,11 @@ function EventCard({ group }: { group: DemoGroup }) {
               }`}
             >
               <div className="flex min-w-0 items-center gap-2">
-                <div
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                    isWinner
-                      ? "bg-gold text-gold-foreground"
-                      : "bg-primary/10 text-primary"
-                  }`}
-                >
-                  #{entry.rank}
+                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center">
+                  <Shield className={`h-7 w-7 ${shieldClasses[index] || "fill-primary/20 text-primary"}`} />
+                  <span className={`absolute text-[10px] font-black ${index === 0 ? "text-gold-foreground" : "text-background"}`}>
+                    {entry.rank}
+                  </span>
                 </div>
                 <span className={`truncate text-sm ${isWinner ? "font-bold" : "font-medium"}`}>
                   {entry.name}
