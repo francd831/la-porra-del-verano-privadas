@@ -54,6 +54,41 @@ interface EstadisticasEquipo {
   diferencia: number;
 }
 
+const GROUP_RESULT_DRAFTS_KEY = "admin-group-result-drafts";
+
+function readGroupResultDrafts(): Record<string, PartidoResultado> {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const rawDrafts = window.sessionStorage.getItem(GROUP_RESULT_DRAFTS_KEY);
+    if (!rawDrafts) return {};
+    return JSON.parse(rawDrafts) as Record<string, PartidoResultado>;
+  } catch {
+    return {};
+  }
+}
+
+function writeGroupResultDraft(matchId: string, result: PartidoResultado) {
+  if (typeof window === "undefined") return;
+
+  const drafts = readGroupResultDrafts();
+  drafts[matchId] = result;
+  window.sessionStorage.setItem(GROUP_RESULT_DRAFTS_KEY, JSON.stringify(drafts));
+}
+
+function removeGroupResultDraft(matchId: string) {
+  if (typeof window === "undefined") return;
+
+  const drafts = readGroupResultDrafts();
+  delete drafts[matchId];
+  window.sessionStorage.setItem(GROUP_RESULT_DRAFTS_KEY, JSON.stringify(drafts));
+}
+
+function clearGroupResultDrafts() {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(GROUP_RESULT_DRAFTS_KEY);
+}
+
 const BALON_ORO_OPTIONS = [
   "Harry Kane",
   "Lamine Yamal",
@@ -268,7 +303,10 @@ export default function Resultados() {
       });
       
       setGroupMatches(groupedMatches);
-      setResultadosGrupos(groupResults);
+      setResultadosGrupos({
+        ...groupResults,
+        ...readGroupResultDrafts(),
+      });
 
       // Asegurar que existen todos los partidos de playoff antes de cargarlos
       await ensurePlayoffMatchesExistStatic();
@@ -392,13 +430,19 @@ export default function Resultados() {
       numeroValor = parsed;
     }
     
-    setResultadosGrupos(prev => ({
-      ...prev,
-      [matchId]: {
+    setResultadosGrupos(prev => {
+      const nextResult = {
         ...prev[matchId],
         [tipo]: numeroValor
-      }
-    }));
+      };
+
+      writeGroupResultDraft(matchId, nextResult);
+
+      return {
+        ...prev,
+        [matchId]: nextResult
+      };
+    });
   };
 
   const handleSaveMatch = async (matchId: string, showToast: boolean = true) => {
@@ -432,6 +476,7 @@ export default function Resultados() {
         .eq('id', matchId);
 
       if (error) throw error;
+      removeGroupResultDraft(matchId);
 
       // Find the match and its group
       const allMatches = Object.values(groupMatches).flat();
@@ -630,6 +675,7 @@ export default function Resultados() {
 
       // Resetear estado local
       setResultadosGrupos({});
+      clearGroupResultDrafts();
       setPlayoffWinners({});
       setCampeon('');
       setBalonOro('');
