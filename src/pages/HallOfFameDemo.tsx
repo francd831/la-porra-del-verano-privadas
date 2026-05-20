@@ -154,7 +154,7 @@ const demoGroups: DemoGroup[] = [
     eventType: "round",
     eventKey: "champion",
     eventLabel: "Campeón",
-    entries: podium(50, 50, 0, 3),
+    entries: podium(0, 0, 0, 3),
   },
   {
     eventType: "award",
@@ -184,6 +184,7 @@ function formatMetric(group: DemoGroup, value: number) {
 
 function EventCard({ group }: { group: DemoGroup }) {
   const winner = group.entries[0];
+  const hasData = group.entries.length > 0 && group.entries.some((entry) => entry.value > 0);
   const shieldClasses = [
     "fill-gold text-gold drop-shadow-[0_0_8px_hsl(var(--gold)/0.35)]",
     "fill-slate-300 text-slate-300",
@@ -195,13 +196,19 @@ function EventCard({ group }: { group: DemoGroup }) {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <CardTitle className="text-base leading-tight">{group.eventLabel}</CardTitle>
-          <Badge className="shrink-0 bg-primary/15 text-primary border border-primary/25">
-            {formatMetric(group, winner.value)}
-          </Badge>
+          {hasData && (
+            <Badge className="shrink-0 bg-primary/15 text-primary border border-primary/25">
+              {formatMetric(group, winner.value)}
+            </Badge>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        {group.entries.map((entry, index) => {
+        {!hasData ? (
+          <div className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-3 py-4 text-sm text-muted-foreground">
+            Aún no hay datos suficientes para mostrar una clasificación.
+          </div>
+        ) : group.entries.map((entry, index) => {
           const isWinner = index === 0;
 
           return (

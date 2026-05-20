@@ -1085,6 +1085,10 @@ export type Database = {
         Args: { p_tournament_id: string }
         Returns: undefined
       }
+      refresh_score_result_events: {
+        Args: { p_tournament_id: string }
+        Returns: undefined
+      }
       update_all_user_points: {
         Args: { p_tournament_id: string }
         Returns: undefined

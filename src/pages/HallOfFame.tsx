@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Award, CalendarDays, Medal, Sparkles, Target, Trophy, Users } from "lucide-react";
+import { Award, CalendarDays, Medal, Shield, Sparkles, Target, Trophy, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,57 +23,84 @@ type Profile = {
   email: string | null;
 };
 
-type EventGroup = {
+type ExpectedGroup = {
   eventType: string;
   eventKey: string;
   eventLabel: string;
+  metricLabel?: string;
+};
+
+type EventGroup = ExpectedGroup & {
   entries: ScoreEvent[];
 };
+
+const groupLetters = Array.from({ length: 12 }, (_, index) => String.fromCharCode(65 + index));
 
 const sectionConfig = [
   {
     title: "Reyes de la general",
     description: "Los mejores acumulados de toda la porra.",
     icon: Trophy,
-    types: ["overall"],
-    keys: ["total", "groups", "playoffs", "awards", "group_order"],
+    groups: [
+      { eventType: "overall", eventKey: "total", eventLabel: "Mejor general" },
+      { eventType: "overall", eventKey: "groups", eventLabel: "Mejor fase de grupos" },
+      { eventType: "overall", eventKey: "playoffs", eventLabel: "Maestro de eliminatorias" },
+    ],
+  },
+  {
+    title: "Reyes de los resultados",
+    description: "Quienes más signos y resultados exactos han acertado.",
+    icon: Sparkles,
+    groups: [
+      { eventType: "results", eventKey: "signs_total", eventLabel: "Más signos acertados", metricLabel: "aciertos" },
+      { eventType: "results", eventKey: "exact_scores_total", eventLabel: "Más resultados exactos", metricLabel: "exactos" },
+    ],
   },
   {
     title: "Jornadas",
     description: "Los mejores pronosticadores de cada jornada de grupos.",
     icon: CalendarDays,
-    types: ["matchday"],
+    groups: [
+      { eventType: "matchday", eventKey: "group_md_1", eventLabel: "Jornada 1" },
+      { eventType: "matchday", eventKey: "group_md_2", eventLabel: "Jornada 2" },
+      { eventType: "matchday", eventKey: "group_md_3", eventLabel: "Jornada 3" },
+    ],
   },
   {
     title: "Grupos",
     description: "Especialistas por grupo, incluyendo bonus de orden exacto.",
     icon: Users,
-    types: ["group"],
+    groups: groupLetters.map((letter) => ({
+      eventType: "group",
+      eventKey: letter,
+      eventLabel: `Grupo ${letter}`,
+    })),
   },
   {
     title: "Eliminatorias",
     description: "Quienes más puntos suman en cada ronda.",
     icon: Target,
-    types: ["round"],
-    keys: ["r32", "r16", "qf", "sf", "final", "champion"],
+    groups: [
+      { eventType: "round", eventKey: "r32", eventLabel: "Dieciseisavos" },
+      { eventType: "round", eventKey: "r16", eventLabel: "Octavos" },
+      { eventType: "round", eventKey: "qf", eventLabel: "Cuartos" },
+      { eventType: "round", eventKey: "sf", eventLabel: "Semifinales" },
+      { eventType: "round", eventKey: "final", eventLabel: "Final" },
+      { eventType: "round", eventKey: "champion", eventLabel: "Campeón" },
+    ],
   },
   {
-    title: "Premios",
-    description: "Aciertos de Balón de Oro y Bota de Oro.",
+    title: "Premios Individuales",
+    description: "Suma conjunta de Balón de Oro y Bota de Oro.",
     icon: Award,
-    types: ["award"],
-  },
-  {
-    title: "Partidos perfectos",
-    description: "Top 3 de cada partido ya puntuado.",
-    icon: Sparkles,
-    types: ["match"],
-    limit: 12,
+    groups: [
+      { eventType: "overall", eventKey: "awards", eventLabel: "Premios Individuales" },
+    ],
   },
 ];
 
-function groupKey(event: ScoreEvent) {
-  return `${event.event_type}:${event.event_key}`;
+function groupKey(eventType: string, eventKey: string) {
+  return `${eventType}:${eventKey}`;
 }
 
 function getDisplayName(event: ScoreEvent, profiles: Map<string, Profile>) {
@@ -81,12 +108,8 @@ function getDisplayName(event: ScoreEvent, profiles: Map<string, Profile>) {
   return profile?.display_name || profile?.email || "Participante";
 }
 
-function sortGroups(groups: EventGroup[], keys?: string[]) {
-  if (!keys) {
-    return [...groups].sort((a, b) => a.eventLabel.localeCompare(b.eventLabel, "es"));
-  }
-
-  return [...groups].sort((a, b) => keys.indexOf(a.eventKey) - keys.indexOf(b.eventKey));
+function formatMetric(group: EventGroup, value: number) {
+  return group.metricLabel ? `${value} ${group.metricLabel}` : `${value} pts`;
 }
 
 function EventCard({
@@ -97,35 +120,62 @@ function EventCard({
   profiles: Map<string, Profile>;
 }) {
   const winner = group.entries[0];
+  const hasData = group.entries.length > 0 && group.entries.some((entry) => entry.points > 0);
   const topEntries = group.entries.slice(0, 3);
+  const shieldClasses = [
+    "fill-gold text-gold drop-shadow-[0_0_8px_hsl(var(--gold)/0.35)]",
+    "fill-slate-300 text-slate-300",
+    "fill-amber-700 text-amber-700",
+  ];
 
   return (
     <Card className="border-border/50 bg-card/70 shadow-soft">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <CardTitle className="text-base leading-tight">{group.eventLabel}</CardTitle>
-          {winner && (
+          {hasData && winner && (
             <Badge className="shrink-0 bg-primary/15 text-primary border border-primary/25">
-              {winner.points} pts
+              {formatMetric(group, winner.points)}
             </Badge>
           )}
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        {topEntries.map((entry) => (
-          <div
-            key={entry.id}
-            className="flex items-center justify-between gap-3 rounded-lg bg-muted/25 px-3 py-2"
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                #{entry.rank || "-"}
-              </div>
-              <span className="truncate text-sm font-medium">{getDisplayName(entry, profiles)}</span>
-            </div>
-            <span className="shrink-0 text-sm font-bold">{entry.points}</span>
+        {!hasData ? (
+          <div className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-3 py-4 text-sm text-muted-foreground">
+            Aún no hay datos suficientes para mostrar una clasificación.
           </div>
-        ))}
+        ) : (
+          topEntries.map((entry, index) => {
+            const isWinner = index === 0;
+
+            return (
+              <div
+                key={entry.id}
+                className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition-colors ${
+                  isWinner
+                    ? "border border-gold/40 bg-gold/20 shadow-[0_0_22px_hsl(var(--gold)/0.12)]"
+                    : "bg-muted/25"
+                }`}
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <div className="relative flex h-8 w-8 shrink-0 items-center justify-center">
+                    <Shield className={`h-7 w-7 ${shieldClasses[index] || "fill-primary/20 text-primary"}`} />
+                    <span className={`absolute text-[10px] font-black ${index === 0 ? "text-gold-foreground" : "text-background"}`}>
+                      {entry.rank || index + 1}
+                    </span>
+                  </div>
+                  <span className={`truncate text-sm ${isWinner ? "font-bold" : "font-medium"}`}>
+                    {getDisplayName(entry, profiles)}
+                  </span>
+                </div>
+                <span className={`shrink-0 text-sm ${isWinner ? "font-black text-gold" : "font-bold"}`}>
+                  {formatMetric(group, entry.points)}
+                </span>
+              </div>
+            );
+          })
+        )}
       </CardContent>
     </Card>
   );
@@ -180,29 +230,36 @@ export default function HallOfFame() {
   }, []);
 
   const groupedEvents = useMemo(() => {
-    const grouped = new Map<string, EventGroup>();
+    const grouped = new Map<string, ScoreEvent[]>();
 
     for (const event of events) {
-      const key = groupKey(event);
-      const current = grouped.get(key);
-      if (current) {
-        current.entries.push(event);
-      } else {
-        grouped.set(key, {
-          eventType: event.event_type,
-          eventKey: event.event_key,
-          eventLabel: event.event_label,
-          entries: [event],
-        });
-      }
+      const key = groupKey(event.event_type, event.event_key);
+      const current = grouped.get(key) || [];
+      current.push(event);
+      grouped.set(key, current);
     }
 
     for (const group of grouped.values()) {
-      group.entries.sort((a, b) => (a.rank || 999) - (b.rank || 999) || b.points - a.points);
+      group.sort((a, b) => (a.rank || 999) - (b.rank || 999) || b.points - a.points);
     }
 
-    return Array.from(grouped.values());
+    return grouped;
   }, [events]);
+
+  const sectionGroups = useMemo(() => {
+    return sectionConfig.map((section) => ({
+      ...section,
+      groups: section.groups.map((expected) => ({
+        ...expected,
+        entries: groupedEvents.get(groupKey(expected.eventType, expected.eventKey)) || [],
+      })),
+    }));
+  }, [groupedEvents]);
+
+  const activeGroupCount = sectionGroups.reduce(
+    (count, section) => count + section.groups.filter((group) => group.entries.some((entry) => entry.points > 0)).length,
+    0
+  );
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -217,35 +274,19 @@ export default function HallOfFame() {
             Ganadores por jornadas, grupos, rondas, premios y grandes hitos de la porra.
           </p>
         </div>
-        {events.length > 0 && (
-          <Badge variant="secondary" className="w-fit text-sm">
-            {groupedEvents.length} categorías activas
-          </Badge>
-        )}
+        <Badge variant="secondary" className="w-fit text-sm">
+          {activeGroupCount} categorías activas
+        </Badge>
       </div>
 
       {loading ? (
         <div className="rounded-xl border border-border/50 bg-card/60 p-10 text-center text-muted-foreground">
           Cargando Hall of Fame...
         </div>
-      ) : events.length === 0 ? (
-        <div className="rounded-xl border border-border/50 bg-card/60 p-10 text-center">
-          <Trophy className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
-          <h2 className="text-lg font-semibold">Aún no hay méritos calculados</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Aparecerán cuando se guarden resultados y se recalculen las puntuaciones.
-          </p>
-        </div>
       ) : (
         <div className="space-y-8">
-          {sectionConfig.map((section) => {
+          {sectionGroups.map((section) => {
             const Icon = section.icon;
-            const sectionGroups = sortGroups(
-              groupedEvents.filter((group) => section.types.includes(group.eventType)),
-              section.keys
-            ).slice(0, section.limit);
-
-            if (sectionGroups.length === 0) return null;
 
             return (
               <section key={section.title} className="space-y-4">
@@ -259,7 +300,7 @@ export default function HallOfFame() {
                   </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {sectionGroups.map((group) => (
+                  {section.groups.map((group) => (
                     <EventCard key={`${group.eventType}:${group.eventKey}`} group={group} profiles={profiles} />
                   ))}
                 </div>
