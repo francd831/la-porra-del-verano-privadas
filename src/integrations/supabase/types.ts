@@ -301,6 +301,7 @@ export type Database = {
           joined_at: string
           league_id: string
           role: string
+          status: string
           user_id: string
         }
         Insert: {
@@ -308,6 +309,7 @@ export type Database = {
           joined_at?: string
           league_id: string
           role?: string
+          status?: string
           user_id: string
         }
         Update: {
@@ -315,6 +317,7 @@ export type Database = {
           joined_at?: string
           league_id?: string
           role?: string
+          status?: string
           user_id?: string
         }
         Relationships: [
@@ -335,6 +338,7 @@ export type Database = {
           invite_code: string
           name: string
           owner_id: string
+          requires_approval: boolean
           tournament_id: string
           updated_at: string
         }
@@ -345,6 +349,7 @@ export type Database = {
           invite_code?: string
           name: string
           owner_id: string
+          requires_approval?: boolean
           tournament_id?: string
           updated_at?: string
         }
@@ -355,6 +360,7 @@ export type Database = {
           invite_code?: string
           name?: string
           owner_id?: string
+          requires_approval?: boolean
           tournament_id?: string
           updated_at?: string
         }
@@ -1067,6 +1073,14 @@ export type Database = {
       }
       is_display_name_available: {
         Args: { p_display_name: string }
+        Returns: boolean
+      }
+      approve_league_member: {
+        Args: { p_league_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      is_approved_league_member: {
+        Args: { p_league_id: string; p_user_id: string }
         Returns: boolean
       }
       is_league_admin: {

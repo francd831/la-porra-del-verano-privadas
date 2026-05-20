@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, Crown, Shield, Trophy, Users, Medal, Share2, MessageSquare, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Clock, Copy, Crown, Shield, Trophy, Users, Medal, Share2, MessageSquare, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,7 @@ interface League {
   comments: string | null;
   invite_code: string;
   owner_id: string;
+  requires_approval: boolean;
   created_at: string;
   tournament_id: string;
 }
@@ -33,6 +34,7 @@ interface League {
 interface Member {
   user_id: string;
   role: string;
+  status: string;
   joined_at: string;
   display_name: string;
 }
@@ -75,9 +77,16 @@ export default function LigaDetalle() {
   const currentMember = useMemo(() => {
     return members.find((member) => member.user_id === user?.id);
   }, [members, user]);
+  const approvedMembers = useMemo(() => {
+    return members.filter((member) => member.status === "approved");
+  }, [members]);
+  const pendingMembers = useMemo(() => {
+    return members.filter((member) => member.status === "pending");
+  }, [members]);
 
   const isOwner = league?.owner_id === user?.id;
-  const canEditLeague = isOwner || currentMember?.role === "admin";
+  const currentMemberIsPending = currentMember?.status === "pending";
+  const canEditLeague = isOwner || (currentMember?.role === "admin" && currentMember?.status === "approved");
 
   const fetchLeague = useCallback(async () => {
     if (!leagueId) return;
@@ -85,7 +94,7 @@ export default function LigaDetalle() {
     try {
       const { data: leagueData, error: leagueError } = await supabase
         .from("leagues")
-        .select("id, name, comments, invite_code, owner_id, created_at, tournament_id")
+        .select("id, name, comments, invite_code, owner_id, requires_approval, created_at, tournament_id")
         .eq("id", leagueId)
         .single();
 
@@ -95,7 +104,7 @@ export default function LigaDetalle() {
 
       const { data: memberData, error: memberError } = await supabase
         .from("league_members")
-        .select("user_id, role, joined_at")
+        .select("user_id, role, status, joined_at")
         .eq("league_id", leagueId)
         .order("joined_at", { ascending: true });
 
@@ -123,7 +132,7 @@ export default function LigaDetalle() {
       }));
       setMembers(formattedMembers);
 
-      const rankingMembers = formattedMembers.filter((member) => !adminIds.has(member.user_id));
+      const rankingMembers = formattedMembers.filter((member) => member.status === "approved" && !adminIds.has(member.user_id));
       const rankingUserIds = rankingMembers.map((member) => member.user_id);
 
       const { data: submissionsData, error: submissionsError } = rankingUserIds.length
@@ -256,6 +265,35 @@ export default function LigaDetalle() {
     }
   };
 
+  const approveMember = async (member: Member) => {
+    if (!league || !isOwner || member.status !== "pending") return;
+
+    setRemovingMemberId(member.user_id);
+    try {
+      const { error } = await supabase.rpc("approve_league_member", {
+        p_league_id: league.id,
+        p_user_id: member.user_id,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Usuario aprobado",
+        description: `${member.display_name} ya puede competir en la liga.`,
+      });
+      await fetchLeague();
+    } catch (error) {
+      console.error("Error approving league member:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo aprobar al usuario.",
+      });
+    } finally {
+      setRemovingMemberId(null);
+    }
+  };
+
   const deleteLeague = async () => {
     if (!league || !isOwner || deletingLeague) return;
 
@@ -333,7 +371,8 @@ export default function LigaDetalle() {
               <h1 className="text-2xl md:text-3xl font-bold leading-tight">{league.name}</h1>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-xs text-muted-foreground">
-                  {members.length} miembros
+                  {approvedMembers.length} miembros
+                  {pendingMembers.length > 0 && isOwner && ` · ${pendingMembers.length} pendientes`}
                 </span>
               </div>
             </div>
@@ -364,7 +403,17 @@ export default function LigaDetalle() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {rankings.length === 0 ? (
+            {currentMemberIsPending ? (
+              <div className="px-6 py-14 text-center">
+                <Clock className="mx-auto mb-3 h-10 w-10 text-primary/50" />
+                <p className="font-semibold text-sm">
+                  Tu solicitud está pendiente de aprobación
+                </p>
+                <p className="text-muted-foreground/60 text-xs mt-1">
+                  Cuando el owner te acepte, aparecerás en la clasificación privada.
+                </p>
+              </div>
+            ) : rankings.length === 0 ? (
               <div className="px-6 py-14 text-center">
                 <Trophy className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
                 <p className="text-muted-foreground text-sm">
@@ -439,6 +488,61 @@ export default function LigaDetalle() {
 
         {/* Sidebar */}
         <div className="space-y-5">
+          {currentMemberIsPending && (
+            <Card className="border border-primary/25 bg-primary/5 backdrop-blur-xl shadow-soft overflow-hidden">
+              <CardHeader className="pb-3 border-b border-primary/20">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Clock className="h-4 w-4 text-primary" />
+                  Pendiente de aceptación
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Ya has solicitado entrar en esta liga. El owner debe aprobar tu acceso para que puedas competir en su clasificación.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {isOwner && pendingMembers.length > 0 && (
+            <Card className="border border-gold/30 bg-gold/5 backdrop-blur-xl shadow-soft overflow-hidden">
+              <CardHeader className="pb-3 border-b border-gold/20">
+                <CardTitle className="flex items-center justify-between text-base">
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gold" />
+                    Aprobaciones pendientes
+                  </span>
+                  <span className="text-xs text-muted-foreground font-normal">{pendingMembers.length}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 space-y-1.5">
+                {pendingMembers.map((member) => (
+                  <div
+                    key={member.user_id}
+                    className="flex items-center justify-between gap-2 rounded-lg bg-muted/20 p-2.5"
+                  >
+                    <div className="min-w-0 flex items-center gap-2">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold/20 text-xs font-bold text-gold">
+                        {member.display_name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="truncate text-sm font-medium">{member.display_name}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8 shrink-0 gap-1.5 rounded-lg"
+                      onClick={() => approveMember(member)}
+                      disabled={removingMemberId === member.user_id}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      Aceptar
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Members */}
           <Card className="border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft overflow-hidden">
             <CardHeader className="pb-3 border-b border-border/30">
@@ -487,11 +591,11 @@ export default function LigaDetalle() {
                   <Users className="h-4 w-4 text-primary" />
                   Miembros
                 </span>
-                <span className="text-xs text-muted-foreground font-normal">{members.length}</span>
+                <span className="text-xs text-muted-foreground font-normal">{approvedMembers.length}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3 space-y-1.5 max-h-[320px] overflow-y-auto">
-              {members.map((member) => {
+              {approvedMembers.map((member) => {
                 const isMe = member.user_id === user?.id;
                 const canRemoveMember = isOwner && !isMe && member.role !== "owner";
                 return (
@@ -553,6 +657,11 @@ export default function LigaDetalle() {
               <div>
                 <p className="font-semibold text-sm mb-1">Invita a más gente</p>
                 <p className="text-xs text-muted-foreground">Comparte el código con tu grupo</p>
+                {league.requires_approval && (
+                  <p className="mt-1 text-[11px] text-muted-foreground/70">
+                    Los nuevos usuarios quedarán pendientes hasta que el owner los acepte.
+                  </p>
+                )}
               </div>
               <Button
                 variant="outline"
@@ -570,7 +679,9 @@ export default function LigaDetalle() {
             <CardContent className="p-4 space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground text-xs">Tu rol</span>
-                <span className="font-semibold text-xs">{roleLabel(currentMember?.role || "member")}</span>
+                <span className="font-semibold text-xs">
+                  {currentMemberIsPending ? "Pendiente" : roleLabel(currentMember?.role || "member")}
+                </span>
               </div>
               <p className="text-[11px] text-muted-foreground/60 pt-1 border-t border-border/20">
                 Tus pronósticos son únicos y cuentan en todas las ligas donde participes.

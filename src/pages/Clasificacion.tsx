@@ -34,12 +34,15 @@ interface LeagueOption {
   comments: string | null;
   invite_code: string;
   owner_id: string;
+  requires_approval: boolean;
+  member_status: string;
   member_count: number;
 }
 
 interface LeagueMemberPositionRow {
   league_id: string;
   user_id: string;
+  status: string;
 }
 
 interface SubmissionRow {
@@ -133,8 +136,9 @@ export default function Clasificacion() {
       if (leagueOptions.length > 0) {
         const { data: memberRows, error: membersError } = await supabase
           .from("league_members")
-          .select("league_id, user_id")
-          .in("league_id", leagueOptions.map((league) => league.id));
+          .select("league_id, user_id, status")
+          .in("league_id", leagueOptions.map((league) => league.id))
+          .eq("status", "approved");
         if (membersError) throw membersError;
 
         const membersByLeague = new Map<string, string[]>();
@@ -168,7 +172,7 @@ export default function Clasificacion() {
     }
     const { data: memberData, error: memberError } = await supabase
       .from("league_members")
-      .select("league_id")
+      .select("league_id, status")
       .eq("user_id", user.id);
     if (memberError) {
       console.error("Error loading user leagues:", memberError);
@@ -182,7 +186,7 @@ export default function Clasificacion() {
     }
     const { data: leaguesData, error: leaguesError } = await supabase
       .from("leagues")
-      .select("id, name, comments, invite_code, owner_id")
+      .select("id, name, comments, invite_code, owner_id, requires_approval")
       .in("id", leagueIds)
       .order("created_at", { ascending: false });
     if (leaguesError) {
@@ -192,13 +196,16 @@ export default function Clasificacion() {
     const { data: countRows } = await supabase
       .from("league_members")
       .select("league_id, user_id")
-      .in("league_id", leagueIds);
+      .in("league_id", leagueIds)
+      .eq("status", "approved");
     const countsByLeague = new Map<string, number>();
     (countRows || []).forEach((row) => {
       countsByLeague.set(row.league_id, (countsByLeague.get(row.league_id) || 0) + 1);
     });
+    const statusByLeague = new Map((memberData || []).map((row) => [row.league_id, row.status || "approved"]));
     const loadedLeagues = (leaguesData || []).map((league) => ({
       ...league,
+      member_status: statusByLeague.get(league.id) || "approved",
       member_count: countsByLeague.get(league.id) || 0,
     }));
     setLeagues(loadedLeagues);
@@ -253,9 +260,21 @@ export default function Clasificacion() {
 
       if (error) throw error;
 
+      const { data: membership } = typeof leagueId === "string"
+        ? await supabase
+            .from("league_members")
+            .select("status")
+            .eq("league_id", leagueId)
+            .eq("user_id", user.id)
+            .maybeSingle()
+        : { data: null };
+      const isPending = membership?.status === "pending";
+
       toast({
-        title: "Te has unido a la liga",
-        description: "La clasificación privada ya está disponible aquí.",
+        title: isPending ? "Solicitud enviada" : "Te has unido a la liga",
+        description: isPending
+          ? "El owner debe aprobar tu acceso antes de que compitas en la clasificación."
+          : "La clasificación privada ya está disponible aquí.",
       });
       setInviteCode("");
       await fetchUserLeagues();
@@ -295,7 +314,8 @@ export default function Clasificacion() {
         const { data: leagueMembers, error } = await supabase
           .from("league_members")
           .select("user_id")
-          .eq("league_id", selectedLeagueId);
+          .eq("league_id", selectedLeagueId)
+          .eq("status", "approved");
         if (error) throw error;
         leagueMemberIds = new Set((leagueMembers || []).map((m) => m.user_id));
       }
@@ -404,6 +424,7 @@ export default function Clasificacion() {
   const showFullRanking = true;
   const rankingTitle = selectedLeague ? selectedLeague.name : "General";
   const selectedLeagueIsOwner = !!selectedLeague && selectedLeague.owner_id === user?.id;
+  const selectedLeagueIsPending = selectedLeague?.member_status === "pending";
   const getSelectorPosition = (scopeId: string) => {
     const position = rankingPositions[scopeId];
     return position ? `#${position}` : "-";
@@ -469,7 +490,12 @@ export default function Clasificacion() {
             <Users className="w-4 h-4 shrink-0" />
             <span className="flex min-w-0 flex-col items-start leading-tight">
               <span className="max-w-full truncate">{league.name}</span>
-              {user && (
+              {league.member_status === "pending" && (
+                <span className={`mt-1 text-[10px] font-bold uppercase tracking-wide ${getSelectorPositionClass(selectedLeagueId === league.id)}`}>
+                  Pendiente
+                </span>
+              )}
+              {user && league.member_status !== "pending" && (
                 <span className={`mt-1 text-2xl font-black leading-none ${getSelectorPositionClass(selectedLeagueId === league.id)}`}>
                   {getSelectorPosition(league.id)}
                 </span>
@@ -544,6 +570,16 @@ export default function Clasificacion() {
               </Button>
             ) : (
               <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
+                {selectedLeagueIsPending && (
+                  <div className="mb-4 rounded-lg border border-primary/25 bg-primary/5 p-3">
+                    <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                      Pendiente de aceptación
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Ya has solicitado entrar en esta liga. El owner debe aprobar tu acceso para que puedas competir.
+                    </p>
+                  </div>
+                )}
                 <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Comentario del admin
                 </div>

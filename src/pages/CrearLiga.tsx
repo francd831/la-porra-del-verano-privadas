@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export default function CrearLiga() {
   const { user } = useAuth();
@@ -16,6 +17,7 @@ export default function CrearLiga() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [comments, setComments] = useState("");
+  const [requiresApproval, setRequiresApproval] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (event: FormEvent) => {
@@ -40,6 +42,7 @@ export default function CrearLiga() {
         .insert({
           name: trimmedName,
           comments: trimmedComments || null,
+          requires_approval: requiresApproval,
           owner_id: user.id,
         })
         .select("id")
@@ -118,6 +121,44 @@ export default function CrearLiga() {
               <p className="text-xs text-muted-foreground">
                 Solo los admins pueden editar estos comentarios.
               </p>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">
+                Acceso a la liga
+              </Label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setRequiresApproval(false)}
+                  className={cn(
+                    "rounded-xl border p-4 text-left transition-colors",
+                    !requiresApproval
+                      ? "border-primary bg-primary/10 shadow-glow"
+                      : "border-border/50 bg-muted/20 hover:bg-muted/30"
+                  )}
+                >
+                  <div className="font-semibold text-sm">Entrada directa</div>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    Cualquiera con el código entra automáticamente.
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRequiresApproval(true)}
+                  className={cn(
+                    "rounded-xl border p-4 text-left transition-colors",
+                    requiresApproval
+                      ? "border-primary bg-primary/10 shadow-glow"
+                      : "border-border/50 bg-muted/20 hover:bg-muted/30"
+                  )}
+                >
+                  <div className="font-semibold text-sm">Aprobación manual</div>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    El owner debe aceptar a cada usuario antes de que compita.
+                  </p>
+                </button>
+              </div>
             </div>
 
             <Button
