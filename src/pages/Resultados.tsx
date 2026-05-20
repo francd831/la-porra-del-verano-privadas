@@ -243,7 +243,8 @@ export default function Resultados() {
           away_team:teams!matches_away_team_id_fkey(*)
         `)
         .eq('match_type', 'group')
-        .order('match_date');
+        .order('match_date', { ascending: true })
+        .order('id', { ascending: true });
 
       if (groupMatchesError) throw groupMatchesError;
 
@@ -1711,7 +1712,8 @@ export default function Resultados() {
               // Ordenar partidos dentro del grupo por fecha y luego por id
               const sortedMatches = [...groupMatchesList].sort((a, b) => {
                 if (a.match_date && b.match_date) {
-                  return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
+                  const dateDiff = new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
+                  if (dateDiff !== 0) return dateDiff;
                 }
                 return a.id.localeCompare(b.id);
               });
