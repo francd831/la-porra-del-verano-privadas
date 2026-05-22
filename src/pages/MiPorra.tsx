@@ -39,6 +39,42 @@ interface PartidoResultado {
   visitante: number | null;
 }
 
+const USER_GROUP_PREDICTION_DRAFTS_KEY = "user-group-prediction-drafts";
+const USER_PREDICTION_ACTIVE_TAB_KEY = "user-prediction-active-tab";
+
+function readUserGroupPredictionDrafts(): Record<string, PartidoResultado> {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const rawDrafts = window.sessionStorage.getItem(USER_GROUP_PREDICTION_DRAFTS_KEY);
+    if (!rawDrafts) return {};
+    return JSON.parse(rawDrafts) as Record<string, PartidoResultado>;
+  } catch {
+    return {};
+  }
+}
+
+function writeUserGroupPredictionDrafts(drafts: Record<string, PartidoResultado>) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(USER_GROUP_PREDICTION_DRAFTS_KEY, JSON.stringify(drafts));
+}
+
+function clearUserGroupPredictionDrafts() {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(USER_GROUP_PREDICTION_DRAFTS_KEY);
+}
+
+function readUserPredictionActiveTab() {
+  if (typeof window === "undefined") return "grupos";
+  const activeTab = window.sessionStorage.getItem(USER_PREDICTION_ACTIVE_TAB_KEY);
+  return activeTab === "eliminatorias" ? activeTab : "grupos";
+}
+
+function writeUserPredictionActiveTab(activeTab: string) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(USER_PREDICTION_ACTIVE_TAB_KEY, activeTab);
+}
+
 // Interfaz para las estadísticas de un equipo
 interface EstadisticasEquipo {
   equipo: string;
@@ -122,7 +158,7 @@ export default function Pronosticos() {
   const [playoffMatches, setPlayoffMatches] = useState<Record<string, Match[]>>({});
   const [playoffPredictions, setPlayoffPredictions] = useState<Record<string, PartidoResultado>>({});
   const [playoffWinners, setPlayoffWinners] = useState<Record<string, string>>({});
-  const [activeTab, setActiveTab] = useState("grupos");
+  const [activeTab, setActiveTab] = useState(() => readUserPredictionActiveTab());
   const [predictionsLocked, setPredictionsLocked] = useState(false);
 
   // Estados para resultados reales y equipos clasificados
@@ -683,14 +719,18 @@ export default function Pronosticos() {
           playoffWinnersMap[prediction.playoff_round] = prediction.predicted_winner_team_id;
         }
       });
-      setPartidosGrupos(groupPredictionsMap);
+      const mergedGroupPredictions = {
+        ...groupPredictionsMap,
+        ...readUserGroupPredictionDrafts(),
+      };
+      setPartidosGrupos(mergedGroupPredictions);
       setPlayoffWinners(playoffWinnersMap);
       setPlayoffPredictions(playoffPredictionsMap);
 
       // Si hay predicciones de playoffs guardadas, reconstruir el bracket completo
       if (Object.keys(playoffWinnersMap).length > 0 && Object.keys(groupMatchesData).length > 0) {
         // Primero generar dieciseisavos basándose en las predicciones de grupos del usuario
-        const dieciseisavosMatches = generarDieciseisavosFromPredictions(groupPredictionsMap, groupMatchesData, teamsData);
+        const dieciseisavosMatches = generarDieciseisavosFromPredictions(mergedGroupPredictions, groupMatchesData, teamsData);
 
         // Crear estructura base con los dieciseisavos generados
         const newPlayoffMatches: Record<string, Match[]> = {
@@ -738,6 +778,20 @@ export default function Pronosticos() {
         // Ahora aplicar las predicciones de ganadores para avanzar equipos
         const reconstructedMatches = reconstructBracketFromPredictions(playoffWinnersMap, teamsData, newPlayoffMatches);
         setPlayoffMatches(reconstructedMatches);
+      } else if (readUserPredictionActiveTab() === "eliminatorias" && Object.keys(groupMatchesData).length > 0) {
+        const allGroupMatchesFilled = Object.values(groupMatchesData).every(matches =>
+          matches.every(match => {
+            const prediction = mergedGroupPredictions[match.id];
+            return prediction && prediction.local !== null && prediction.visitante !== null;
+          })
+        );
+
+        if (allGroupMatchesFilled) {
+          setPlayoffMatches(prev => ({
+            ...prev,
+            'Dieciseisavos de Final': generarDieciseisavosFromPredictions(mergedGroupPredictions, groupMatchesData, teamsData),
+          }));
+        }
       }
 
       // Cargar predicción del campeón
@@ -1330,6 +1384,7 @@ export default function Pronosticos() {
           [tipo]: numeroValor
         }
       };
+      writeUserGroupPredictionDrafts(newPredictions);
       return newPredictions;
     });
 
@@ -1389,6 +1444,7 @@ export default function Pronosticos() {
     }
 
     setPartidosGrupos({});
+    clearUserGroupPredictionDrafts();
     setPlayoffWinners({});
     setCampeon('');
     setPlayoffMatches({
@@ -1709,10 +1765,12 @@ export default function Pronosticos() {
     generarDieciseisavosDeFinal();
 
     // Cambiar a la pestaña de eliminatorias
+    writeUserPredictionActiveTab("eliminatorias");
     setActiveTab("eliminatorias");
   };
 
   const handleBackToGroups = () => {
+    writeUserPredictionActiveTab("grupos");
     setActiveTab("grupos");
   };
 
@@ -1981,6 +2039,7 @@ export default function Pronosticos() {
           ? "Hemos guardado lo que llevas. Aún faltan pronósticos por completar."
           : "Tus pronósticos se han guardado correctamente."
       });
+      writeUserGroupPredictionDrafts(partidosGrupos);
     } catch (error: any) {
       console.error('Error saving predictions:', error);
       toast({
@@ -2083,6 +2142,7 @@ export default function Pronosticos() {
               };
             });
             setPartidosGrupos(newPredictions);
+            writeUserGroupPredictionDrafts(newPredictions);
 
             // Reiniciar fase eliminatoria
             setPlayoffWinners({});
