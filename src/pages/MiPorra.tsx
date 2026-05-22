@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import PredictionsViewerDialog from "@/components/PredictionsViewerDialog";
 import PlayoffBracket from "@/components/PlayoffBracket";
 import { sortStandingsByFifaCriteria, sortThirdPlacedByFifaCriteria } from "@/lib/fifaStandings";
+import { getThirdPlaceAllocation } from "@/lib/thirdPlaceAllocations";
 
 // Interfaces para los datos de la base de datos
 interface Team {
@@ -612,6 +613,7 @@ export default function Pronosticos() {
       }
     });
     const mejoresTerceras = sortThirdPlacedByFifaCriteria(terceros).slice(0, 8);
+    const thirdPlaceAllocation = getThirdPlaceAllocation(mejoresTerceras.map(t => t.grupo));
     const getTerceroPorGrupo = (grupo: string): Team | undefined => {
       const tercero = mejoresTerceras.find(t => t.grupo === grupo);
       if (!tercero) return undefined;
@@ -628,7 +630,7 @@ export default function Pronosticos() {
       away: standings['B']?.[1]
     }, {
       home: standings['E']?.[0],
-      away: mejoresTerceras[0] ? getTerceroPorGrupo(mejoresTerceras[0].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.E) : undefined
     }, {
       home: standings['F']?.[0],
       away: standings['C']?.[1]
@@ -637,22 +639,22 @@ export default function Pronosticos() {
       away: standings['F']?.[1]
     }, {
       home: standings['I']?.[0],
-      away: mejoresTerceras[1] ? getTerceroPorGrupo(mejoresTerceras[1].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.I) : undefined
     }, {
       home: standings['E']?.[1],
       away: standings['I']?.[1]
     }, {
       home: standings['A']?.[0],
-      away: mejoresTerceras[2] ? getTerceroPorGrupo(mejoresTerceras[2].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.A) : undefined
     }, {
       home: standings['L']?.[0],
-      away: mejoresTerceras[3] ? getTerceroPorGrupo(mejoresTerceras[3].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.L) : undefined
     }, {
       home: standings['D']?.[0],
-      away: mejoresTerceras[4] ? getTerceroPorGrupo(mejoresTerceras[4].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.D) : undefined
     }, {
       home: standings['G']?.[0],
-      away: mejoresTerceras[5] ? getTerceroPorGrupo(mejoresTerceras[5].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.G) : undefined
     }, {
       home: standings['K']?.[1],
       away: standings['L']?.[1]
@@ -661,13 +663,13 @@ export default function Pronosticos() {
       away: standings['J']?.[1]
     }, {
       home: standings['B']?.[0],
-      away: mejoresTerceras[6] ? getTerceroPorGrupo(mejoresTerceras[6].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.B) : undefined
     }, {
       home: standings['J']?.[0],
       away: standings['H']?.[1]
     }, {
       home: standings['K']?.[0],
-      away: mejoresTerceras[7] ? getTerceroPorGrupo(mejoresTerceras[7].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.K) : undefined
     }, {
       home: standings['D']?.[1],
       away: standings['G']?.[1]
@@ -837,11 +839,8 @@ export default function Pronosticos() {
 
     // Obtener las 8 mejores terceras de los 12 grupos
     const mejoresTerceras = calcularMejoresTerceras().slice(0, 8);
+    const thirdPlaceAllocation = getThirdPlaceAllocation(mejoresTerceras.map(t => t.grupo));
 
-    // Mapear terceras a grupos para determinar emparejamientos según Anexo C
-    const tercerosGrupos = mejoresTerceras.map(t => t.grupo).sort().join('');
-
-    // Función para obtener el Team de un tercero por su grupo
     const getTerceroPorGrupo = (grupo: string): Team | undefined => {
       const tercero = mejoresTerceras.find(t => t.grupo === grupo);
       if (!tercero) return undefined;
@@ -853,33 +852,6 @@ export default function Pronosticos() {
       return undefined;
     };
 
-    // Según la normativa FIFA 2026, hay 495 combinaciones posibles de 8 mejores terceros
-    // Aquí usamos una configuración simplificada basada en los grupos de los terceros clasificados
-    // En un sistema completo, se debería implementar el Anexo C completo
-
-    // Configuración de terceros para cada partido según la combinación de grupos clasificados
-    // Formato: { posición en mejores terceras => partido al que va }
-    const getTercerosParaPartidos = (): Record<string, Team | undefined> => {
-      // Simplificación: asignar terceros en orden según su clasificación
-      // En la implementación real del Anexo C, esto dependería de qué grupos clasifican
-      return {
-        'ABCDF': getTerceroPorGrupo(mejoresTerceras[0]?.grupo),
-        // Para 1E
-        'CDFGH': getTerceroPorGrupo(mejoresTerceras[1]?.grupo),
-        // Para 1I
-        'CEFHI': getTerceroPorGrupo(mejoresTerceras[2]?.grupo),
-        // Para 1A
-        'EHIJK': getTerceroPorGrupo(mejoresTerceras[3]?.grupo),
-        // Para 1L
-        'BEFIJ': getTerceroPorGrupo(mejoresTerceras[4]?.grupo),
-        // Para 1D
-        'AEHIJ': getTerceroPorGrupo(mejoresTerceras[5]?.grupo),
-        // Para 1G
-        'EFGIJ': getTerceroPorGrupo(mejoresTerceras[6]?.grupo),
-        // Para 1B
-        'DEIJL': getTerceroPorGrupo(mejoresTerceras[7]?.grupo) // Para 1K
-      };
-    };
     const newPlayoffMatches = {
       ...playoffMatches
     };
@@ -895,7 +867,7 @@ export default function Pronosticos() {
     // M74: 1E vs Mejor 3ª (ABCDF)
     {
       home: standings['E']?.[0],
-      away: mejoresTerceras[0] ? getTerceroPorGrupo(mejoresTerceras[0].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.E) : undefined
     },
     // M75: 1F vs 2C
     {
@@ -910,7 +882,7 @@ export default function Pronosticos() {
     // M77: 1I vs Mejor 3ª (CDFGH)
     {
       home: standings['I']?.[0],
-      away: mejoresTerceras[1] ? getTerceroPorGrupo(mejoresTerceras[1].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.I) : undefined
     },
     // M78: 2E vs 2I
     {
@@ -920,22 +892,22 @@ export default function Pronosticos() {
     // M79: 1A vs Mejor 3ª (CEFHI)
     {
       home: standings['A']?.[0],
-      away: mejoresTerceras[2] ? getTerceroPorGrupo(mejoresTerceras[2].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.A) : undefined
     },
     // M80: 1L vs Mejor 3ª (EHIJK)
     {
       home: standings['L']?.[0],
-      away: mejoresTerceras[3] ? getTerceroPorGrupo(mejoresTerceras[3].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.L) : undefined
     },
     // M81: 1D vs Mejor 3ª (BEFIJ)
     {
       home: standings['D']?.[0],
-      away: mejoresTerceras[4] ? getTerceroPorGrupo(mejoresTerceras[4].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.D) : undefined
     },
     // M82: 1G vs Mejor 3ª (AEHIJ)
     {
       home: standings['G']?.[0],
-      away: mejoresTerceras[5] ? getTerceroPorGrupo(mejoresTerceras[5].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.G) : undefined
     },
     // M83: 2K vs 2L
     {
@@ -950,7 +922,7 @@ export default function Pronosticos() {
     // M85: 1B vs Mejor 3ª (EFGIJ)
     {
       home: standings['B']?.[0],
-      away: mejoresTerceras[6] ? getTerceroPorGrupo(mejoresTerceras[6].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.B) : undefined
     },
     // M86: 1J vs 2H
     {
@@ -960,7 +932,7 @@ export default function Pronosticos() {
     // M87: 1K vs Mejor 3ª (DEIJL)
     {
       home: standings['K']?.[0],
-      away: mejoresTerceras[7] ? getTerceroPorGrupo(mejoresTerceras[7].grupo) : undefined
+      away: thirdPlaceAllocation ? getTerceroPorGrupo(thirdPlaceAllocation.K) : undefined
     },
     // M88: 2D vs 2G
     {

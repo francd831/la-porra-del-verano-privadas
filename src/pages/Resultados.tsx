@@ -13,6 +13,7 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import PlayoffBracket from "@/components/PlayoffBracket";
 import { sortStandingsByFifaCriteria, sortThirdPlacedByFifaCriteria } from "@/lib/fifaStandings";
+import { getThirdPlaceAllocation } from "@/lib/thirdPlaceAllocations";
 
 interface Team {
   id: string;
@@ -1016,39 +1017,47 @@ export default function Resultados() {
         qualified[groupId] = { first: firstTeam, second: secondTeam };
       });
 
-      // Obtener las 8 mejores terceras SOLO si todos los grupos están completos
-      let tercerosTeams: Team[] = [];
+      // Obtener las 8 mejores terceras SOLO si todos los grupos estan completos
+      const tercerosTeamsByGroup: Record<string, Team | null> = {};
+      let thirdPlaceAllocation: ReturnType<typeof getThirdPlaceAllocation> = null;
       if (todosGruposCompletos) {
-        const mejoresTerceras = calcularMejoresTerceras().slice(0, 8); // Solo los 8 mejores
-        tercerosTeams = mejoresTerceras.map(tercero => {
+        const mejoresTerceras = calcularMejoresTerceras().slice(0, 8);
+        thirdPlaceAllocation = getThirdPlaceAllocation(mejoresTerceras.map(tercero => tercero.grupo));
+        mejoresTerceras.forEach(tercero => {
           const matchesInGroup = groupMatches[tercero.grupo];
           for (const match of matchesInGroup || []) {
-            if (match.home_team?.name === tercero.equipo) return match.home_team;
-            if (match.away_team?.name === tercero.equipo) return match.away_team;
+            if (match.home_team?.name === tercero.equipo) {
+              tercerosTeamsByGroup[tercero.grupo] = match.home_team;
+              return;
+            }
+            if (match.away_team?.name === tercero.equipo) {
+              tercerosTeamsByGroup[tercero.grupo] = match.away_team;
+              return;
+            }
           }
-          return null;
-        }).filter(Boolean) as Team[];
+        });
       }
+      const getThirdForSlot = (slot: 'A' | 'B' | 'D' | 'E' | 'G' | 'I' | 'K' | 'L') =>
+        todosGruposCompletos && thirdPlaceAllocation ? tercerosTeamsByGroup[thirdPlaceAllocation[slot]] || null : null;
 
-      // Configuración de dieciseisavos según formato Mundial 2026
-      // Los cruces con terceros solo se completan cuando todos los grupos están completos
+      // Configuracion de dieciseisavos segun formato Mundial 2026 y Anexo C para terceros
       const roundOf32Pairings = [
-        { home: qualified.A.first, away: todosGruposCompletos ? tercerosTeams[0] : null },
-        { home: qualified.B.first, away: todosGruposCompletos ? tercerosTeams[1] : null },
-        { home: qualified.C.first, away: todosGruposCompletos ? tercerosTeams[2] : null },
-        { home: qualified.D.first, away: todosGruposCompletos ? tercerosTeams[3] : null },
-        { home: qualified.E.first, away: qualified.F.second },
-        { home: qualified.F.first, away: qualified.E.second },
-        { home: qualified.G.first, away: qualified.H.second },
-        { home: qualified.H.first, away: qualified.G.second },
-        { home: qualified.I.first, away: qualified.J.second },
-        { home: qualified.J.first, away: qualified.I.second },
-        { home: qualified.K.first, away: qualified.L.second },
-        { home: qualified.L.first, away: qualified.K.second },
-        { home: qualified.A.second, away: todosGruposCompletos ? tercerosTeams[4] : null },
-        { home: qualified.B.second, away: todosGruposCompletos ? tercerosTeams[5] : null },
-        { home: qualified.C.second, away: todosGruposCompletos ? tercerosTeams[6] : null },
-        { home: qualified.D.second, away: todosGruposCompletos ? tercerosTeams[7] : null },
+        { home: qualified.A.second, away: qualified.B.second },
+        { home: qualified.E.first, away: getThirdForSlot('E') },
+        { home: qualified.F.first, away: qualified.C.second },
+        { home: qualified.C.first, away: qualified.F.second },
+        { home: qualified.I.first, away: getThirdForSlot('I') },
+        { home: qualified.E.second, away: qualified.I.second },
+        { home: qualified.A.first, away: getThirdForSlot('A') },
+        { home: qualified.L.first, away: getThirdForSlot('L') },
+        { home: qualified.D.first, away: getThirdForSlot('D') },
+        { home: qualified.G.first, away: getThirdForSlot('G') },
+        { home: qualified.K.second, away: qualified.L.second },
+        { home: qualified.H.first, away: qualified.J.second },
+        { home: qualified.B.first, away: getThirdForSlot('B') },
+        { home: qualified.J.first, away: qualified.H.second },
+        { home: qualified.K.first, away: getThirdForSlot('K') },
+        { home: qualified.D.second, away: qualified.G.second },
       ];
 
       // Actualizar cada partido con los equipos clasificados (permitiendo valores nulos)
