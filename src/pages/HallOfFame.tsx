@@ -3,6 +3,7 @@ import { Award, CalendarDays, Medal, Shield, Sparkles, Target, Trophy, Users } f
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const TOURNAMENT_ID = "11111111-1111-1111-1111-111111111111";
 
@@ -32,6 +33,7 @@ type ExpectedGroup = {
 
 type EventGroup = ExpectedGroup & {
   entries: ScoreEvent[];
+  currentUserEntry?: ScoreEvent;
 };
 
 const groupLetters = Array.from({ length: 12 }, (_, index) => String.fromCharCode(65 + index));
@@ -122,6 +124,7 @@ function EventCard({
   const winner = group.entries[0];
   const hasData = group.entries.length > 0 && group.entries.some((entry) => entry.points > 0);
   const topEntries = group.entries.slice(0, 3);
+  const currentUserEntry = group.currentUserEntry;
   const shieldClasses = [
     "fill-gold text-gold drop-shadow-[0_0_8px_hsl(var(--gold)/0.35)]",
     "fill-slate-300 text-slate-300",
@@ -176,12 +179,34 @@ function EventCard({
             );
           })
         )}
+        {hasData && (
+          <div className="mt-3 rounded-lg border border-primary/25 bg-primary/10 px-3 py-2">
+            {currentUserEntry ? (
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-bold uppercase text-primary">Tu posición</div>
+                  <div className="truncate text-sm font-semibold">
+                    #{currentUserEntry.rank || "-"} · {getDisplayName(currentUserEntry, profiles)}
+                  </div>
+                </div>
+                <span className="shrink-0 text-sm font-black text-primary">
+                  {formatMetric(group, currentUserEntry.points)}
+                </span>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                Tu posición aparecerá cuando tengas puntos en esta clasificación.
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
 export default function HallOfFame() {
+  const { user } = useAuth();
   const [events, setEvents] = useState<ScoreEvent[]>([]);
   const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -190,7 +215,7 @@ export default function HallOfFame() {
     const loadHallOfFame = async () => {
       setLoading(true);
       try {
-        const { data: eventsData, error: eventsError } = await supabase
+        const { data: topEventsData, error: topEventsError } = await supabase
           .from("user_score_events")
           .select("id, user_id, event_type, event_key, event_label, points, rank, metadata")
           .eq("tournament_id", TOURNAMENT_ID)
@@ -200,9 +225,24 @@ export default function HallOfFame() {
           .order("rank", { ascending: true })
           .order("points", { ascending: false });
 
-        if (eventsError) throw eventsError;
+        if (topEventsError) throw topEventsError;
 
-        const nextEvents = (eventsData || []) as ScoreEvent[];
+        const { data: userEventsData, error: userEventsError } = user
+          ? await supabase
+              .from("user_score_events")
+              .select("id, user_id, event_type, event_key, event_label, points, rank, metadata")
+              .eq("tournament_id", TOURNAMENT_ID)
+              .eq("user_id", user.id)
+          : { data: [], error: null };
+
+        if (userEventsError) throw userEventsError;
+
+        const eventsById = new Map<string, ScoreEvent>();
+        [...((topEventsData || []) as ScoreEvent[]), ...((userEventsData || []) as ScoreEvent[])].forEach((event) => {
+          eventsById.set(event.id, event);
+        });
+
+        const nextEvents = Array.from(eventsById.values());
         setEvents(nextEvents);
 
         const userIds = Array.from(new Set(nextEvents.map((event) => event.user_id)));
@@ -227,7 +267,7 @@ export default function HallOfFame() {
     };
 
     loadHallOfFame();
-  }, []);
+  }, [user]);
 
   const groupedEvents = useMemo(() => {
     const grouped = new Map<string, ScoreEvent[]>();
@@ -252,9 +292,14 @@ export default function HallOfFame() {
       groups: section.groups.map((expected) => ({
         ...expected,
         entries: groupedEvents.get(groupKey(expected.eventType, expected.eventKey)) || [],
+        currentUserEntry: user
+          ? (groupedEvents.get(groupKey(expected.eventType, expected.eventKey)) || []).find(
+              (entry) => entry.user_id === user.id
+            )
+          : undefined,
       })),
     }));
-  }, [groupedEvents]);
+  }, [groupedEvents, user]);
 
   const activeGroupCount = sectionGroups.reduce(
     (count, section) => count + section.groups.filter((group) => group.entries.some((entry) => entry.points > 0)).length,
