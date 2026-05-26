@@ -1,5 +1,5 @@
 {
-  "version": "2026-05-26-4",
+  "version": "2026-05-26-5",
   "forceReload": true,
-  "message": "Cuadro eliminatorio compacto y scroll integrado."
+  "message": "Cuadro eliminatorio centrado con tamaño de equipos restaurado."
 }
