@@ -1765,8 +1765,72 @@ export default function Pronosticos() {
     }
   };
 
+  const saveGroupPredictionsDraft = async () => {
+    if (!user) {
+      throw new Error("Debes iniciar sesión para guardar tus pronósticos.");
+    }
+
+    const tournamentId = '11111111-1111-1111-1111-111111111111';
+    const {
+      data: existingSubmission
+    } = await supabase.from('user_submissions').select('id').eq('user_id', user.id).eq('tournament_id', tournamentId).maybeSingle();
+    let submissionId = existingSubmission?.id;
+
+    if (!submissionId) {
+      const {
+        data: newSubmission,
+        error: submissionError
+      } = await supabase.from('user_submissions').insert({
+        user_id: user.id,
+        tournament_id: tournamentId,
+        is_complete: false,
+        total_predictions: 0,
+        champion_predicted: false,
+        awards_predicted: false
+      }).select('id').single();
+      if (submissionError) throw submissionError;
+      submissionId = newSubmission.id;
+    }
+
+    const groupMatchIds = Object.values(groupMatches).flat().map(match => match.id);
+    const groupPredictions = Object.entries(partidosGrupos)
+      .filter(([, resultado]) => resultado.local !== null && resultado.visitante !== null)
+      .map(([matchId, resultado]) => ({
+        user_id: user.id,
+        match_id: matchId,
+        home_goals: resultado.local as number,
+        away_goals: resultado.visitante as number,
+        submission_id: submissionId
+      }));
+
+    if (groupMatchIds.length > 0) {
+      const { error: deleteGroupError } = await supabase
+        .from('predictions')
+        .delete()
+        .eq('user_id', user.id)
+        .in('match_id', groupMatchIds);
+
+      if (deleteGroupError) throw deleteGroupError;
+    }
+
+    if (groupPredictions.length > 0) {
+      const { error: matchError } = await supabase.from('predictions').upsert(groupPredictions, {
+        onConflict: 'user_id,match_id'
+      });
+      if (matchError) throw matchError;
+    }
+
+    const { error: updateError } = await supabase.from('user_submissions').update({
+      total_predictions: groupPredictions.length,
+      updated_at: new Date().toISOString()
+    }).eq('id', submissionId);
+    if (updateError) throw updateError;
+
+    writeUserGroupPredictionDrafts(partidosGrupos);
+  };
+
   // Función para ir a la fase eliminatoria
-  const handleGoToPlayoffs = () => {
+  const handleGoToPlayoffs = async () => {
     // Verificar que se hayan completado todos los partidos de grupos
     const allGroupMatchesFilled = Object.values(groupMatches).every(matches => matches.every(match => {
       const prediction = partidosGrupos[match.id];
@@ -1781,12 +1845,30 @@ export default function Pronosticos() {
       return;
     }
 
-    // Generar dieciseisavos automáticamente
-    generarDieciseisavosDeFinal();
+    setIsLoading(true);
+    try {
+      await saveGroupPredictionsDraft();
 
-    // Cambiar a la pestaña de eliminatorias
-    writeUserPredictionActiveTab("eliminatorias");
-    setActiveTab("eliminatorias");
+      // Generar dieciseisavos automáticamente
+      generarDieciseisavosDeFinal();
+
+      // Cambiar a la pestaña de eliminatorias
+      writeUserPredictionActiveTab("eliminatorias");
+      setActiveTab("eliminatorias");
+      toast({
+        title: "Fase de grupos guardada",
+        description: "Hemos guardado tus resultados antes de generar la fase eliminatoria."
+      });
+    } catch (error: any) {
+      console.error('Error saving group predictions before playoffs:', error);
+      toast({
+        variant: "destructive",
+        title: "Error al guardar",
+        description: error.message || "No se han podido guardar los resultados de grupos."
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBackToGroups = () => {
@@ -2129,9 +2211,14 @@ export default function Pronosticos() {
                   </>}
               </Button>
             )}
-            <Button onClick={handleGoToPlayoffs} className="bg-gradient-hero shadow-strong hover:opacity-90" size="sm">
-              <span>Ir a Fase Final</span>
-              <ArrowRight className="ml-2 w-4 h-4" />
+            <Button onClick={handleGoToPlayoffs} disabled={isLoading || predictionsLocked} className="bg-gradient-hero shadow-strong hover:opacity-90" size="sm">
+              {isLoading ? <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Guardando...
+                </> : <>
+                  <span>Ir a Fase Final</span>
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </>}
             </Button>
           </div>
           
