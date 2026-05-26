@@ -114,7 +114,7 @@ export default function CrearLiga() {
                 id="league-comments"
                 value={comments}
                 onChange={(event) => setComments(event.target.value)}
-                placeholder="Ej. Normas del grupo, premio simbólico, fechas importantes..."
+                placeholder="Ej. Normas del grupo, fechas importantes..."
                 maxLength={1000}
                 className="min-h-28 resize-none bg-muted/30 border-border/50 focus:border-primary focus:ring-primary/20"
               />

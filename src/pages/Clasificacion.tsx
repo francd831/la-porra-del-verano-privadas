@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 const DEFAULT_TOURNAMENT_ID = "11111111-1111-1111-1111-111111111111";
-const MAX_PRIVATE_LEAGUES = 5;
+const MAX_PRIVATE_LEAGUES = 3;
 
 interface UserRanking {
   user_id: string;
