@@ -347,6 +347,50 @@ export default function Pronosticos() {
     loadData();
   }, [user, toast]);
 
+  const createPlayoffBase = (dieciseisavosMatches: Match[] = []): Record<string, Match[]> => ({
+    'Dieciseisavos de Final': dieciseisavosMatches,
+    'Octavos de Final': Array.from({ length: 8 }, (_, i) => ({
+      id: `R16_${i + 1}`,
+      home_team_id: '',
+      away_team_id: '',
+      group_id: '',
+      round: 'Octavos de Final',
+      match_date: ''
+    })) as Match[],
+    'Cuartos de Final': Array.from({ length: 4 }, (_, i) => ({
+      id: `QF_${i + 1}`,
+      home_team_id: '',
+      away_team_id: '',
+      group_id: '',
+      round: 'Cuartos de Final',
+      match_date: ''
+    })) as Match[],
+    'Semifinales': Array.from({ length: 2 }, (_, i) => ({
+      id: `SF_${i + 1}`,
+      home_team_id: '',
+      away_team_id: '',
+      group_id: '',
+      round: 'Semifinales',
+      match_date: ''
+    })) as Match[],
+    'Final': [{
+      id: 'FINAL_1',
+      home_team_id: '',
+      away_team_id: '',
+      group_id: '',
+      round: 'Final',
+      match_date: ''
+    }] as Match[]
+  });
+
+  const findPlayoffMatch = (matches: Record<string, Match[]>, matchId: string) =>
+    Object.values(matches).flat().find(match => match.id === matchId);
+
+  const winnerCanPlayMatch = (matches: Record<string, Match[]>, matchId: string, winnerId: string) => {
+    const match = findPlayoffMatch(matches, matchId);
+    return Boolean(match && (match.home_team_id === winnerId || match.away_team_id === winnerId));
+  };
+
   // Reconstruir el bracket basándose en las predicciones guardadas
   // Sigue la normativa FIFA 2026 para el mapeo correcto entre rondas
   const reconstructBracketFromPredictions = (winnersMap: Record<string, string>, teamsData: Team[], basePlayoffMatches: Record<string, Match[]>) => {
@@ -472,6 +516,28 @@ export default function Pronosticos() {
       });
     }
     return newPlayoffMatches;
+  };
+
+  const normalizeBracketFromWinners = (winnersMap: Record<string, string>, teamsData: Team[], basePlayoffMatches: Record<string, Match[]>) => {
+    let normalizedWinners = { ...winnersMap };
+    let normalizedMatches = reconstructBracketFromPredictions(normalizedWinners, teamsData, basePlayoffMatches);
+
+    for (let i = 0; i < 6; i++) {
+      const nextWinners = Object.fromEntries(
+        Object.entries(normalizedWinners).filter(([matchId, winnerId]) =>
+          winnerCanPlayMatch(normalizedMatches, matchId, winnerId)
+        )
+      );
+
+      if (Object.keys(nextWinners).length === Object.keys(normalizedWinners).length) {
+        return { winners: normalizedWinners, matches: normalizedMatches };
+      }
+
+      normalizedWinners = nextWinners;
+      normalizedMatches = reconstructBracketFromPredictions(normalizedWinners, teamsData, basePlayoffMatches);
+    }
+
+    return { winners: normalizedWinners, matches: normalizedMatches };
   };
 
   // Generar dieciseisavos de final basándose en predicciones de grupos
@@ -726,7 +792,6 @@ export default function Pronosticos() {
         ...readUserGroupPredictionDrafts(),
       };
       setPartidosGrupos(mergedGroupPredictions);
-      setPlayoffWinners(playoffWinnersMap);
       setPlayoffPredictions(playoffPredictionsMap);
 
       // Si hay predicciones de playoffs guardadas, reconstruir el bracket completo
@@ -735,52 +800,14 @@ export default function Pronosticos() {
         const dieciseisavosMatches = generarDieciseisavosFromPredictions(mergedGroupPredictions, groupMatchesData, teamsData);
 
         // Crear estructura base con los dieciseisavos generados
-        const newPlayoffMatches: Record<string, Match[]> = {
-          'Dieciseisavos de Final': dieciseisavosMatches,
-          'Octavos de Final': Array.from({
-            length: 8
-          }, (_, i) => ({
-            id: `R16_${i + 1}`,
-            home_team_id: '',
-            away_team_id: '',
-            group_id: '',
-            round: 'Octavos de Final',
-            match_date: ''
-          })) as Match[],
-          'Cuartos de Final': Array.from({
-            length: 4
-          }, (_, i) => ({
-            id: `QF_${i + 1}`,
-            home_team_id: '',
-            away_team_id: '',
-            group_id: '',
-            round: 'Cuartos de Final',
-            match_date: ''
-          })) as Match[],
-          'Semifinales': Array.from({
-            length: 2
-          }, (_, i) => ({
-            id: `SF_${i + 1}`,
-            home_team_id: '',
-            away_team_id: '',
-            group_id: '',
-            round: 'Semifinales',
-            match_date: ''
-          })) as Match[],
-          'Final': [{
-            id: 'FINAL_1',
-            home_team_id: '',
-            away_team_id: '',
-            group_id: '',
-            round: 'Final',
-            match_date: ''
-          }] as Match[]
-        };
+        const newPlayoffMatches = createPlayoffBase(dieciseisavosMatches);
 
         // Ahora aplicar las predicciones de ganadores para avanzar equipos
-        const reconstructedMatches = reconstructBracketFromPredictions(playoffWinnersMap, teamsData, newPlayoffMatches);
-        setPlayoffMatches(reconstructedMatches);
+        const normalized = normalizeBracketFromWinners(playoffWinnersMap, teamsData, newPlayoffMatches);
+        setPlayoffWinners(normalized.winners);
+        setPlayoffMatches(normalized.matches);
       } else if (readUserPredictionActiveTab() === "eliminatorias" && Object.keys(groupMatchesData).length > 0) {
+        setPlayoffWinners(playoffWinnersMap);
         const allGroupMatchesFilled = Object.values(groupMatchesData).every(matches =>
           matches.every(match => {
             const prediction = mergedGroupPredictions[match.id];
@@ -1487,6 +1514,27 @@ export default function Pronosticos() {
   // Función para seleccionar ganador de un partido de eliminatorias
   // Sigue la normativa FIFA 2026 para el avance de equipos entre rondas
   const handleSelectWinner = (matchId: string, teamId: string, teamName: string, round: string) => {
+    const currentMatch = findPlayoffMatch(playoffMatches, matchId);
+    if (!currentMatch || !winnerCanPlayMatch(playoffMatches, matchId, teamId)) return;
+
+    const baseMatches = createPlayoffBase(playoffMatches['Dieciseisavos de Final'] || []);
+    const normalized = normalizeBracketFromWinners(
+      {
+        ...playoffWinners,
+        [matchId]: teamId
+      },
+      teams,
+      baseMatches
+    );
+
+    setPlayoffWinners(normalized.winners);
+    setPlayoffMatches(normalized.matches);
+
+    const championId = normalized.winners['FINAL_1'];
+    const championTeam = championId ? teams.find(t => t.id === championId) : null;
+    setCampeon(championTeam?.name || (round === 'Final' ? teamName : ''));
+    return;
+
     // Guardar el ganador
     setPlayoffWinners(prev => ({
       ...prev,
