@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Award, CalendarDays, Medal, Shield, Sparkles, Target, Trophy, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -205,11 +206,72 @@ function EventCard({
   );
 }
 
+function formatDayOption(eventKey: string) {
+  const date = new Date(`${eventKey}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return eventKey;
+  return date.toLocaleDateString("es-ES", { day: "numeric", month: "long" });
+}
+
+function DayKingSection({
+  dayGroups,
+  selectedDay,
+  onSelectedDayChange,
+  profiles,
+}: {
+  dayGroups: EventGroup[];
+  selectedDay: string;
+  onSelectedDayChange: (day: string) => void;
+  profiles: Map<string, Profile>;
+}) {
+  const selectedGroup = dayGroups.find((group) => group.eventKey === selectedDay) || dayGroups[0];
+
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+            <CalendarDays className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">Rey del día</h2>
+            <p className="text-sm text-muted-foreground">
+              Cuenta todos los partidos jugados en la fecha seleccionada.
+            </p>
+          </div>
+        </div>
+        <Select value={selectedGroup?.eventKey || ""} onValueChange={onSelectedDayChange} disabled={dayGroups.length === 0}>
+          <SelectTrigger className="w-full bg-card/70 md:w-56">
+            <SelectValue placeholder="Selecciona un día" />
+          </SelectTrigger>
+          <SelectContent>
+            {dayGroups.map((group) => (
+              <SelectItem key={group.eventKey} value={group.eventKey}>
+                {formatDayOption(group.eventKey)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {selectedGroup ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <EventCard group={selectedGroup} profiles={profiles} />
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-border/70 bg-card/60 p-6 text-sm text-muted-foreground">
+          Aún no hay días con partidos puntuables.
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function HallOfFame() {
   const { user } = useAuth();
   const [events, setEvents] = useState<ScoreEvent[]>([]);
   const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [selectedDay, setSelectedDay] = useState("");
 
   useEffect(() => {
     const loadHallOfFame = async () => {
@@ -301,10 +363,33 @@ export default function HallOfFame() {
     }));
   }, [groupedEvents, user]);
 
+  const dayGroups = useMemo(() => {
+    return Array.from(groupedEvents.entries())
+      .filter(([key]) => key.startsWith("day:"))
+      .map(([key, entries]) => {
+        const eventKey = key.replace("day:", "");
+        return {
+          eventType: "day",
+          eventKey,
+          eventLabel: entries[0]?.event_label || `Rey del día · ${formatDayOption(eventKey)}`,
+          entries,
+          currentUserEntry: user ? entries.find((entry) => entry.user_id === user.id) : undefined,
+        } as EventGroup;
+      })
+      .sort((a, b) => a.eventKey.localeCompare(b.eventKey));
+  }, [groupedEvents, user]);
+
+  useEffect(() => {
+    if (dayGroups.length === 0) return;
+    if (selectedDay && dayGroups.some((group) => group.eventKey === selectedDay)) return;
+    setSelectedDay(dayGroups[dayGroups.length - 1].eventKey);
+  }, [dayGroups, selectedDay]);
+
+  const activeDayCount = dayGroups.some((group) => group.entries.some((entry) => entry.points > 0)) ? 1 : 0;
   const activeGroupCount = sectionGroups.reduce(
     (count, section) => count + section.groups.filter((group) => group.entries.some((entry) => entry.points > 0)).length,
     0
-  );
+  ) + activeDayCount;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -330,6 +415,12 @@ export default function HallOfFame() {
         </div>
       ) : (
         <div className="space-y-8">
+          <DayKingSection
+            dayGroups={dayGroups}
+            selectedDay={selectedDay}
+            onSelectedDayChange={setSelectedDay}
+            profiles={profiles}
+          />
           {sectionGroups.map((section) => {
             const Icon = section.icon;
 
