@@ -294,7 +294,7 @@ export default function PlayoffBracket({
   const rightSF = [getSFById('SF_2')].filter(Boolean) as Match[]; // M102: W99 vs W100 -> Final away
 
   const boardWidth = 1512;
-  const boardHeight = 760;
+  const boardHeight = 860;
   const compactWidth = 112;
   const normalWidth = 144;
   const matchHeight = 58;
@@ -302,7 +302,7 @@ export default function PlayoffBracket({
   const yR16 = [119, 279, 459, 619];
   const yQF = [199, 539];
   const ySF = [369];
-  const yFinal = 369;
+  const yFinal = 585;
 
   const positionedMatches = [
     ...leftR32Visual.map((match, index) => ({ match, x: 20, y: yR32[index], width: compactWidth, compact: true, isFinal: false })),
@@ -325,6 +325,17 @@ export default function PlayoffBracket({
   };
   const connectorPath = (fromId: string, toId: string, side: 'left' | 'right' | 'center') => {
     if (!positions.has(fromId) || !positions.has(toId)) return null;
+    if (side === 'center') {
+      const from = positions.get(fromId);
+      const to = positions.get(toId);
+      if (!from || !to) return null;
+      const x1 = from.x + from.width / 2;
+      const y1 = from.y + matchHeight;
+      const x2 = to.x + to.width / 2;
+      const y2 = to.y;
+      const midY = y1 + Math.abs(y2 - y1) / 2;
+      return `M ${x1} ${y1} V ${midY} H ${x2} V ${y2}`;
+    }
     const x1 = side === 'right' ? leftEdge(fromId) : rightEdge(fromId);
     const x2 = side === 'right' ? rightEdge(toId) : leftEdge(toId);
     const y1 = centerY(fromId);
@@ -381,7 +392,7 @@ export default function PlayoffBracket({
             </div>
           ))}
 
-          <Trophy className="absolute z-10 w-12 h-12 text-gold animate-pulse" style={{ left: 730, top: 305 }} />
+          <Trophy className="absolute z-10 w-12 h-12 text-gold animate-pulse" style={{ left: 730, top: 522 }} />
 
           {positionedMatches.map(({ match, x, y, compact, isFinal }) => (
             <div key={match.id} className="absolute z-20" style={{ left: x, top: y }}>
@@ -389,7 +400,7 @@ export default function PlayoffBracket({
             </div>
           ))}
 
-          {campeon && <div className="absolute z-20 text-center" style={{ left: 650, top: 448, width: 212 }}>
+          {campeon && <div className="absolute z-20 text-center" style={{ left: 650, top: 665, width: 212 }}>
               <p className="text-xs text-muted-foreground">Campeon</p>
               <div className="flex items-center justify-center gap-2">
                 <p className="font-bold text-gold text-3xl">{campeon}</p>
