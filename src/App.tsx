@@ -12,6 +12,7 @@ import { BottomNav } from "./components/BottomNav";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { PWAInstallBanner } from "./components/PWAInstallBanner";
 import { AppVersionGate } from "./components/AppVersionGate";
+import { AdminMessagePopup } from "./components/AdminMessagePopup";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
@@ -25,6 +26,7 @@ import Resultados from "./pages/Resultados";
 import Clasificacion from "./pages/Clasificacion";
 import HallOfFame from "./pages/HallOfFame";
 import AdminLigas from "./pages/AdminLigas";
+import AdminMensajes from "./pages/AdminMensajes";
 import Bases from "./pages/Bases";
 import PoliticaPrivacidad from "./pages/PoliticaPrivacidad";
 import CondicionesServicio from "./pages/CondicionesServicio";
@@ -49,6 +51,7 @@ const App = () => (
             <ScrollToTop />
             <PWAInstallBanner />
             <AppVersionGate />
+            <AdminMessagePopup />
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
@@ -62,6 +65,7 @@ const App = () => (
               <Route path="/pronosticos" element={<AuthGuard><Pronosticos /></AuthGuard>} />
               <Route path="/resultados" element={<AdminGuard><Resultados /></AdminGuard>} />
               <Route path="/admin/ligas" element={<AdminGuard><AdminLigas /></AdminGuard>} />
+              <Route path="/admin/mensajes" element={<AdminGuard><AdminMensajes /></AdminGuard>} />
               <Route path="/clasificacion" element={<AuthGuard><Clasificacion /></AuthGuard>} />
               <Route path="/hall-of-fame" element={<AuthGuard><HallOfFame /></AuthGuard>} />
               <Route path="/bases" element={<Bases />} />

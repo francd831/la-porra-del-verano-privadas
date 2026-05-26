@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Trophy, Target, Award, FileText, Home, User, BarChart3, Users } from "lucide-react";
+import { Trophy, Target, Award, FileText, Home, User, BarChart3, Users, MessageSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +41,7 @@ export function BottomNav() {
       ? [
           { href: "/resultados", icon: Award, label: "Resultados" },
           { href: "/admin/ligas", icon: Users, label: "Ligas" },
+          { href: "/admin/mensajes", icon: MessageSquare, label: "Mensajes" },
           { href: "/clasificacion", icon: Trophy, label: "Ranking" },
           { href: "/perfil", icon: User, label: "Perfil" },
         ]
