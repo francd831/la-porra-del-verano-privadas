@@ -80,8 +80,7 @@ export default function Bases() {
               </li>
             </ul>
             <div className="mt-6 p-4 bg-muted/20 rounded-lg border border-muted/30 text-xs text-muted-foreground space-y-1">
-              <p>La plataforma no organiza apuestas, botes ni premios económicos.</p>
-              <p>Cualquier incentivo privado entre miembros de una liga queda fuera de la responsabilidad de la plataforma.</p>
+              <p>La plataforma no organiza, ni admite, apuestas, botes ni premios económicos.</p>
             </div>
           </CardContent>
         </Card>
