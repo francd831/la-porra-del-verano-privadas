@@ -164,6 +164,26 @@
     animation: glow 2s ease-in-out infinite alternate;
   }
 
+  .playoff-bracket-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.65) hsl(var(--card) / 0.55);
+  }
+
+  .playoff-bracket-scroll::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .playoff-bracket-scroll::-webkit-scrollbar-track {
+    background: hsl(var(--card) / 0.55);
+    border-radius: 999px;
+  }
+
+  .playoff-bracket-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, hsl(var(--primary)), hsl(280 80% 60%));
+    border-radius: 999px;
+    border: 2px solid hsl(var(--card) / 0.55);
+  }
+
   @keyframes glow {
     from { box-shadow: 0 0 20px hsl(239 84% 67% / 0.3); }
     to { box-shadow: 0 0 30px hsl(239 84% 67% / 0.6); }

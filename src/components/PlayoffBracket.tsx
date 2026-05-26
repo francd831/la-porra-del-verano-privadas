@@ -137,9 +137,9 @@ const BracketMatch = ({
   // Para usuarios: el botón solo está habilitado si NO está bloqueado
   const isDisabled = !match.home_team || (isAdmin ? false : predictionsLocked);
   const awayIsDisabled = !match.away_team || (isAdmin ? false : predictionsLocked);
-  return <div className={cn("flex flex-col rounded-lg overflow-hidden border", isFinal ? "border-gold bg-gradient-to-br from-gold/20 to-gold/5 shadow-lg" : "border-border bg-card", compact ? "w-28" : "w-36")}>
+  return <div className={cn("flex flex-col rounded-md overflow-hidden border", isFinal ? "border-gold bg-gradient-to-br from-gold/20 to-gold/5 shadow-lg" : "border-border bg-card", compact ? "w-[86px]" : "w-[108px]")}>
       {/* Equipo Local */}
-      <button onClick={() => match.home_team && onSelectWinner?.(match.id, match.home_team_id, match.home_team.name, match.round)} disabled={isDisabled} className={cn("flex items-center gap-1 px-2 py-1.5 text-xs transition-all border-b border-border/50", compact ? "py-1 text-[10px]" : "", homeSelected ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted/50", isDisabled && "cursor-default opacity-50")}>
+      <button onClick={() => match.home_team && onSelectWinner?.(match.id, match.home_team_id, match.home_team.name, match.round)} disabled={isDisabled} className={cn("flex items-center gap-1 px-1.5 py-1.5 text-[10px] transition-all border-b border-border/50", compact ? "py-1 text-[8px]" : "", homeSelected ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted/50", isDisabled && "cursor-default opacity-50")}>
         <span className="flex-1 truncate text-left">
           {match.home_team?.name || 'TBD'}
         </span>
@@ -151,7 +151,7 @@ const BracketMatch = ({
       </button>
       
       {/* Equipo Visitante */}
-      <button onClick={() => match.away_team && onSelectWinner?.(match.id, match.away_team_id, match.away_team.name, match.round)} disabled={awayIsDisabled} className={cn("flex items-center gap-1 px-2 py-1.5 text-xs transition-all", compact ? "py-1 text-[10px]" : "", awaySelected ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted/50", awayIsDisabled && "cursor-default opacity-50")}>
+      <button onClick={() => match.away_team && onSelectWinner?.(match.id, match.away_team_id, match.away_team.name, match.round)} disabled={awayIsDisabled} className={cn("flex items-center gap-1 px-1.5 py-1.5 text-[10px] transition-all", compact ? "py-1 text-[8px]" : "", awaySelected ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted/50", awayIsDisabled && "cursor-default opacity-50")}>
         <span className="flex-1 truncate text-left">
           {match.away_team?.name || 'TBD'}
         </span>
@@ -293,27 +293,27 @@ export default function PlayoffBracket({
   ].filter(Boolean) as Match[];
   const rightSF = [getSFById('SF_2')].filter(Boolean) as Match[]; // M102: W99 vs W100 -> Final away
 
-  const boardWidth = 1512;
-  const boardHeight = 860;
-  const compactWidth = 112;
-  const normalWidth = 144;
-  const matchHeight = 58;
-  const yR32 = [84, 154, 244, 314, 424, 494, 584, 654];
-  const yR16 = [119, 279, 459, 619];
-  const yQF = [199, 539];
-  const ySF = [369];
-  const yFinal = 585;
+  const boardWidth = 996;
+  const boardHeight = 800;
+  const compactWidth = 86;
+  const normalWidth = 108;
+  const matchHeight = 50;
+  const yR32 = [82, 146, 232, 296, 402, 466, 552, 616];
+  const yR16 = [114, 264, 434, 584];
+  const yQF = [184, 504];
+  const ySF = [344];
+  const yFinal = 560;
 
   const positionedMatches = [
-    ...leftR32Visual.map((match, index) => ({ match, x: 20, y: yR32[index], width: compactWidth, compact: true, isFinal: false })),
-    ...leftR16Visual.map((match, index) => ({ match, x: 190, y: yR16[index], width: compactWidth, compact: true, isFinal: false })),
-    ...leftQF.map((match, index) => ({ match, x: 380, y: yQF[index], width: normalWidth, compact: false, isFinal: false })),
-    ...leftSF.map((match, index) => ({ match, x: 560, y: ySF[index], width: normalWidth, compact: false, isFinal: false })),
-    ...(finalMatches[0] ? [{ match: finalMatches[0], x: 684, y: yFinal, width: normalWidth, compact: false, isFinal: true }] : []),
-    ...rightSF.map((match, index) => ({ match, x: 808, y: ySF[index], width: normalWidth, compact: false, isFinal: false })),
-    ...rightQF.map((match, index) => ({ match, x: 988, y: yQF[index], width: normalWidth, compact: false, isFinal: false })),
-    ...rightR16Visual.map((match, index) => ({ match, x: 1190, y: yR16[index], width: compactWidth, compact: true, isFinal: false })),
-    ...rightR32Visual.map((match, index) => ({ match, x: 1380, y: yR32[index], width: compactWidth, compact: true, isFinal: false })),
+    ...leftR32Visual.map((match, index) => ({ match, x: 14, y: yR32[index], width: compactWidth, compact: true, isFinal: false })),
+    ...leftR16Visual.map((match, index) => ({ match, x: 124, y: yR16[index], width: compactWidth, compact: true, isFinal: false })),
+    ...leftQF.map((match, index) => ({ match, x: 250, y: yQF[index], width: normalWidth, compact: false, isFinal: false })),
+    ...leftSF.map((match, index) => ({ match, x: 370, y: ySF[index], width: normalWidth, compact: false, isFinal: false })),
+    ...(finalMatches[0] ? [{ match: finalMatches[0], x: 451, y: yFinal, width: normalWidth, compact: false, isFinal: true }] : []),
+    ...rightSF.map((match, index) => ({ match, x: 584, y: ySF[index], width: normalWidth, compact: false, isFinal: false })),
+    ...rightQF.map((match, index) => ({ match, x: 680, y: yQF[index], width: normalWidth, compact: false, isFinal: false })),
+    ...rightR16Visual.map((match, index) => ({ match, x: 810, y: yR16[index], width: compactWidth, compact: true, isFinal: false })),
+    ...rightR32Visual.map((match, index) => ({ match, x: 910, y: yR32[index], width: compactWidth, compact: true, isFinal: false })),
   ];
 
   const positions = new Map(positionedMatches.map((item) => [item.match.id, item]));
@@ -364,18 +364,18 @@ export default function PlayoffBracket({
   ] as const;
 
   const roundLabels = [
-    { label: 'Dieciseisavos', x: 20, width: compactWidth },
-    { label: 'Octavos', x: 190, width: compactWidth },
-    { label: 'Cuartos', x: 380, width: normalWidth },
-    { label: 'Semifinal', x: 560, width: normalWidth },
-    { label: 'Final', x: 684, width: normalWidth, trophy: true },
-    { label: 'Semifinal', x: 808, width: normalWidth },
-    { label: 'Cuartos', x: 988, width: normalWidth },
-    { label: 'Octavos', x: 1190, width: compactWidth },
-    { label: 'Dieciseisavos', x: 1380, width: compactWidth },
+    { label: 'Dieciseisavos', x: 14, width: compactWidth },
+    { label: 'Octavos', x: 124, width: compactWidth },
+    { label: 'Cuartos', x: 250, width: normalWidth },
+    { label: 'Semifinal', x: 370, width: normalWidth },
+    { label: 'Final', x: 451, width: normalWidth, trophy: true },
+    { label: 'Semifinal', x: 584, width: normalWidth },
+    { label: 'Cuartos', x: 680, width: normalWidth },
+    { label: 'Octavos', x: 810, width: compactWidth },
+    { label: 'Dieciseisavos', x: 910, width: compactWidth },
   ];
 
-  return <div className="w-full overflow-x-auto pb-4">
+  return <div className="playoff-bracket-scroll w-full overflow-x-auto pb-4">
       <div className="space-y-6">
         <div className="relative" style={{ width: boardWidth, height: boardHeight }}>
           <svg className="absolute inset-0 z-0 pointer-events-none" width={boardWidth} height={boardHeight} viewBox={`0 0 ${boardWidth} ${boardHeight}`} aria-hidden="true">
@@ -392,7 +392,7 @@ export default function PlayoffBracket({
             </div>
           ))}
 
-          <Trophy className="absolute z-10 w-12 h-12 text-gold animate-pulse" style={{ left: 730, top: 522 }} />
+          <Trophy className="absolute z-10 w-10 h-10 text-gold animate-pulse" style={{ left: 485, top: 502 }} />
 
           {positionedMatches.map(({ match, x, y, compact, isFinal }) => (
             <div key={match.id} className="absolute z-20" style={{ left: x, top: y }}>
@@ -400,7 +400,7 @@ export default function PlayoffBracket({
             </div>
           ))}
 
-          {campeon && <div className="absolute z-20 text-center" style={{ left: 650, top: 665, width: 212 }}>
+          {campeon && <div className="absolute z-20 text-center" style={{ left: 399, top: 638, width: 212 }}>
               <p className="text-xs text-muted-foreground">Campeon</p>
               <div className="flex items-center justify-center gap-2">
                 <p className="font-bold text-gold text-3xl">{campeon}</p>

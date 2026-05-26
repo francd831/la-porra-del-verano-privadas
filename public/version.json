@@ -1,5 +1,5 @@
 {
-  "version": "2026-05-26-3",
+  "version": "2026-05-26-4",
   "forceReload": true,
-  "message": "Ajuste visual de la final en el cuadro eliminatorio."
+  "message": "Cuadro eliminatorio compacto y scroll integrado."
 }
