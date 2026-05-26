@@ -293,6 +293,145 @@ export default function PlayoffBracket({
   ].filter(Boolean) as Match[];
   const rightSF = [getSFById('SF_2')].filter(Boolean) as Match[]; // M102: W99 vs W100 -> Final away
 
+  const boardWidth = 1512;
+  const boardHeight = 760;
+  const compactWidth = 112;
+  const normalWidth = 144;
+  const matchHeight = 58;
+  const yR32 = [84, 154, 244, 314, 424, 494, 584, 654];
+  const yR16 = [119, 279, 459, 619];
+  const yQF = [199, 539];
+  const ySF = [369];
+  const yFinal = 369;
+
+  const positionedMatches = [
+    ...leftR32Visual.map((match, index) => ({ match, x: 20, y: yR32[index], width: compactWidth, compact: true, isFinal: false })),
+    ...leftR16Visual.map((match, index) => ({ match, x: 190, y: yR16[index], width: compactWidth, compact: true, isFinal: false })),
+    ...leftQF.map((match, index) => ({ match, x: 380, y: yQF[index], width: normalWidth, compact: false, isFinal: false })),
+    ...leftSF.map((match, index) => ({ match, x: 560, y: ySF[index], width: normalWidth, compact: false, isFinal: false })),
+    ...(finalMatches[0] ? [{ match: finalMatches[0], x: 684, y: yFinal, width: normalWidth, compact: false, isFinal: true }] : []),
+    ...rightSF.map((match, index) => ({ match, x: 808, y: ySF[index], width: normalWidth, compact: false, isFinal: false })),
+    ...rightQF.map((match, index) => ({ match, x: 988, y: yQF[index], width: normalWidth, compact: false, isFinal: false })),
+    ...rightR16Visual.map((match, index) => ({ match, x: 1190, y: yR16[index], width: compactWidth, compact: true, isFinal: false })),
+    ...rightR32Visual.map((match, index) => ({ match, x: 1380, y: yR32[index], width: compactWidth, compact: true, isFinal: false })),
+  ];
+
+  const positions = new Map(positionedMatches.map((item) => [item.match.id, item]));
+  const centerY = (id: string) => (positions.get(id)?.y || 0) + matchHeight / 2;
+  const leftEdge = (id: string) => positions.get(id)?.x || 0;
+  const rightEdge = (id: string) => {
+    const item = positions.get(id);
+    return item ? item.x + item.width : 0;
+  };
+  const connectorPath = (fromId: string, toId: string, side: 'left' | 'right' | 'center') => {
+    if (!positions.has(fromId) || !positions.has(toId)) return null;
+    const x1 = side === 'right' ? leftEdge(fromId) : rightEdge(fromId);
+    const x2 = side === 'right' ? rightEdge(toId) : leftEdge(toId);
+    const y1 = centerY(fromId);
+    const y2 = centerY(toId);
+    const midX = side === 'right' ? x1 - Math.abs(x1 - x2) / 2 : x1 + Math.abs(x2 - x1) / 2;
+    return `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
+  };
+
+  const connectors = [
+    ['R32_2', 'R16_1', 'left'], ['R32_5', 'R16_1', 'left'],
+    ['R32_1', 'R16_2', 'left'], ['R32_3', 'R16_2', 'left'],
+    ['R32_11', 'R16_5', 'left'], ['R32_12', 'R16_5', 'left'],
+    ['R32_9', 'R16_6', 'left'], ['R32_10', 'R16_6', 'left'],
+    ['R16_1', 'QF_1', 'left'], ['R16_2', 'QF_1', 'left'],
+    ['R16_5', 'QF_2', 'left'], ['R16_6', 'QF_2', 'left'],
+    ['QF_1', 'SF_1', 'left'], ['QF_2', 'SF_1', 'left'],
+    ['SF_1', 'FINAL_1', 'center'],
+    ['R32_4', 'R16_3', 'right'], ['R32_6', 'R16_3', 'right'],
+    ['R32_7', 'R16_4', 'right'], ['R32_8', 'R16_4', 'right'],
+    ['R32_14', 'R16_7', 'right'], ['R32_16', 'R16_7', 'right'],
+    ['R32_13', 'R16_8', 'right'], ['R32_15', 'R16_8', 'right'],
+    ['R16_3', 'QF_3', 'right'], ['R16_4', 'QF_3', 'right'],
+    ['R16_7', 'QF_4', 'right'], ['R16_8', 'QF_4', 'right'],
+    ['QF_3', 'SF_2', 'right'], ['QF_4', 'SF_2', 'right'],
+    ['SF_2', 'FINAL_1', 'center'],
+  ] as const;
+
+  const roundLabels = [
+    { label: 'Dieciseisavos', x: 20, width: compactWidth },
+    { label: 'Octavos', x: 190, width: compactWidth },
+    { label: 'Cuartos', x: 380, width: normalWidth },
+    { label: 'Semifinal', x: 560, width: normalWidth },
+    { label: 'Final', x: 684, width: normalWidth, trophy: true },
+    { label: 'Semifinal', x: 808, width: normalWidth },
+    { label: 'Cuartos', x: 988, width: normalWidth },
+    { label: 'Octavos', x: 1190, width: compactWidth },
+    { label: 'Dieciseisavos', x: 1380, width: compactWidth },
+  ];
+
+  return <div className="w-full overflow-x-auto pb-4">
+      <div className="space-y-6">
+        <div className="relative" style={{ width: boardWidth, height: boardHeight }}>
+          <svg className="absolute inset-0 z-0 pointer-events-none" width={boardWidth} height={boardHeight} viewBox={`0 0 ${boardWidth} ${boardHeight}`} aria-hidden="true">
+            {connectors.map(([fromId, toId, side]) => {
+              const d = connectorPath(fromId, toId, side);
+              return d ? <path key={`${fromId}-${toId}`} d={d} fill="none" stroke="hsl(var(--border))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" /> : null;
+            })}
+          </svg>
+
+          {roundLabels.map(({ label, x, width, trophy }) => (
+            <div key={`${label}-${x}`} className="absolute top-2 z-10 flex items-center justify-center gap-1 text-xs font-semibold text-muted-foreground" style={{ left: x, width }}>
+              {trophy && <Trophy className="w-4 h-4 text-gold" />}
+              <span>{label}</span>
+            </div>
+          ))}
+
+          <Trophy className="absolute z-10 w-12 h-12 text-gold animate-pulse" style={{ left: 730, top: 305 }} />
+
+          {positionedMatches.map(({ match, x, y, compact, isFinal }) => (
+            <div key={match.id} className="absolute z-20" style={{ left: x, top: y }}>
+              <BracketMatch match={match} playoffWinners={playoffWinners} predictionsLocked={predictionsLocked} onSelectWinner={onSelectWinner} onViewParticipants={onViewParticipants} isAdmin={isAdmin} compact={compact} isFinal={isFinal} classifiedTeams={classifiedTeams} />
+            </div>
+          ))}
+
+          {campeon && <div className="absolute z-20 text-center" style={{ left: 650, top: 448, width: 212 }}>
+              <p className="text-xs text-muted-foreground">Campeon</p>
+              <div className="flex items-center justify-center gap-2">
+                <p className="font-bold text-gold text-3xl">{campeon}</p>
+                {campeonReal && classifiedTeams?.champion === campeonReal && (() => {
+                  const finalWinnerId = playoffWinners['FINAL_1'];
+                  if (finalWinnerId && finalWinnerId === campeonReal) {
+                    return <span className="inline-flex items-center justify-center min-w-[24px] h-5 px-1.5 text-[10px] font-bold rounded bg-success text-success-foreground">
+                        +50
+                      </span>;
+                  }
+                  return null;
+                })()}
+              </div>
+            </div>}
+        </div>
+
+        {/* Leyenda y boton reset */}
+        <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground mt-4">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-primary rounded" />
+            <span>Seleccionado</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-card border rounded" />
+            <span>Por seleccionar</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-gold" />
+            <span>Campeon</span>
+          </div>
+          {onSave && !predictionsLocked && <Button variant="default" size="sm" onClick={onSave} className="ml-4">
+              <Save className="w-3 h-3 mr-1" />
+              Guardar y recalcular
+            </Button>}
+          {onReset && !predictionsLocked && <Button variant="outline" size="sm" onClick={onReset} className="ml-2 text-destructive hover:text-destructive">
+              <RotateCcw className="w-3 h-3 mr-1" />
+              Reiniciar cuadro
+            </Button>}
+        </div>
+      </div>
+    </div>;
+
   return <div className="w-full overflow-x-auto pb-4">
       <div className="min-w-[1200px] flex flex-col items-center gap-8">
         {/* Títulos de las rondas */}
