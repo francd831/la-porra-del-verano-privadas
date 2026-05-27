@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, ChevronUp, Crown, Medal, MessageSquare, Plus, Search, Star, Trophy, Users } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, Crown, Medal, MessageSquare, Plus, Search, Star, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,7 @@ interface UserRanking {
   points_sf: number;
   points_final: number;
   points_champion: number;
+  is_complete: boolean;
 }
 
 interface LeagueOption {
@@ -58,6 +59,7 @@ interface SubmissionRow {
   points_sf: number | null;
   points_final: number | null;
   points_champion: number | null;
+  is_complete: boolean | null;
 }
 
 interface DisplayNameResult {
@@ -324,7 +326,8 @@ export default function Clasificacion() {
         .from("user_submissions")
         .select(`
           user_id, points_total, points_groups, points_group_order, points_playoffs,
-          points_awards, points_r32, points_r16, points_qf, points_sf, points_final, points_champion
+          points_awards, points_r32, points_r16, points_qf, points_sf, points_final, points_champion,
+          is_complete
         `)
         .eq("tournament_id", DEFAULT_TOURNAMENT_ID)
         .order("points_total", { ascending: false });
@@ -372,6 +375,7 @@ export default function Clasificacion() {
             points_sf: item?.points_sf || 0,
             points_final: item?.points_final || 0,
             points_champion: item?.points_champion || 0,
+            is_complete: !!item?.is_complete,
           };
         })
         .sort((a, b) => b.points_total - a.points_total);
@@ -602,6 +606,11 @@ export default function Clasificacion() {
                   <Medal className="w-5 h-5 text-[hsl(215,20%,75%)]" />
                 </div>
                 <h3 className="font-semibold text-xs truncate text-foreground">{topThree[1].display_name}</h3>
+                {!topThree[1].is_complete && (
+                  <Badge variant="outline" className="mx-auto mt-1 w-fit border-amber-400/40 bg-amber-400/10 text-[9px] text-amber-300">
+                    Incompleta
+                  </Badge>
+                )}
                 <p className="text-sm font-bold text-primary">{topThree[1].points_total} pts</p>
               </Card>
               <div className="h-12 bg-muted-foreground/20 rounded-t-lg flex items-center justify-center border border-border/30">
@@ -614,6 +623,11 @@ export default function Clasificacion() {
                   <Trophy className="w-6 h-6 text-gold" />
                 </div>
                 <h3 className="font-bold text-xs text-gold truncate">{topThree[0].display_name}</h3>
+                {!topThree[0].is_complete && (
+                  <Badge variant="outline" className="mx-auto mt-1 w-fit border-amber-400/40 bg-amber-400/10 text-[9px] text-amber-300">
+                    Incompleta
+                  </Badge>
+                )}
                 <p className="text-base font-bold text-gold">{topThree[0].points_total} pts</p>
               </Card>
               <div className="h-16 bg-gold/20 rounded-t-lg flex items-center justify-center border border-gold/40 shadow-[0_0_15px_rgba(234,179,8,0.15)]">
@@ -626,6 +640,11 @@ export default function Clasificacion() {
                   <Star className="w-5 h-5 text-amber-500" />
                 </div>
                 <h3 className="font-semibold text-xs truncate text-foreground">{topThree[2].display_name}</h3>
+                {!topThree[2].is_complete && (
+                  <Badge variant="outline" className="mx-auto mt-1 w-fit border-amber-400/40 bg-amber-400/10 text-[9px] text-amber-300">
+                    Incompleta
+                  </Badge>
+                )}
                 <p className="text-sm font-bold text-primary">{topThree[2].points_total} pts</p>
               </Card>
               <div className="h-10 bg-amber-700/20 rounded-t-lg flex items-center justify-center border border-amber-700/30">
@@ -685,6 +704,16 @@ export default function Clasificacion() {
                               <span className="truncate max-w-[100px] sm:max-w-[140px]">{p.display_name}</span>
                               {esUsuario && (
                                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] px-1">Tú</Badge>
+                              )}
+                              {!p.is_complete && (
+                                <Badge
+                                  variant="outline"
+                                  className="gap-1 border-amber-400/40 bg-amber-400/10 text-[10px] text-amber-300 px-1"
+                                  title="Este usuario todavia no ha completado toda su porra"
+                                >
+                                  <AlertTriangle className="h-3 w-3" />
+                                  Incompleta
+                                </Badge>
                               )}
                             </div>
                           </td>
