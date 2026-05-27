@@ -696,13 +696,13 @@ export default function Dashboard() {
                 </Badge>
               </div>
               <div className="grid grid-cols-1 gap-1.5">
-                <div className="flex flex-col items-center p-3 bg-muted/40 rounded text-sm">
-                  <span className="text-muted-foreground text-xs">Bota de Oro</span>
-                  <span className="font-semibold text-base">{awardPoints.botaDeOro}</span>
+                <div className="flex min-h-12 items-center justify-between gap-2 rounded bg-muted/40 p-2 text-xs">
+                  <span className="self-start text-muted-foreground">Bota de Oro</span>
+                  <span className="text-lg font-black leading-none">{awardPoints.botaDeOro}</span>
                 </div>
-                <div className="flex flex-col items-center p-3 bg-muted/40 rounded text-sm">
-                  <span className="text-muted-foreground text-xs">Balón de Oro</span>
-                  <span className="font-semibold text-base">{awardPoints.balonDeOro}</span>
+                <div className="flex min-h-12 items-center justify-between gap-2 rounded bg-muted/40 p-2 text-xs">
+                  <span className="self-start text-muted-foreground">Balón de Oro</span>
+                  <span className="text-lg font-black leading-none">{awardPoints.balonDeOro}</span>
                 </div>
               </div>
             </CardContent>
