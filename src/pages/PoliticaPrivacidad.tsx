@@ -60,13 +60,16 @@ export default function PoliticaPrivacidad() {
               Utilizamos servicios de terceros para operar la plataforma, entre ellos Supabase para autenticación, base de datos y almacenamiento técnico,
               y proveedores de despliegue web para publicar la aplicación.
             </p>
+            <p>
+              También usamos Vercel Web Analytics para obtener estadísticas agregadas y anónimas de uso del sitio. Este sistema no utiliza cookies ni identifica personalmente a los usuarios.
+            </p>
           </section>
 
           <section className="space-y-2">
             <h2 className="text-lg font-semibold text-foreground">6. Cookies y tecnologías similares</h2>
             <p>
               Esta web utiliza cookies técnicas y tecnologías similares necesarias para iniciar sesión, mantener la sesión, guardar preferencias funcionales,
-              conservar borradores temporales y mejorar la carga mediante caché. No utilizamos cookies publicitarias, de analítica ni de seguimiento comercial.
+              conservar borradores temporales y mejorar la carga mediante caché. No utilizamos cookies publicitarias ni de seguimiento comercial.
             </p>
           </section>
 
