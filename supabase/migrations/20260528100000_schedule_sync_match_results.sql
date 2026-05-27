@@ -25,6 +25,7 @@ SELECT cron.schedule(
       ), '')
     ),
     body := '{}'::jsonb
-  ) AS request_id;
+  ) AS request_id
+  WHERE now() >= TIMESTAMPTZ '2026-06-11 19:00:00+00';
   $$
 );
