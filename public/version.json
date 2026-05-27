@@ -1,5 +1,5 @@
 {
-  "version": "2026-05-27-07",
+  "version": "2026-05-27-08",
   "forceReload": true,
-  "message": "Estadisticas globales solo tras cierre de pronosticos."
+  "message": "Aviso visible en estadisticas pendientes."
 }

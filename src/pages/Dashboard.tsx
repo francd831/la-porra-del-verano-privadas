@@ -138,9 +138,12 @@ export default function Dashboard() {
   
 
   const loadDistribution = async (matchId: string, actualHome: number, actualAway: number) => {
-    if (!predictionsLocked) return;
     if (distributionMatchId === matchId) { setDistributionMatchId(null); return; }
     setDistributionMatchId(matchId);
+    if (!predictionsLocked) {
+      setDistributionData([]);
+      return;
+    }
     setDistributionLoading(true);
     try {
       const { data: adminRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'admin');
@@ -737,7 +740,7 @@ export default function Dashboard() {
                         awayTeam: match.away_team?.name || ''
                       });
                       setStatsDialogOpen(true);
-                    }} disabled={!predictionsLocked} title={predictionsLocked ? "Ver estadÃ­sticas globales" : "Disponible cuando se cierren los pronÃ³sticos"}>
+                    }} title={predictionsLocked ? "Ver estadÃ­sticas globales" : "Disponible cuando se cierren los pronÃ³sticos"}>
                             <BarChart3 className="w-3 h-3 mr-1" />
                             Estadísticas
                           </Button>
@@ -794,7 +797,7 @@ export default function Dashboard() {
                             )}
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => loadDistribution(match.id, match.home_goals!, match.away_goals!)} disabled={!predictionsLocked} title={predictionsLocked ? "Ver distribuciÃ³n global" : "Disponible cuando se cierren los pronÃ³sticos"}>
+                            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => loadDistribution(match.id, match.home_goals!, match.away_goals!)} title={predictionsLocked ? "Ver distribuciÃ³n global" : "Disponible cuando se cierren los pronÃ³sticos"}>
                               <BarChart3 className="w-3 h-3 mr-0.5" />
                               Dist.
                             </Button>
@@ -813,7 +816,11 @@ export default function Dashboard() {
                       </div>
                       {distributionMatchId === match.id && (
                         <div className="mt-1 p-3 rounded-lg border bg-muted/20">
-                          {distributionLoading ? (
+                          {!predictionsLocked ? (
+                            <div className="py-4 text-center text-xs text-muted-foreground">
+                              La distribuciÃ³n global estarÃ¡ disponible cuando el administrador cierre los pronÃ³sticos.
+                            </div>
+                          ) : distributionLoading ? (
                             <div className="flex items-center justify-center py-4">
                               <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                             </div>
