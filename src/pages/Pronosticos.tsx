@@ -200,24 +200,25 @@ export default function Pronosticos() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+      const adminIds = new Set((adminRoles || []).map(r => r.user_id));
+      const isCurrentUserAdmin = !!user && adminIds.has(user.id);
+
       const { data: tournamentData } = await supabase
         .from('tournaments')
         .select('predictions_locked')
         .eq('id', '11111111-1111-1111-1111-111111111111')
         .single();
 
-      if (!tournamentData?.predictions_locked) {
+      if (!tournamentData?.predictions_locked && !isCurrentUserAdmin) {
         setPredictionsLocked(false);
         setLoading(false);
         return;
       }
       setPredictionsLocked(true);
-
-      const { data: adminRoles } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'admin');
-      const adminIds = new Set((adminRoles || []).map(r => r.user_id));
 
       const { data: teamsData } = await supabase.from('teams').select('*').order('name');
       const teamsMap = new Map((teamsData || []).map(t => [t.id, t]));
