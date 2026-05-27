@@ -473,7 +473,6 @@ export default function Clasificacion() {
   const rankingTitle = selectedLeague ? selectedLeague.name : "General";
   const selectedLeagueIsOwner = !!selectedLeague && selectedLeague.owner_id === user?.id;
   const selectedLeagueIsPending = selectedLeague?.member_status === "pending";
-  const liveMatch = liveMatches[0];
   const getSelectorPosition = (scopeId: string) => {
     const position = rankingPositions[scopeId];
     return position ? `#${position}` : "-";
@@ -554,22 +553,28 @@ export default function Clasificacion() {
         ))}
       </div>
 
-      {liveMatch && (
+      {liveMatches.length > 0 && (
         <Card className="mb-6 overflow-hidden border-primary/30 bg-primary/10 shadow-glow">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <CardContent className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/15">
                 <Timer className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-primary">Partido en juego</p>
-                <p className="text-base font-bold text-foreground">
-                  {liveMatch.home_team?.name || "Equipo local"}
-                  <span className="mx-2 text-primary">
-                    {liveMatch.home_goals ?? "-"} - {liveMatch.away_goals ?? "-"}
-                  </span>
-                  {liveMatch.away_team?.name || "Equipo visitante"}
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                  {liveMatches.length === 1 ? "Partido en juego" : "Partidos en juego"}
                 </p>
+                <div className="mt-1 grid gap-1">
+                  {liveMatches.map((match) => (
+                    <p key={match.id} className="text-base font-bold text-foreground">
+                      {match.home_team?.name || "Equipo local"}
+                      <span className="mx-2 text-primary">
+                        {match.home_goals ?? "-"} - {match.away_goals ?? "-"}
+                      </span>
+                      {match.away_team?.name || "Equipo visitante"}
+                    </p>
+                  ))}
+                </div>
               </div>
             </div>
             <Badge className="w-fit border border-primary/30 bg-primary text-primary-foreground">
