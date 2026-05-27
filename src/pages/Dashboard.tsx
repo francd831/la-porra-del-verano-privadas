@@ -621,9 +621,9 @@ export default function Dashboard() {
                 </Badge>
               </div>
               <div className="grid grid-cols-4 gap-1.5">
-                {groupPoints.map((group) => <div key={group.groupName} className="flex flex-col items-center p-1.5 bg-muted/40 rounded text-xs relative">
-                    <span className="text-muted-foreground">{group.groupName.replace('Grupo ', '')}</span>
-                    <span className="font-semibold">{group.points}</span>
+                {groupPoints.map((group) => <div key={group.groupName} className="flex min-h-12 items-center justify-between gap-2 rounded bg-muted/40 p-2 text-xs">
+                    <span className="self-start text-muted-foreground">{group.groupName.replace('Grupo ', '')}</span>
+                    <span className="text-lg font-black leading-none">{group.points}</span>
                   </div>)}
               </div>
             </CardContent>
@@ -642,29 +642,29 @@ export default function Dashboard() {
                 </Badge>
               </div>
               <div className="grid grid-cols-2 gap-1.5">
-                <div className="flex flex-col items-center p-1.5 bg-muted/40 rounded text-xs">
-                  <span className="text-muted-foreground">1/16</span>
-                  <span className="font-semibold">{stats?.pointsR32 || 0}</span>
+                <div className="flex min-h-12 items-center justify-between gap-2 rounded bg-muted/40 p-2 text-xs">
+                  <span className="self-start text-muted-foreground">1/16</span>
+                  <span className="text-lg font-black leading-none">{stats?.pointsR32 || 0}</span>
                 </div>
-                <div className="flex flex-col items-center p-1.5 bg-muted/40 rounded text-xs">
-                  <span className="text-muted-foreground">1/8</span>
-                  <span className="font-semibold">{stats?.pointsR16 || 0}</span>
+                <div className="flex min-h-12 items-center justify-between gap-2 rounded bg-muted/40 p-2 text-xs">
+                  <span className="self-start text-muted-foreground">1/8</span>
+                  <span className="text-lg font-black leading-none">{stats?.pointsR16 || 0}</span>
                 </div>
-                <div className="flex flex-col items-center p-1.5 bg-muted/40 rounded text-xs">
-                  <span className="text-muted-foreground">1/4</span>
-                  <span className="font-semibold">{stats?.pointsQF || 0}</span>
+                <div className="flex min-h-12 items-center justify-between gap-2 rounded bg-muted/40 p-2 text-xs">
+                  <span className="self-start text-muted-foreground">1/4</span>
+                  <span className="text-lg font-black leading-none">{stats?.pointsQF || 0}</span>
                 </div>
-                <div className="flex flex-col items-center p-1.5 bg-muted/40 rounded text-xs">
-                  <span className="text-muted-foreground">1/2</span>
-                  <span className="font-semibold">{stats?.pointsSF || 0}</span>
+                <div className="flex min-h-12 items-center justify-between gap-2 rounded bg-muted/40 p-2 text-xs">
+                  <span className="self-start text-muted-foreground">1/2</span>
+                  <span className="text-lg font-black leading-none">{stats?.pointsSF || 0}</span>
                 </div>
-                <div className="flex flex-col items-center p-1.5 bg-muted/40 rounded text-xs">
-                  <span className="text-muted-foreground">Final</span>
-                  <span className="font-semibold">{stats?.pointsFinal || 0}</span>
+                <div className="flex min-h-12 items-center justify-between gap-2 rounded bg-muted/40 p-2 text-xs">
+                  <span className="self-start text-muted-foreground">Final</span>
+                  <span className="text-lg font-black leading-none">{stats?.pointsFinal || 0}</span>
                 </div>
-                <div className="flex flex-col items-center p-1.5 bg-muted/40 rounded text-xs">
-                  <span className="text-muted-foreground">Campeón</span>
-                  <span className="font-semibold">{stats?.pointsChampion || 0}</span>
+                <div className="flex min-h-12 items-center justify-between gap-2 rounded bg-muted/40 p-2 text-xs">
+                  <span className="self-start text-muted-foreground">Campeón</span>
+                  <span className="text-lg font-black leading-none">{stats?.pointsChampion || 0}</span>
                 </div>
               </div>
             </CardContent>
