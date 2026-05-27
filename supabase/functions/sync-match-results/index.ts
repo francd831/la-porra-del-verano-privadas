@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-sync-secret",
 };
 
 // football-data.org v4 — World Cup competition code is "WC"
@@ -26,17 +26,50 @@ function mapStatus(s: string): string {
   return "scheduled";
 }
 
+async function isAuthorized(req: Request, supabaseUrl: string, serviceKey: string): Promise<boolean> {
+  const syncSecret = Deno.env.get("SYNC_RESULTS_SECRET");
+  const providedSecret = req.headers.get("x-sync-secret");
+  if (syncSecret && providedSecret && providedSecret === syncSecret) {
+    return true;
+  }
+
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader) return false;
+
+  const supabase = createClient(supabaseUrl, serviceKey);
+  const token = authHeader.replace(/^Bearer\s+/i, "");
+  const { data: authData, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !authData.user) return false;
+
+  const { data: roleData, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", authData.user.id)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  return !roleError && !!roleData;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    if (!(await isAuthorized(req, supabaseUrl, serviceKey))) {
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const apiKey = Deno.env.get("FOOTBALL_DATA_API_KEY");
     if (!apiKey) throw new Error("FOOTBALL_DATA_API_KEY is not configured");
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
     // Fetch matches from football-data.org
