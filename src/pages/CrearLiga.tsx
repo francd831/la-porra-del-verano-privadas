@@ -121,6 +121,9 @@ export default function CrearLiga() {
               <p className="text-xs text-muted-foreground">
                 Solo los admins pueden editar estos comentarios.
               </p>
+              <p className="text-xs text-muted-foreground">
+                Usa este espacio para comentar las normas de tu liga. No se permite promover, organizar o coordinar apuestas economicas, botes ni premios en metalico.
+              </p>
             </div>
 
             <div className="space-y-3">
