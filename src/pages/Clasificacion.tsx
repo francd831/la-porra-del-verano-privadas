@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, ChevronDown, ChevronUp, Crown, Medal, MessageSquare, Plus, Search, Star, Trophy, Users } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, Crown, Medal, MessageSquare, Plus, Search, Star, Timer, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,8 +67,17 @@ interface DisplayNameResult {
   display_name: string | null;
 }
 
+interface LiveMatch {
+  id: string;
+  home_goals: number | null;
+  away_goals: number | null;
+  home_team: { name: string } | null;
+  away_team: { name: string } | null;
+}
+
 export default function Clasificacion() {
   const [rankings, setRankings] = useState<UserRanking[]>([]);
+  const [liveMatches, setLiveMatches] = useState<LiveMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [rankingsVisible, setRankingsVisible] = useState(false);
@@ -301,6 +310,27 @@ export default function Clasificacion() {
   const fetchRankings = useCallback(async () => {
     setLoading(true);
     try {
+      const { data: liveMatchesData, error: liveMatchesError } = await supabase
+        .from("matches")
+        .select(`
+          id,
+          home_goals,
+          away_goals,
+          home_team:teams!matches_home_team_id_fkey(name),
+          away_team:teams!matches_away_team_id_fkey(name)
+        `)
+        .eq("tournament_id", DEFAULT_TOURNAMENT_ID)
+        .eq("status", "in_progress")
+        .order("match_date", { ascending: true });
+      if (liveMatchesError) throw liveMatchesError;
+      setLiveMatches((liveMatchesData || []).map((match) => ({
+        id: match.id,
+        home_goals: match.home_goals,
+        away_goals: match.away_goals,
+        home_team: match.home_team as { name: string } | null,
+        away_team: match.away_team as { name: string } | null,
+      })));
+
       const { data: tournamentData } = await supabase
         .from("tournaments")
         .select("rankings_visible")
@@ -443,6 +473,7 @@ export default function Clasificacion() {
   const rankingTitle = selectedLeague ? selectedLeague.name : "General";
   const selectedLeagueIsOwner = !!selectedLeague && selectedLeague.owner_id === user?.id;
   const selectedLeagueIsPending = selectedLeague?.member_status === "pending";
+  const liveMatch = liveMatches[0];
   const getSelectorPosition = (scopeId: string) => {
     const position = rankingPositions[scopeId];
     return position ? `#${position}` : "-";
@@ -522,6 +553,31 @@ export default function Clasificacion() {
           </button>
         ))}
       </div>
+
+      {liveMatch && (
+        <Card className="mb-6 overflow-hidden border-primary/30 bg-primary/10 shadow-glow">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/15">
+                <Timer className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">Partido en juego</p>
+                <p className="text-base font-bold text-foreground">
+                  {liveMatch.home_team?.name || "Equipo local"}
+                  <span className="mx-2 text-primary">
+                    {liveMatch.home_goals ?? "-"} - {liveMatch.away_goals ?? "-"}
+                  </span>
+                  {liveMatch.away_team?.name || "Equipo visitante"}
+                </p>
+              </div>
+            </div>
+            <Badge className="w-fit border border-primary/30 bg-primary text-primary-foreground">
+              Clasificacion en tiempo real
+            </Badge>
+          </CardContent>
+        </Card>
+      )}
 
       {user && (
         <Card className="mb-6 border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft">
