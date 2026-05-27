@@ -107,7 +107,7 @@ export default function MatchStatsDialog({ isOpen, onClose, matchId, homeTeam, a
 
         {!predictionsLocked ? (
           <div className="text-center py-12 text-muted-foreground">
-            Las estadÃ­sticas globales estarÃ¡n disponibles cuando el administrador cierre los pronÃ³sticos.
+            Las estadisticas globales estaran disponibles cuando el administrador cierre los pronosticos.
           </div>
         ) : loading ? (
           <div className="flex items-center justify-center py-12">
