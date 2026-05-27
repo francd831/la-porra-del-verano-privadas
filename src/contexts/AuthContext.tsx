@@ -8,7 +8,17 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, metadata?: { display_name?: string; first_name?: string; last_name?: string }) => Promise<{ error: any }>;
+  signUp: (
+    email: string,
+    password: string,
+    metadata?: {
+      display_name?: string;
+      first_name?: string;
+      last_name?: string;
+      terms_accepted_at?: string;
+      privacy_accepted_at?: string;
+    }
+  ) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
 }
@@ -76,7 +86,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, metadata?: { display_name?: string; first_name?: string; last_name?: string }) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    metadata?: {
+      display_name?: string;
+      first_name?: string;
+      last_name?: string;
+      terms_accepted_at?: string;
+      privacy_accepted_at?: string;
+    }
+  ) => {
     const redirectUrl = getAuthRedirectUrl("/dashboard");
     
     const { error } = await supabase.auth.signUp({

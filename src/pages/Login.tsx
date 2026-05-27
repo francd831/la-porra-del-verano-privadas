@@ -171,6 +171,18 @@ export default function Login() {
               )}
             </Button>
 
+            <p className="text-center text-xs leading-relaxed text-muted-foreground">
+              Al continuar aceptas la{" "}
+              <Link className="text-primary underline-offset-4 hover:underline" to="/politica-privacidad">
+                Política de privacidad
+              </Link>{" "}
+              y las{" "}
+              <Link className="text-primary underline-offset-4 hover:underline" to="/condiciones-servicio">
+                Condiciones de servicio
+              </Link>
+              .
+            </p>
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />

@@ -4,6 +4,7 @@ import { UserPlus, User, Mail, Lock, Eye, EyeOff, AlertTriangle, CheckCircle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +25,7 @@ export default function Registro() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isCheckingAlias, setIsCheckingAlias] = useState(false);
   const [aliasAvailable, setAliasAvailable] = useState<boolean | null>(null);
+  const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false);
   const { signUp, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -100,6 +102,16 @@ export default function Registro() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    if (!acceptedLegalTerms) {
+      toast({
+        variant: "destructive",
+        title: "Aceptación necesaria",
+        description: "Debes aceptar la Política de privacidad y las Condiciones de servicio para crear tu cuenta.",
+      });
+      setIsLoading(false);
+      return;
+    }
     
     // Validaciones básicas
     if (formData.password !== formData.confirmPassword) {
@@ -150,7 +162,9 @@ export default function Registro() {
       const { error } = await signUp(formData.email, formData.password, {
         display_name: formData.alias.trim(),
         first_name: formData.nombre.trim(),
-        last_name: formData.apellidos.trim()
+        last_name: formData.apellidos.trim(),
+        terms_accepted_at: new Date().toISOString(),
+        privacy_accepted_at: new Date().toISOString()
       });
 
       if (error) {
@@ -243,6 +257,18 @@ export default function Registro() {
                 </>
               )}
             </Button>
+
+            <p className="text-center text-xs leading-relaxed text-muted-foreground">
+              Al registrarte con Google aceptas la{" "}
+              <Link className="text-primary underline-offset-4 hover:underline" to="/politica-privacidad">
+                Política de privacidad
+              </Link>{" "}
+              y las{" "}
+              <Link className="text-primary underline-offset-4 hover:underline" to="/condiciones-servicio">
+                Condiciones de servicio
+              </Link>
+              .
+            </p>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -384,10 +410,30 @@ export default function Registro() {
                 </div>
               </div>
 
+              <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-card/50 p-3">
+                <Checkbox
+                  id="acceptedLegalTerms"
+                  checked={acceptedLegalTerms}
+                  onCheckedChange={(checked) => setAcceptedLegalTerms(checked === true)}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="acceptedLegalTerms" className="text-sm font-normal leading-relaxed text-muted-foreground">
+                  Acepto la{" "}
+                  <Link className="text-primary underline-offset-4 hover:underline" to="/politica-privacidad">
+                    Política de privacidad
+                  </Link>{" "}
+                  y las{" "}
+                  <Link className="text-primary underline-offset-4 hover:underline" to="/condiciones-servicio">
+                    Condiciones de servicio
+                  </Link>
+                  .
+                </Label>
+              </div>
+
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isLoading}
+                disabled={isLoading || !acceptedLegalTerms}
               >
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
