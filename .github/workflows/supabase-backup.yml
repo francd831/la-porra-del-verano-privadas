@@ -38,7 +38,8 @@ jobs:
         run: |
           mkdir -p backups
           BACKUP_FILE="backups/supabase-backup-$(date -u +%Y-%m-%dT%H-%M-%SZ).dump"
-          pg_dump "$SUPABASE_DB_URL" \
+          /usr/lib/postgresql/17/bin/pg_dump --version
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" \
             --format=custom \
             --no-owner \
             --no-privileges \
