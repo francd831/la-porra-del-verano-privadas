@@ -22,7 +22,6 @@ type ScoreEvent = {
 type Profile = {
   user_id: string;
   display_name: string | null;
-  email: string | null;
 };
 
 type ExpectedGroup = {
@@ -108,7 +107,7 @@ function groupKey(eventType: string, eventKey: string) {
 
 function getDisplayName(event: ScoreEvent, profiles: Map<string, Profile>) {
   const profile = profiles.get(event.user_id);
-  return profile?.display_name || profile?.email || "Participante";
+  return profile?.display_name || "Usuario";
 }
 
 function formatMetric(group: EventGroup, value: number) {
@@ -313,10 +312,9 @@ export default function HallOfFame() {
           return;
         }
 
-        const { data: profilesData, error: profilesError } = await supabase
-          .from("profiles")
-          .select("user_id, display_name, email")
-          .in("user_id", userIds);
+        const { data: profilesData, error: profilesError } = await supabase.rpc("get_user_display_names", {
+          p_user_ids: userIds,
+        });
 
         if (profilesError) throw profilesError;
 
