@@ -127,12 +127,13 @@ export default function Clasificacion() {
       const pointsRows = (submissionsData || []) as Pick<SubmissionRow, "user_id" | "points_total">[];
       const pointsByUser = new Map(pointsRows.map((row) => [row.user_id, row.points_total || 0]));
       const generalRanking = pointsRows
-        .filter((row) => !adminIds.has(row.user_id))
-        .sort((a, b) => (b.points_total || 0) - (a.points_total || 0));
+        .filter((row) => !adminIds.has(row.user_id));
 
-      const generalPosition = generalRanking.findIndex((row) => row.user_id === user.id);
+      const userGeneralPoints = pointsByUser.get(user.id);
       const positions: Record<string, number | null> = {
-        general: generalPosition >= 0 ? generalPosition + 1 : null,
+        general: userGeneralPoints === undefined
+          ? null
+          : generalRanking.filter((row) => (row.points_total || 0) > userGeneralPoints).length + 1,
       };
 
       if (leagueOptions.length > 0) {
@@ -151,11 +152,13 @@ export default function Clasificacion() {
         });
 
         leagueOptions.forEach((league) => {
-          const leagueRanking = (membersByLeague.get(league.id) || [])
-            .filter((memberId) => !adminIds.has(memberId))
-            .sort((a, b) => (pointsByUser.get(b) || 0) - (pointsByUser.get(a) || 0));
-          const leaguePosition = leagueRanking.findIndex((memberId) => memberId === user.id);
-          positions[league.id] = leaguePosition >= 0 ? leaguePosition + 1 : null;
+          const leagueMemberIds = (membersByLeague.get(league.id) || []).filter((memberId) => !adminIds.has(memberId));
+          if (!leagueMemberIds.includes(user.id)) {
+            positions[league.id] = null;
+            return;
+          }
+          const userLeaguePoints = pointsByUser.get(user.id) || 0;
+          positions[league.id] = leagueMemberIds.filter((memberId) => (pointsByUser.get(memberId) || 0) > userLeaguePoints).length + 1;
         });
       }
 
@@ -378,7 +381,10 @@ export default function Clasificacion() {
             is_complete: !!item?.is_complete,
           };
         })
-        .sort((a, b) => b.points_total - a.points_total);
+        .sort((a, b) => {
+          if (b.points_total !== a.points_total) return b.points_total - a.points_total;
+          return a.display_name.localeCompare(b.display_name, "es", { sensitivity: "base" });
+        });
 
       setRankings(rankingsData);
     } catch (e) {
@@ -423,7 +429,15 @@ export default function Clasificacion() {
 
   const visibleRankings = rankings;
   const topThree = visibleRankings.slice(0, 3);
-  const userPosition = user ? rankings.findIndex((r) => r.user_id === user.id) + 1 : 0;
+  const rankingPositionsByUser = useMemo(() => {
+    const positions = new Map<string, number>();
+    visibleRankings.forEach((ranking, index) => {
+      const firstSamePointsIndex = visibleRankings.findIndex((candidate) => candidate.points_total === ranking.points_total);
+      positions.set(ranking.user_id, firstSamePointsIndex + 1);
+    });
+    return positions;
+  }, [visibleRankings]);
+  const userPosition = user ? rankingPositionsByUser.get(user.id) || 0 : 0;
   const currentUserPoints = user ? rankings.find((r) => r.user_id === user.id)?.points_total || 0 : 0;
   const showFullRanking = true;
   const rankingTitle = selectedLeague ? selectedLeague.name : "General";
@@ -614,7 +628,7 @@ export default function Clasificacion() {
                 <p className="text-sm font-bold text-primary">{topThree[1].points_total} pts</p>
               </Card>
               <div className="h-12 bg-muted-foreground/20 rounded-t-lg flex items-center justify-center border border-border/30">
-                <span className="text-lg font-bold text-muted-foreground">2</span>
+                <span className="text-lg font-bold text-muted-foreground">{rankingPositionsByUser.get(topThree[1].user_id) || 2}</span>
               </div>
             </div>
             <div className="flex-1 text-center">
@@ -631,7 +645,7 @@ export default function Clasificacion() {
                 <p className="text-base font-bold text-gold">{topThree[0].points_total} pts</p>
               </Card>
               <div className="h-16 bg-gold/20 rounded-t-lg flex items-center justify-center border border-gold/40 shadow-[0_0_15px_rgba(234,179,8,0.15)]">
-                <span className="text-xl font-bold text-gold">1</span>
+                <span className="text-xl font-bold text-gold">{rankingPositionsByUser.get(topThree[0].user_id) || 1}</span>
               </div>
             </div>
             <div className="flex-1 text-center">
@@ -648,7 +662,7 @@ export default function Clasificacion() {
                 <p className="text-sm font-bold text-primary">{topThree[2].points_total} pts</p>
               </Card>
               <div className="h-10 bg-amber-700/20 rounded-t-lg flex items-center justify-center border border-amber-700/30">
-                <span className="text-lg font-bold text-amber-500">3</span>
+                <span className="text-lg font-bold text-amber-500">{rankingPositionsByUser.get(topThree[2].user_id) || 3}</span>
               </div>
             </div>
           </div>
@@ -686,8 +700,7 @@ export default function Clasificacion() {
                 </thead>
                 <tbody>
                   {visibleRankings.map((p, index) => {
-                    const realIndex = rankings.findIndex((r) => r.user_id === p.user_id);
-                    const posicion = showFullRanking ? index + 1 : realIndex + 1;
+                    const posicion = rankingPositionsByUser.get(p.user_id) || index + 1;
                     const esUsuario = user && p.user_id === user.id;
                     const isExpanded = expandedRows.has(p.user_id);
                     return (
