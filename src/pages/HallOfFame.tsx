@@ -235,7 +235,7 @@ function DayKingSection({
           <div>
             <h2 className="text-xl font-bold">Rey del día</h2>
             <p className="text-sm text-muted-foreground">
-              Cuenta todos los partidos jugados en la fecha seleccionada.
+              Cuenta todos los partidos jugados en la fecha seleccionada (hora española).
             </p>
           </div>
         </div>
