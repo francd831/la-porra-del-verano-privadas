@@ -16,7 +16,7 @@ export default function PoliticaPrivacidad() {
       <Card className="border border-border/50 bg-card/70 shadow-soft">
         <CardHeader>
           <CardTitle className="text-3xl font-bold font-heading">Política de privacidad</CardTitle>
-          <p className="text-sm text-muted-foreground">Última actualización: 18 de mayo de 2026</p>
+          <p className="text-sm text-muted-foreground">Última actualización: 27 de mayo de 2026</p>
         </CardHeader>
         <CardContent className="space-y-6 text-sm leading-7 text-muted-foreground">
           <section className="space-y-2">
@@ -63,7 +63,15 @@ export default function PoliticaPrivacidad() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-lg font-semibold text-foreground">6. Conservación</h2>
+            <h2 className="text-lg font-semibold text-foreground">6. Cookies y tecnologías similares</h2>
+            <p>
+              Esta web utiliza cookies técnicas y tecnologías similares necesarias para iniciar sesión, mantener la sesión, guardar preferencias funcionales,
+              conservar borradores temporales y mejorar la carga mediante caché. No utilizamos cookies publicitarias, de analítica ni de seguimiento comercial.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-lg font-semibold text-foreground">7. Conservación</h2>
             <p>
               Conservaremos tus datos mientras mantengas una cuenta activa o mientras sean necesarios para prestar el servicio. Puedes solicitar la eliminación
               de tus datos escribiendo al email de contacto.
@@ -71,7 +79,7 @@ export default function PoliticaPrivacidad() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-lg font-semibold text-foreground">7. Cesión de datos</h2>
+            <h2 className="text-lg font-semibold text-foreground">8. Cesión de datos</h2>
             <p>
               No vendemos tus datos personales. Solo compartimos información con proveedores técnicos cuando es necesario para que la plataforma funcione
               o cuando exista una obligación legal.
@@ -79,7 +87,7 @@ export default function PoliticaPrivacidad() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-lg font-semibold text-foreground">8. Derechos</h2>
+            <h2 className="text-lg font-semibold text-foreground">9. Derechos</h2>
             <p>
               Puedes solicitar acceso, rectificación, eliminación, oposición, limitación o portabilidad de tus datos escribiendo a
               <a className="ml-1 text-primary underline-offset-4 hover:underline" href="mailto:laporradelverano@gmail.com">laporradelverano@gmail.com</a>.
@@ -87,7 +95,7 @@ export default function PoliticaPrivacidad() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-lg font-semibold text-foreground">9. Seguridad</h2>
+            <h2 className="text-lg font-semibold text-foreground">10. Seguridad</h2>
             <p>
               Aplicamos medidas técnicas razonables para proteger la información, incluyendo autenticación gestionada por proveedores especializados
               y políticas de acceso a datos en la base de datos.
