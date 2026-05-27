@@ -10,6 +10,7 @@ interface MatchStatsDialogProps {
   matchId: string;
   homeTeam: string;
   awayTeam: string;
+  predictionsLocked: boolean;
 }
 
 interface PredictionStat {
@@ -27,16 +28,20 @@ const COLORS = [
   'hsl(var(--muted-foreground))',
 ];
 
-export default function MatchStatsDialog({ isOpen, onClose, matchId, homeTeam, awayTeam }: MatchStatsDialogProps) {
+export default function MatchStatsDialog({ isOpen, onClose, matchId, homeTeam, awayTeam, predictionsLocked }: MatchStatsDialogProps) {
   const [stats, setStats] = useState<PredictionStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPredictions, setTotalPredictions] = useState(0);
 
   useEffect(() => {
-    if (isOpen && matchId) {
+    if (isOpen && matchId && predictionsLocked) {
       fetchStats();
+    } else if (isOpen && !predictionsLocked) {
+      setStats([]);
+      setTotalPredictions(0);
+      setLoading(false);
     }
-  }, [isOpen, matchId]);
+  }, [isOpen, matchId, predictionsLocked]);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -100,7 +105,11 @@ export default function MatchStatsDialog({ isOpen, onClose, matchId, homeTeam, a
           </p>
         </DialogHeader>
 
-        {loading ? (
+        {!predictionsLocked ? (
+          <div className="text-center py-12 text-muted-foreground">
+            Las estadÃ­sticas globales estarÃ¡n disponibles cuando el administrador cierre los pronÃ³sticos.
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>

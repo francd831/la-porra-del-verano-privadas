@@ -1,5 +1,5 @@
 {
-  "version": "2026-05-27-06",
+  "version": "2026-05-27-07",
   "forceReload": true,
-  "message": "Nueva metrica de goles acertados en Hall of Fame."
+  "message": "Estadisticas globales solo tras cierre de pronosticos."
 }

@@ -133,10 +133,12 @@ export default function Dashboard() {
   const [distributionData, setDistributionData] = useState<{ points: number; participants: number }[]>([]);
   const [distributionLoading, setDistributionLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [predictionsLocked, setPredictionsLocked] = useState(false);
   const privateLeaguesEnabled = isPrivateLeaguesApp();
   
 
   const loadDistribution = async (matchId: string, actualHome: number, actualAway: number) => {
+    if (!predictionsLocked) return;
     if (distributionMatchId === matchId) { setDistributionMatchId(null); return; }
     setDistributionMatchId(matchId);
     setDistributionLoading(true);
@@ -174,6 +176,14 @@ export default function Dashboard() {
         const {
           data: submissionData
         } = await supabase.from('user_submissions').select('*').eq('user_id', user.id).eq('tournament_id', '11111111-1111-1111-1111-111111111111').single();
+
+        const { data: tournamentData } = await supabase
+          .from('tournaments')
+          .select('predictions_locked')
+          .eq('id', '11111111-1111-1111-1111-111111111111')
+          .single();
+
+        setPredictionsLocked(!!tournamentData?.predictions_locked);
 
         // Load all submissions for ranking (excluding admins)
         const {
@@ -727,7 +737,7 @@ export default function Dashboard() {
                         awayTeam: match.away_team?.name || ''
                       });
                       setStatsDialogOpen(true);
-                    }}>
+                    }} disabled={!predictionsLocked} title={predictionsLocked ? "Ver estadÃ­sticas globales" : "Disponible cuando se cierren los pronÃ³sticos"}>
                             <BarChart3 className="w-3 h-3 mr-1" />
                             Estadísticas
                           </Button>
@@ -784,7 +794,7 @@ export default function Dashboard() {
                             )}
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => loadDistribution(match.id, match.home_goals!, match.away_goals!)}>
+                            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => loadDistribution(match.id, match.home_goals!, match.away_goals!)} disabled={!predictionsLocked} title={predictionsLocked ? "Ver distribuciÃ³n global" : "Disponible cuando se cierren los pronÃ³sticos"}>
                               <BarChart3 className="w-3 h-3 mr-0.5" />
                               Dist.
                             </Button>
@@ -841,7 +851,7 @@ export default function Dashboard() {
       </div>
 
       {/* Match Stats Dialog */}
-      {selectedMatchForStats && <MatchStatsDialog isOpen={statsDialogOpen} onClose={() => setStatsDialogOpen(false)} matchId={selectedMatchForStats.id} homeTeam={selectedMatchForStats.homeTeam} awayTeam={selectedMatchForStats.awayTeam} />}
+      {selectedMatchForStats && <MatchStatsDialog isOpen={statsDialogOpen} onClose={() => setStatsDialogOpen(false)} matchId={selectedMatchForStats.id} homeTeam={selectedMatchForStats.homeTeam} awayTeam={selectedMatchForStats.awayTeam} predictionsLocked={predictionsLocked} />}
       <AllMatchesDialog isOpen={allMatchesOpen} onClose={() => setAllMatchesOpen(false)} />
     </div>;
 }
