@@ -56,6 +56,7 @@ const sectionConfig = [
     groups: [
       { eventType: "results", eventKey: "signs_total", eventLabel: "Más signos acertados", metricLabel: "aciertos" },
       { eventType: "results", eventKey: "exact_scores_total", eventLabel: "Más resultados exactos", metricLabel: "exactos" },
+      { eventType: "results", eventKey: "goal_numbers_total", eventLabel: "Más goles de equipo acertados", metricLabel: "aciertos" },
     ],
   },
   {
