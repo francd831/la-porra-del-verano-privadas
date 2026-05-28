@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, MessageSquare, Search, Send, Users } from "lucide-react";
+import { Check, Eye, MessageSquare, Search, Send, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,15 +23,28 @@ type AdminMessageRow = {
   created_at: string;
 };
 
+type MessageStats = {
+  recipientCount: number;
+  seenCount: number;
+  readCount: number;
+};
+
 type RecipientRow = {
   message_id: string;
   user_id: string;
 };
 
+type ReadRow = {
+  message_id: string;
+  user_id: string;
+  seen_at: string | null;
+  read_at: string | null;
+};
+
 export default function AdminMensajes() {
   const { toast } = useToast();
   const [users, setUsers] = useState<MessageUser[]>([]);
-  const [messages, setMessages] = useState<(AdminMessageRow & { recipientCount: number })[]>([]);
+  const [messages, setMessages] = useState<(AdminMessageRow & MessageStats)[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [targetAll, setTargetAll] = useState(true);
   const [title, setTitle] = useState("");
@@ -63,9 +76,28 @@ export default function AdminMensajes() {
         : { data: [], error: null };
       if (recipientsError) throw recipientsError;
 
+      const { data: readsData, error: readsError } = messageIds.length
+        ? await (supabase as any)
+            .from("admin_message_reads")
+            .select("message_id, user_id, seen_at, read_at")
+            .in("message_id", messageIds)
+        : { data: [], error: null };
+      if (readsError) throw readsError;
+
       const recipientCounts = new Map<string, number>();
       ((recipientsData || []) as RecipientRow[]).forEach((recipient) => {
         recipientCounts.set(recipient.message_id, (recipientCounts.get(recipient.message_id) || 0) + 1);
+      });
+
+      const seenCounts = new Map<string, number>();
+      const readCounts = new Map<string, number>();
+      ((readsData || []) as ReadRow[]).forEach((read) => {
+        if (read.seen_at) {
+          seenCounts.set(read.message_id, (seenCounts.get(read.message_id) || 0) + 1);
+        }
+        if (read.read_at) {
+          readCounts.set(read.message_id, (readCounts.get(read.message_id) || 0) + 1);
+        }
       });
 
       setUsers((usersData || []) as MessageUser[]);
@@ -73,6 +105,8 @@ export default function AdminMensajes() {
         ((messagesData || []) as AdminMessageRow[]).map((message) => ({
           ...message,
           recipientCount: message.target_all ? usersData?.length || 0 : recipientCounts.get(message.id) || 0,
+          seenCount: seenCounts.get(message.id) || 0,
+          readCount: readCounts.get(message.id) || 0,
         }))
       );
     } catch (error) {
@@ -312,6 +346,26 @@ export default function AdminMensajes() {
                   </div>
                   <div className="mt-2 text-[11px] text-muted-foreground">
                     {new Date(message.created_at).toLocaleString("es-ES")}
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+                    <div className="rounded-lg border border-border/40 bg-background/40 px-2 py-1.5">
+                      <div className="text-muted-foreground">Dest.</div>
+                      <div className="font-bold text-foreground">{message.recipientCount}</div>
+                    </div>
+                    <div className="rounded-lg border border-border/40 bg-background/40 px-2 py-1.5">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Eye className="h-3 w-3" />
+                        Visto
+                      </div>
+                      <div className="font-bold text-foreground">{message.seenCount}</div>
+                    </div>
+                    <div className="rounded-lg border border-border/40 bg-background/40 px-2 py-1.5">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Check className="h-3 w-3" />
+                        Confirm.
+                      </div>
+                      <div className="font-bold text-foreground">{message.readCount}</div>
+                    </div>
                   </div>
                 </div>
               ))

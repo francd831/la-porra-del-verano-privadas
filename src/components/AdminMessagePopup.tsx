@@ -49,6 +49,22 @@ export function AdminMessagePopup() {
     loadUnreadMessages();
   }, [user]);
 
+  useEffect(() => {
+    if (!currentMessage || !open) return;
+
+    const markSeen = async () => {
+      const { error } = await (supabase as any).rpc("mark_admin_message_seen", {
+        p_message_id: currentMessage.id,
+      });
+
+      if (error) {
+        console.error("Error marking admin message as seen:", error);
+      }
+    };
+
+    markSeen();
+  }, [currentMessage, open]);
+
   const markCurrentAsRead = async () => {
     if (!currentMessage || markingRead) return;
 
