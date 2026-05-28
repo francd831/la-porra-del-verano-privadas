@@ -75,9 +75,22 @@ interface LiveMatch {
   away_team: { name: string } | null;
 }
 
+interface GeneralStats {
+  registered: number;
+  notStarted: number;
+  incomplete: number;
+  complete: number;
+}
+
 export default function Clasificacion() {
   const [rankings, setRankings] = useState<UserRanking[]>([]);
   const [liveMatches, setLiveMatches] = useState<LiveMatch[]>([]);
+  const [generalStats, setGeneralStats] = useState<GeneralStats>({
+    registered: 0,
+    notStarted: 0,
+    incomplete: 0,
+    complete: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [rankingsVisible, setRankingsVisible] = useState(false);
@@ -344,6 +357,40 @@ export default function Clasificacion() {
         .eq("role", "admin");
       const adminIds = new Set((adminRoles || []).map((r) => r.user_id));
 
+      if (isGeneralRanking) {
+        const { data: allProfiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("user_id");
+        if (profilesError) throw profilesError;
+
+        const registeredUserIds = (allProfiles || [])
+          .map((profile) => profile.user_id)
+          .filter((userId) => !adminIds.has(userId));
+
+        const { data: allSubmissions, error: allSubmissionsError } = await supabase
+          .from("user_submissions")
+          .select("user_id, is_complete")
+          .eq("tournament_id", DEFAULT_TOURNAMENT_ID);
+        if (allSubmissionsError) throw allSubmissionsError;
+
+        const submissionsByUser = new Map(
+          ((allSubmissions || []) as Pick<SubmissionRow, "user_id" | "is_complete">[]).map((submission) => [
+            submission.user_id,
+            !!submission.is_complete,
+          ])
+        );
+        const complete = registeredUserIds.filter((userId) => submissionsByUser.get(userId) === true).length;
+        const incomplete = registeredUserIds.filter((userId) => submissionsByUser.get(userId) === false).length;
+        const notStarted = registeredUserIds.length - complete - incomplete;
+
+        setGeneralStats({
+          registered: registeredUserIds.length,
+          notStarted,
+          incomplete,
+          complete,
+        });
+      }
+
       let leagueMemberIds: Set<string> | null = null;
       if (!isGeneralRanking) {
         const { data: leagueMembers, error } = await supabase
@@ -473,6 +520,8 @@ export default function Clasificacion() {
   const rankingTitle = selectedLeague ? selectedLeague.name : "General";
   const selectedLeagueIsOwner = !!selectedLeague && selectedLeague.owner_id === user?.id;
   const selectedLeagueIsPending = selectedLeague?.member_status === "pending";
+  const startedTotal = generalStats.notStarted + generalStats.incomplete + generalStats.complete;
+  const getStatsWidth = (value: number) => startedTotal > 0 ? `${Math.max((value / startedTotal) * 100, value > 0 ? 4 : 0)}%` : "0%";
   const getSelectorPosition = (scopeId: string) => {
     const position = rankingPositions[scopeId];
     return position ? `#${position}` : "-";
@@ -506,51 +555,83 @@ export default function Clasificacion() {
       </div>
 
       {/* Selector de ranking: General + ligas privadas */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        <button
-          onClick={() => setSelectedLeagueId("general")}
-          className={`min-h-[68px] min-w-[124px] px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center gap-3 border ${
-            isGeneralRanking
-              ? "bg-primary text-primary-foreground border-primary shadow-neon"
-              : "bg-secondary/60 text-foreground border-border/50 hover:bg-muted/50"
-          }`}
-        >
-          <Trophy className="w-4 h-4 shrink-0" />
-          <span className="flex min-w-0 flex-col items-start leading-tight">
-            <span className="truncate">General</span>
-            {user && (
-              <span className={`mt-1 text-2xl font-black leading-none ${getSelectorPositionClass(isGeneralRanking)}`}>
-                {getSelectorPosition("general")}
-              </span>
-            )}
-          </span>
-        </button>
-        {leagues.map((league) => (
+      <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex flex-wrap gap-2">
           <button
-            key={league.id}
-            onClick={() => setSelectedLeagueId(league.id)}
-            className={`min-h-[68px] min-w-[124px] max-w-[180px] px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center gap-3 border ${
-              selectedLeagueId === league.id
+            onClick={() => setSelectedLeagueId("general")}
+            className={`min-h-[68px] min-w-[124px] px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center gap-3 border ${
+              isGeneralRanking
                 ? "bg-primary text-primary-foreground border-primary shadow-neon"
                 : "bg-secondary/60 text-foreground border-border/50 hover:bg-muted/50"
             }`}
           >
-            <Users className="w-4 h-4 shrink-0" />
+            <Trophy className="w-4 h-4 shrink-0" />
             <span className="flex min-w-0 flex-col items-start leading-tight">
-              <span className="max-w-full truncate">{league.name}</span>
-              {league.member_status === "pending" && (
-                <span className={`mt-1 text-[10px] font-bold uppercase tracking-wide ${getSelectorPositionClass(selectedLeagueId === league.id)}`}>
-                  Pendiente
-                </span>
-              )}
-              {user && league.member_status !== "pending" && (
-                <span className={`mt-1 text-2xl font-black leading-none ${getSelectorPositionClass(selectedLeagueId === league.id)}`}>
-                  {getSelectorPosition(league.id)}
+              <span className="truncate">General</span>
+              {user && (
+                <span className={`mt-1 text-2xl font-black leading-none ${getSelectorPositionClass(isGeneralRanking)}`}>
+                  {getSelectorPosition("general")}
                 </span>
               )}
             </span>
           </button>
-        ))}
+          {leagues.map((league) => (
+            <button
+              key={league.id}
+              onClick={() => setSelectedLeagueId(league.id)}
+              className={`min-h-[68px] min-w-[124px] max-w-[180px] px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center gap-3 border ${
+                selectedLeagueId === league.id
+                  ? "bg-primary text-primary-foreground border-primary shadow-neon"
+                  : "bg-secondary/60 text-foreground border-border/50 hover:bg-muted/50"
+              }`}
+            >
+              <Users className="w-4 h-4 shrink-0" />
+              <span className="flex min-w-0 flex-col items-start leading-tight">
+                <span className="max-w-full truncate">{league.name}</span>
+                {league.member_status === "pending" && (
+                  <span className={`mt-1 text-[10px] font-bold uppercase tracking-wide ${getSelectorPositionClass(selectedLeagueId === league.id)}`}>
+                    Pendiente
+                  </span>
+                )}
+                {user && league.member_status !== "pending" && (
+                  <span className={`mt-1 text-2xl font-black leading-none ${getSelectorPositionClass(selectedLeagueId === league.id)}`}>
+                    {getSelectorPosition(league.id)}
+                  </span>
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {isGeneralRanking && (
+          <div className="w-full rounded-xl border border-border/50 bg-card/60 p-3 shadow-soft backdrop-blur-xl xl:max-w-[520px]">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="rounded-lg bg-muted/20 px-3 py-2">
+                <div className="text-lg font-black text-foreground">{generalStats.registered}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Registrados</div>
+              </div>
+              <div className="rounded-lg bg-muted/20 px-3 py-2">
+                <div className="text-lg font-black text-slate-300">{generalStats.notStarted}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Sin empezar</div>
+              </div>
+              <div className="rounded-lg bg-amber-400/10 px-3 py-2">
+                <div className="text-lg font-black text-amber-300">{generalStats.incomplete}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Por completar</div>
+              </div>
+              <div className="rounded-lg bg-emerald-400/10 px-3 py-2">
+                <div className="text-lg font-black text-emerald-300">{generalStats.complete}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Porras completas</div>
+              </div>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted/40">
+              <div className="flex h-full">
+                <div className="bg-slate-400/70" style={{ width: getStatsWidth(generalStats.notStarted) }} />
+                <div className="bg-amber-400/80" style={{ width: getStatsWidth(generalStats.incomplete) }} />
+                <div className="bg-emerald-400/80" style={{ width: getStatsWidth(generalStats.complete) }} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {liveMatches.length > 0 && (
