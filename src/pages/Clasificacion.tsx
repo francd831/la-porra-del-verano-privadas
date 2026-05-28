@@ -358,36 +358,17 @@ export default function Clasificacion() {
       const adminIds = new Set((adminRoles || []).map((r) => r.user_id));
 
       if (isGeneralRanking) {
-        const { data: allProfiles, error: profilesError } = await supabase
-          .from("profiles")
-          .select("user_id");
-        if (profilesError) throw profilesError;
+        const { data: statsData, error: statsError } = await supabase.rpc("get_general_participation_stats", {
+          p_tournament_id: DEFAULT_TOURNAMENT_ID,
+        });
+        if (statsError) throw statsError;
 
-        const registeredUserIds = (allProfiles || [])
-          .map((profile) => profile.user_id)
-          .filter((userId) => !adminIds.has(userId));
-
-        const { data: allSubmissions, error: allSubmissionsError } = await supabase
-          .from("user_submissions")
-          .select("user_id, is_complete")
-          .eq("tournament_id", DEFAULT_TOURNAMENT_ID);
-        if (allSubmissionsError) throw allSubmissionsError;
-
-        const submissionsByUser = new Map(
-          ((allSubmissions || []) as Pick<SubmissionRow, "user_id" | "is_complete">[]).map((submission) => [
-            submission.user_id,
-            !!submission.is_complete,
-          ])
-        );
-        const complete = registeredUserIds.filter((userId) => submissionsByUser.get(userId) === true).length;
-        const incomplete = registeredUserIds.filter((userId) => submissionsByUser.get(userId) === false).length;
-        const notStarted = registeredUserIds.length - complete - incomplete;
-
+        const stats = Array.isArray(statsData) ? statsData[0] : statsData;
         setGeneralStats({
-          registered: registeredUserIds.length,
-          notStarted,
-          incomplete,
-          complete,
+          registered: Number(stats?.registered || 0),
+          notStarted: Number(stats?.not_started || 0),
+          incomplete: Number(stats?.incomplete || 0),
+          complete: Number(stats?.complete || 0),
         });
       }
 
