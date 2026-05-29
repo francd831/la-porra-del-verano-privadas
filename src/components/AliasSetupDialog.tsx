@@ -16,10 +16,11 @@ import { useToast } from "@/hooks/use-toast";
 interface AliasSetupDialogProps {
   open: boolean;
   userId: string;
+  email?: string | null;
   onComplete: () => void;
 }
 
-export function AliasSetupDialog({ open, userId, onComplete }: AliasSetupDialogProps) {
+export function AliasSetupDialog({ open, userId, email, onComplete }: AliasSetupDialogProps) {
   const [alias, setAlias] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
@@ -64,17 +65,33 @@ export function AliasSetupDialog({ open, userId, onComplete }: AliasSetupDialogP
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          user_id: userId,
+          email,
           display_name: alias.trim(),
           updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
+        }, { onConflict: 'user_id' });
 
       if (error) {
         toast({
           variant: "destructive",
           title: "Error",
           description: "No se pudo guardar el alias. Intenta nuevamente.",
+        });
+        return;
+      }
+
+      const { data: savedProfile, error: verifyError } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (verifyError || savedProfile?.display_name?.trim() !== alias.trim()) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "No se pudo confirmar el alias guardado. Intenta nuevamente.",
         });
         return;
       }

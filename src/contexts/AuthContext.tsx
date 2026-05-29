@@ -148,6 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         <AliasSetupDialog
           open={showAliasDialog}
           userId={user.id}
+          email={user.email}
           onComplete={handleAliasComplete}
         />
       )}
