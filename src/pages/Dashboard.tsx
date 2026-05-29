@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, ArrowRight, Medal, TrendingUp, ChevronDown, ChevronUp, Trophy, Target, Award, BarChart3, Loader2, Users } from "lucide-react";
+import { Calendar, ArrowRight, Medal, TrendingUp, ChevronDown, ChevronUp, Trophy, Target, Award, BarChart3, Loader2, Users, Shield } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,6 +72,26 @@ interface AwardPoints {
   botaDeOro: number;
   balonDeOro: number;
 }
+interface PodiumBadge {
+  eventLabel: string;
+  rank: number;
+  points: number;
+}
+
+const adminDemoPodiumBadges: PodiumBadge[] = [
+  { eventLabel: "Mejor general", rank: 1, points: 124 },
+  { eventLabel: "Rey del dia", rank: 1, points: 38 },
+  { eventLabel: "Mas signos acertados", rank: 2, points: 16 },
+  { eventLabel: "Grupo A", rank: 2, points: 42 },
+  { eventLabel: "Mas resultados exactos", rank: 3, points: 7 },
+  { eventLabel: "Premios Individuales", rank: 3, points: 30 },
+];
+
+const podiumShieldClasses = [
+  "fill-gold text-gold drop-shadow-[0_0_8px_hsl(var(--gold)/0.35)]",
+  "fill-slate-300 text-slate-300",
+  "fill-amber-700 text-amber-700",
+];
 
 // Helper function to calculate points for a single match
 function calculateMatchPoints(prediction: {
@@ -134,6 +154,7 @@ export default function Dashboard() {
   const [distributionLoading, setDistributionLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [predictionsLocked, setPredictionsLocked] = useState(false);
+  const [podiumBadges, setPodiumBadges] = useState<PodiumBadge[]>([]);
   const privateLeaguesEnabled = isPrivateLeaguesApp();
   
 
@@ -198,6 +219,33 @@ export default function Dashboard() {
           data: admins
         } = await supabase.from('user_roles').select('user_id').eq('role', 'admin');
         const adminIds = new Set(admins?.map((a) => a.user_id) || []);
+        const isAdminUser = adminIds.has(user.id);
+        if (isAdminUser) {
+          setPodiumBadges(adminDemoPodiumBadges);
+        } else {
+          const { data: userPodiumEvents, error: userPodiumError } = await supabase
+            .from('user_score_events')
+            .select('event_label, points, rank')
+            .eq('tournament_id', '11111111-1111-1111-1111-111111111111')
+            .eq('user_id', user.id)
+            .lte('rank', 3)
+            .gt('points', 0)
+            .order('rank', { ascending: true })
+            .order('event_label', { ascending: true });
+
+          if (userPodiumError) {
+            console.error('Error loading podium badges:', userPodiumError);
+            setPodiumBadges([]);
+          } else {
+            setPodiumBadges((userPodiumEvents || [])
+              .filter((event) => event.rank !== null)
+              .map((event) => ({
+                eventLabel: event.event_label,
+                rank: event.rank || 0,
+                points: event.points || 0,
+              })));
+          }
+        }
         const nonAdminSubmissions = allSubmissions?.filter((s) => !adminIds.has(s.user_id)) || [];
         const userRank = nonAdminSubmissions.findIndex((s) => s.user_id === user.id) + 1;
         const totalParticipants = nonAdminSubmissions.length;
@@ -566,6 +614,31 @@ export default function Dashboard() {
               <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                 ¡Hola, {stats?.displayName}!
               </h1>
+              {podiumBadges.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-3">
+                  {podiumBadges.map((badge) => {
+                    const shieldIndex = Math.max(0, Math.min(2, badge.rank - 1));
+
+                    return (
+                      <div
+                        key={`${badge.eventLabel}-${badge.rank}-${badge.points}`}
+                        className="flex w-24 flex-col items-center gap-1 rounded-lg border border-border/60 bg-card/70 px-2 py-2 shadow-soft"
+                        title={`${badge.eventLabel}: #${badge.rank} con ${badge.points} puntos`}
+                      >
+                        <div className="relative flex h-9 w-9 items-center justify-center">
+                          <Shield className={`h-8 w-8 ${podiumShieldClasses[shieldIndex]}`} />
+                          <span className={`absolute text-[11px] font-black ${badge.rank === 1 ? "text-gold-foreground" : "text-background"}`}>
+                            {badge.rank}
+                          </span>
+                        </div>
+                        <span className="line-clamp-2 min-h-[2rem] text-center text-[11px] font-medium leading-tight text-muted-foreground">
+                          {badge.eventLabel}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Compact Position and Score Cards */}
