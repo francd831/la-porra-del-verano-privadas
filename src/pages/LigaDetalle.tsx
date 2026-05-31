@@ -25,6 +25,7 @@ interface League {
   name: string;
   comments: string | null;
   invite_code: string;
+  logo_url: string | null;
   owner_id: string;
   requires_approval: boolean;
   created_at: string;
@@ -94,7 +95,7 @@ export default function LigaDetalle() {
     try {
       const { data: leagueData, error: leagueError } = await supabase
         .from("leagues")
-        .select("id, name, comments, invite_code, owner_id, requires_approval, created_at, tournament_id")
+        .select("id, name, comments, invite_code, logo_url, owner_id, requires_approval, created_at, tournament_id")
         .eq("id", leagueId)
         .single();
 
@@ -364,9 +365,15 @@ export default function LigaDetalle() {
       <div className="mb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/60 shadow-glow">
-              <Trophy className="h-7 w-7 text-primary-foreground" />
-            </div>
+            {league.logo_url ? (
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border/50 bg-white p-2 shadow-glow">
+                <img src={league.logo_url} alt="" className="max-h-full max-w-full object-contain" />
+              </div>
+            ) : (
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/60 shadow-glow">
+                <Trophy className="h-7 w-7 text-primary-foreground" />
+              </div>
+            )}
             <div>
               <h1 className="text-2xl md:text-3xl font-bold leading-tight">{league.name}</h1>
               <div className="flex items-center gap-2 mt-1">

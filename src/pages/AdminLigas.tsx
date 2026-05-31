@@ -13,6 +13,7 @@ type LeagueRow = {
   name: string;
   comments: string | null;
   invite_code: string;
+  logo_url: string | null;
   owner_id: string;
   requires_approval: boolean;
   created_at: string;
@@ -48,7 +49,7 @@ export default function AdminLigas() {
       try {
         const { data: leaguesData, error: leaguesError } = await supabase
           .from("leagues")
-          .select("id, name, comments, invite_code, owner_id, requires_approval, created_at")
+          .select("id, name, comments, invite_code, logo_url, owner_id, requires_approval, created_at")
           .order("created_at", { ascending: false });
 
         if (leaguesError) throw leaguesError;
@@ -222,10 +223,21 @@ export default function AdminLigas() {
                   {filteredLeagues.map((league) => (
                     <tr key={league.id} className="border-b border-border/20 hover:bg-muted/10">
                       <td className="max-w-[260px] px-4 py-3">
-                        <div className="truncate text-sm font-semibold">{league.name}</div>
-                        {league.comments && (
-                          <div className="mt-0.5 truncate text-xs text-muted-foreground">{league.comments}</div>
-                        )}
+                        <div className="flex min-w-0 items-center gap-2">
+                          {league.logo_url && (
+                            <img
+                              src={league.logo_url}
+                              alt=""
+                              className="h-8 w-8 shrink-0 rounded-lg border border-border/40 bg-white object-contain p-1"
+                            />
+                          )}
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-semibold">{league.name}</div>
+                            {league.comments && (
+                              <div className="mt-0.5 truncate text-xs text-muted-foreground">{league.comments}</div>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-sm">{league.owner_name}</td>
                       <td className="px-4 py-3 text-center">

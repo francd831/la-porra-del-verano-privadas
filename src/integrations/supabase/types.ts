@@ -336,6 +336,7 @@ export type Database = {
           created_at: string
           id: string
           invite_code: string
+          logo_url: string | null
           name: string
           owner_id: string
           requires_approval: boolean
@@ -347,6 +348,7 @@ export type Database = {
           created_at?: string
           id?: string
           invite_code?: string
+          logo_url?: string | null
           name: string
           owner_id: string
           requires_approval?: boolean
@@ -358,6 +360,7 @@ export type Database = {
           created_at?: string
           id?: string
           invite_code?: string
+          logo_url?: string | null
           name?: string
           owner_id?: string
           requires_approval?: boolean

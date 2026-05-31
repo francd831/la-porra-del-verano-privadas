@@ -34,6 +34,7 @@ interface LeagueOption {
   name: string;
   comments: string | null;
   invite_code: string;
+  logo_url: string | null;
   owner_id: string;
   requires_approval: boolean;
   member_status: string;
@@ -213,7 +214,7 @@ export default function Clasificacion() {
     }
     const { data: leaguesData, error: leaguesError } = await supabase
       .from("leagues")
-      .select("id, name, comments, invite_code, owner_id, requires_approval")
+      .select("id, name, comments, invite_code, logo_url, owner_id, requires_approval")
       .in("id", leagueIds)
       .order("created_at", { ascending: false });
     if (leaguesError) {
@@ -566,7 +567,15 @@ export default function Clasificacion() {
                   : "bg-secondary/60 text-foreground border-border/50 hover:bg-muted/50"
               }`}
             >
-              <Users className="w-4 h-4 shrink-0" />
+              {league.logo_url ? (
+                <img
+                  src={league.logo_url}
+                  alt=""
+                  className="h-8 w-8 shrink-0 rounded-lg border border-border/40 bg-white object-contain p-1"
+                />
+              ) : (
+                <Users className="w-4 h-4 shrink-0" />
+              )}
               <span className="flex min-w-0 flex-col items-start leading-tight">
                 <span className="max-w-full truncate">{league.name}</span>
                 {league.member_status === "pending" && (
@@ -694,6 +703,13 @@ export default function Clasificacion() {
         <Card className="mb-6 border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
+              {selectedLeague.logo_url && (
+                <img
+                  src={selectedLeague.logo_url}
+                  alt=""
+                  className="h-9 w-9 shrink-0 rounded-lg border border-border/40 bg-white object-contain p-1"
+                />
+              )}
               {selectedLeagueIsOwner ? (
                 <Crown className="h-5 w-5 text-gold" />
               ) : (
