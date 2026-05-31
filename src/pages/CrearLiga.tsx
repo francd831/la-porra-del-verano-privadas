@@ -57,10 +57,13 @@ export default function CrearLiga() {
       navigate(`/ligas/${data.id}`);
     } catch (error) {
       console.error("Error creating league:", error);
+      const message = error instanceof Error ? error.message : "";
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo crear la liga.",
+        description: message.includes("User league limit reached")
+          ? "Solo puedes pertenecer a 3 ligas privadas."
+          : "No se pudo crear la liga.",
       });
     } finally {
       setSaving(false);

@@ -42,13 +42,13 @@ export function BottomNav() {
           { href: "/resultados", icon: Award, label: "Resultados" },
           { href: "/admin/ligas", icon: Users, label: "Ligas" },
           { href: "/admin/mensajes", icon: MessageSquare, label: "Mensajes" },
-          { href: "/clasificacion", icon: Trophy, label: "Ranking" },
+          { href: "/clasificacion", icon: Trophy, label: "Clasificación" },
           { href: "/perfil", icon: User, label: "Perfil" },
         ]
       : [
           { href: "/dashboard", icon: Home, label: "Inicio" },
           { href: "/mi-porra", icon: Target, label: "Mi Porra" },
-          { href: "/clasificacion", icon: Trophy, label: "Ranking" },
+          { href: "/clasificacion", icon: Trophy, label: "Clasificación" },
           basesOrPronosticos,
           { href: "/perfil", icon: User, label: "Perfil" },
         ]
