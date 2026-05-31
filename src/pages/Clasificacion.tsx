@@ -655,7 +655,7 @@ export default function Clasificacion() {
         </Card>
       )}
 
-      {user && (
+      {user && isGeneralRanking && (
         <Card className="mb-6 border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft">
           <CardContent className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-end">
             <div className="flex items-center gap-3">
