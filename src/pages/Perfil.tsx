@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Edit, Save, Calendar, AlertTriangle, CheckCircle } from "lucide-react";
+import { User, Save, Calendar, AlertTriangle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Perfil() {
-  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isCheckingAlias, setIsCheckingAlias] = useState(false);
   const [aliasAvailable, setAliasAvailable] = useState<boolean | null>(null);
@@ -20,6 +19,10 @@ export default function Perfil() {
     display_name: "",
     email: "",
     fechaRegistro: ""
+  });
+  const [originalUserData, setOriginalUserData] = useState({
+    display_name: "",
+    email: "",
   });
 
   const [estadisticas, setEstadisticas] = useState({
@@ -67,6 +70,10 @@ export default function Perfil() {
             month: 'long',
             day: 'numeric'
           })
+        });
+        setOriginalUserData({
+          display_name: displayName,
+          email: data.email || user?.email || '',
         });
         setOriginalAlias(displayName);
       }
@@ -134,8 +141,6 @@ export default function Perfil() {
 
   // Debounced alias availability check
   useEffect(() => {
-    if (!isEditing) return;
-    
     const alias = userData.display_name.trim();
     
     // If alias hasn't changed or is the same as original, don't check
@@ -166,12 +171,25 @@ export default function Perfil() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [userData.display_name, isEditing, originalAlias]);
+  }, [userData.display_name, originalAlias]);
+
+  const trimmedAlias = userData.display_name.trim();
+  const trimmedEmail = userData.email.trim();
+  const hasChanges =
+    trimmedAlias !== originalUserData.display_name.trim() ||
+    trimmedEmail !== originalUserData.email.trim();
+  const aliasChanged = trimmedAlias !== originalAlias;
+  const aliasInvalid = trimmedAlias.length < 3;
+  const saveDisabled =
+    !hasChanges ||
+    isCheckingAlias ||
+    aliasInvalid ||
+    (aliasChanged && trimmedAlias.length >= 3 && aliasAvailable !== true);
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user || saveDisabled) return;
     
-    const alias = userData.display_name.trim();
+    const alias = trimmedAlias;
     
     // Check if alias changed and is not available
     if (alias !== originalAlias && alias.length >= 3 && aliasAvailable === false) {
@@ -188,7 +206,7 @@ export default function Perfil() {
         .from('profiles')
         .update({
           display_name: alias,
-          email: userData.email,
+          email: trimmedEmail,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', user.id);
@@ -203,12 +221,15 @@ export default function Perfil() {
       }
 
       setOriginalAlias(alias);
+      setOriginalUserData({
+        display_name: alias,
+        email: trimmedEmail,
+      });
       setAliasAvailable(null);
       toast({
         title: "Perfil actualizado",
         description: "Tus cambios han sido guardados correctamente.",
       });
-      setIsEditing(false);
     } catch (error) {
       toast({
         variant: "destructive", 
@@ -242,12 +263,12 @@ export default function Perfil() {
             </div>
           </div>
           <Button
-            onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-            variant={isEditing ? "default" : "outline"}
+            onClick={handleSave}
+            disabled={saveDisabled}
             className="flex items-center space-x-2 w-full sm:w-auto flex-shrink-0"
           >
-            {isEditing ? <Save className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
-            <span>{isEditing ? "Guardar" : "Editar"}</span>
+            <Save className="w-4 h-4" />
+            <span>Guardar cambios</span>
           </Button>
         </div>
       </div>
@@ -266,20 +287,19 @@ export default function Perfil() {
                     id="display_name"
                     value={userData.display_name}
                     onChange={(e) => handleInputChange("display_name", e.target.value)}
-                    disabled={!isEditing}
                     placeholder="Ingresa tu alias"
                     className="pr-10"
                     maxLength={30}
                   />
-                  {isEditing && isCheckingAlias && (
+                  {isCheckingAlias && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       <div className="w-4 h-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
                     </div>
                   )}
-                  {isEditing && !isCheckingAlias && userData.display_name.trim() !== originalAlias && userData.display_name.trim().length >= 3 && aliasAvailable === true && (
+                  {!isCheckingAlias && userData.display_name.trim() !== originalAlias && userData.display_name.trim().length >= 3 && aliasAvailable === true && (
                     <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                   )}
-                  {isEditing && !isCheckingAlias && userData.display_name.trim() !== originalAlias && userData.display_name.trim().length >= 3 && aliasAvailable === false && (
+                  {!isCheckingAlias && userData.display_name.trim() !== originalAlias && userData.display_name.trim().length >= 3 && aliasAvailable === false && (
                     <AlertTriangle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-destructive" />
                   )}
                 </div>
@@ -288,12 +308,12 @@ export default function Perfil() {
                     <AlertTriangle className="w-3 h-3" />
                     El alias debe ser único y no contener palabras ofensivas o malsonantes.
                   </p>
-                  {isEditing && !isCheckingAlias && userData.display_name.trim() !== originalAlias && userData.display_name.trim().length >= 3 && aliasAvailable === false && (
+                  {!isCheckingAlias && userData.display_name.trim() !== originalAlias && userData.display_name.trim().length >= 3 && aliasAvailable === false && (
                     <p className="text-xs text-destructive">
                       Este alias ya está en uso. Por favor, elige otro.
                     </p>
                   )}
-                  {isEditing && userData.display_name.trim().length > 0 && userData.display_name.trim().length < 3 && (
+                  {userData.display_name.trim().length > 0 && userData.display_name.trim().length < 3 && (
                     <p className="text-xs text-destructive">
                       El alias debe tener al menos 3 caracteres.
                     </p>
@@ -308,7 +328,6 @@ export default function Perfil() {
                   type="email"
                   value={userData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  disabled={!isEditing}
                 />
               </div>
 
