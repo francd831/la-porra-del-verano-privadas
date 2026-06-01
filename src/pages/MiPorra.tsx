@@ -2456,6 +2456,10 @@ export default function Pronosticos() {
         <TabsContent value="eliminatorias" className="space-y-6">
           {!predictionsLocked && (
             <div className="fixed top-20 right-4 z-50 flex flex-col items-end gap-2 sm:flex-row">
+              <Button onClick={handleBackToGroups} className="bg-gradient-hero shadow-strong hover:opacity-90" size="sm">
+                <ArrowLeft className="mr-2 w-4 h-4" />
+                <span>Volver a Fase de Grupos</span>
+              </Button>
               <Button onClick={handleGuardarPronosticos} disabled={isLoading || !user} className="bg-gradient-hero shadow-strong" size="sm">
                 {isLoading ? <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -2464,10 +2468,6 @@ export default function Pronosticos() {
                     <Save className="w-4 h-4 mr-2" />
                     Guardar Pronósticos
                   </>}
-              </Button>
-              <Button onClick={handleBackToGroups} className="bg-gradient-hero shadow-strong hover:opacity-90" size="sm">
-                <ArrowLeft className="mr-2 w-4 h-4" />
-                <span>Volver a Fase de Grupos</span>
               </Button>
             </div>
           )}

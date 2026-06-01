@@ -1,5 +1,5 @@
 {
-  "version": "2026-06-01-03",
+  "version": "2026-06-01-04",
   "forceReload": true,
-  "message": "Correccion de carga completa de pronosticos."
+  "message": "Ajuste de orden de botones en fase final."
 }
