@@ -1,5 +1,5 @@
 {
-  "version": "2026-06-01-02",
+  "version": "2026-06-01-03",
   "forceReload": true,
-  "message": "Correccion de visualizacion de pronosticos completos."
+  "message": "Correccion de carga completa de pronosticos."
 }

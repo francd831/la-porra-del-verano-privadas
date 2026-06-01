@@ -175,6 +175,32 @@ const AWARD_TYPES = [
   { key: 'Balón de Oro', label: 'Balón de Oro' },
 ];
 
+const fetchAllPredictions = async (userIds: string[]) => {
+  if (userIds.length === 0) return [];
+
+  const pageSize = 1000;
+  let from = 0;
+  const allPredictions = [];
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('predictions')
+      .select('*')
+      .in('user_id', userIds)
+      .range(from, from + pageSize - 1);
+
+    if (error) throw error;
+
+    const page = data || [];
+    allPredictions.push(...page);
+
+    if (page.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return allPredictions;
+};
+
 export default function Pronosticos() {
   const [displayPredictions, setDisplayPredictions] = useState<DisplayPrediction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -254,7 +280,7 @@ export default function Pronosticos() {
       setUsers(filteredProfiles);
       const usersMap = new Map(filteredProfiles.map(u => [u.user_id, u.display_name]));
 
-      const { data: predictionsData } = await supabase.from('predictions').select('*');
+      const predictionsData = await fetchAllPredictions(completeUserIds);
       const { data: awardPredictionsData } = await supabase
         .from('award_predictions').select('*').eq('tournament_id', '11111111-1111-1111-1111-111111111111');
       const { data: championPredictionsData } = await supabase
