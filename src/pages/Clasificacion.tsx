@@ -561,7 +561,7 @@ export default function Clasificacion() {
             <button
               key={league.id}
               onClick={() => setSelectedLeagueId(league.id)}
-              className={`min-h-[68px] min-w-[124px] max-w-[180px] px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center gap-3 border ${
+              className={`min-h-[68px] min-w-[124px] max-w-[220px] px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center gap-3 border ${
                 selectedLeagueId === league.id
                   ? "bg-primary text-primary-foreground border-primary shadow-neon"
                   : "bg-secondary/60 text-foreground border-border/50 hover:bg-muted/50"
@@ -570,14 +570,14 @@ export default function Clasificacion() {
               {league.logo_url ? (
                 <img
                   src={league.logo_url}
-                  alt=""
-                  className="h-8 w-8 shrink-0 rounded-lg border border-border/40 bg-white object-contain p-1"
+                  alt={league.name}
+                  className="h-11 w-28 shrink-0 rounded-lg border border-border/40 bg-white object-contain px-2 py-1"
                 />
               ) : (
                 <Users className="w-4 h-4 shrink-0" />
               )}
               <span className="flex min-w-0 flex-col items-start leading-tight">
-                <span className="max-w-full truncate">{league.name}</span>
+                {!league.logo_url && <span className="max-w-full truncate">{league.name}</span>}
                 {league.member_status === "pending" && (
                   <span className={`mt-1 text-[10px] font-bold uppercase tracking-wide ${getSelectorPositionClass(selectedLeagueId === league.id)}`}>
                     Pendiente
@@ -706,8 +706,8 @@ export default function Clasificacion() {
               {selectedLeague.logo_url && (
                 <img
                   src={selectedLeague.logo_url}
-                  alt=""
-                  className="h-9 w-9 shrink-0 rounded-lg border border-border/40 bg-white object-contain p-1"
+                  alt={selectedLeague.name}
+                  className="h-12 w-36 shrink-0 rounded-xl border border-border/40 bg-white object-contain px-3 py-2"
                 />
               )}
               {selectedLeagueIsOwner ? (
@@ -715,7 +715,7 @@ export default function Clasificacion() {
               ) : (
                 <MessageSquare className="h-5 w-5 text-primary" />
               )}
-              <span>{selectedLeague.name}</span>
+              {!selectedLeague.logo_url && <span>{selectedLeague.name}</span>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

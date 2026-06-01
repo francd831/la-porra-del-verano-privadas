@@ -366,7 +366,7 @@ export default function LigaDetalle() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3">
             {league.logo_url ? (
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border/50 bg-white p-2 shadow-glow">
+              <div className="flex h-20 w-52 shrink-0 items-center justify-center rounded-2xl border border-border/50 bg-white px-5 py-3 shadow-glow">
                 <img src={league.logo_url} alt="" className="max-h-full max-w-full object-contain" />
               </div>
             ) : (
@@ -375,7 +375,9 @@ export default function LigaDetalle() {
               </div>
             )}
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold leading-tight">{league.name}</h1>
+              {!league.logo_url && (
+                <h1 className="text-2xl md:text-3xl font-bold leading-tight">{league.name}</h1>
+              )}
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-xs text-muted-foreground">
                   {approvedMembers.length} miembros
