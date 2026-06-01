@@ -238,11 +238,14 @@ export default function Pronosticos() {
 
       const { data: submissionsUsers } = await supabase
         .from('user_submissions')
-        .select('user_id')
+        .select('user_id, is_complete')
         .eq('tournament_id', '11111111-1111-1111-1111-111111111111');
       
-      const allUserIds = (submissionsUsers || []).map(s => s.user_id).filter(id => !adminIds.has(id));
-      const { data: profilesData } = await supabase.rpc('get_user_display_names', { p_user_ids: allUserIds });
+      const completeUserIds = (submissionsUsers || [])
+        .filter(s => s.is_complete && !adminIds.has(s.user_id))
+        .map(s => s.user_id);
+      const visibleUserIds = new Set(completeUserIds);
+      const { data: profilesData } = await supabase.rpc('get_user_display_names', { p_user_ids: completeUserIds });
       
       const filteredProfiles = (profilesData || []).map(p => ({
         user_id: p.user_id,
@@ -261,7 +264,7 @@ export default function Pronosticos() {
       const isGroupStageMatchId = (matchId: string) => /^[A-L]_\d+$/.test(matchId);
 
       const predictionsByUser = new Map<string, typeof predictionsData>();
-      (predictionsData || []).filter(p => !adminIds.has(p.user_id)).forEach(p => {
+      (predictionsData || []).filter(p => visibleUserIds.has(p.user_id)).forEach(p => {
         if (!predictionsByUser.has(p.user_id)) predictionsByUser.set(p.user_id, []);
         predictionsByUser.get(p.user_id)!.push(p);
       });
@@ -336,7 +339,7 @@ export default function Pronosticos() {
       });
 
       // Champion predictions
-      (championPredictionsData || []).filter(cp => !adminIds.has(cp.user_id)).forEach(cp => {
+      (championPredictionsData || []).filter(cp => visibleUserIds.has(cp.user_id)).forEach(cp => {
         const userName = usersMap.get(cp.user_id) || 'Usuario';
         const team = teamsMap.get(cp.predicted_winner_team_id);
         allDisplayPredictions.push({
@@ -348,7 +351,7 @@ export default function Pronosticos() {
       });
 
       // Award predictions
-      (awardPredictionsData || []).filter(ap => !adminIds.has(ap.user_id)).forEach(ap => {
+      (awardPredictionsData || []).filter(ap => visibleUserIds.has(ap.user_id)).forEach(ap => {
         const userName = usersMap.get(ap.user_id) || 'Usuario';
         const awardName = ap.award_type === 'balon_oro' ? 'Balón de Oro' : 'Bota de Oro';
         allDisplayPredictions.push({
@@ -472,6 +475,24 @@ export default function Pronosticos() {
       }));
 
     return sorted;
+  }, [displayPredictions, activeSection, selectedPlayoffRound, selectedAward]);
+
+  const aggregatedRoundSummary = useMemo(() => {
+    if (activeSection === 'groups') return null;
+
+    const relevantPreds = activeSection === 'playoffs'
+      ? displayPredictions.filter(p => p.roundDisplay === selectedPlayoffRound)
+      : displayPredictions.filter(p => p.roundDisplay === 'Premios Individuales' && p.matchDisplay === selectedAward);
+
+    return {
+      uniqueCount: new Set(relevantPreds.map(p => (
+        p.predictionDisplay.includes(' (Real:')
+          ? p.predictionDisplay.split(' (Real:')[0]
+          : p.predictionDisplay
+      ))).size,
+      totalSelections: relevantPreds.length,
+      totalUsers: new Set(relevantPreds.map(p => p.userId)).size,
+    };
   }, [displayPredictions, activeSection, selectedPlayoffRound, selectedAward]);
 
   if (loading) {
@@ -647,10 +668,15 @@ export default function Pronosticos() {
               <TrendingUp className="w-5 h-5 text-primary" />
               <span>
                 {activeSection === 'playoffs' 
-                  ? `Equipos en ${selectedPlayoffRound}` 
+                  ? `Equipos distintos en ${selectedPlayoffRound}` 
                   : selectedAward}
               </span>
             </CardTitle>
+            {aggregatedRoundSummary && (
+              <p className="text-xs text-muted-foreground">
+                {aggregatedRoundSummary.uniqueCount} opciones distintas · {aggregatedRoundSummary.totalSelections} selecciones · {aggregatedRoundSummary.totalUsers} participantes
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             {(() => {
@@ -715,7 +741,7 @@ export default function Pronosticos() {
       {/* Results count */}
       <div className="mb-4 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Mostrando {filteredPredictions.length} pronósticos
+          Mostrando {filteredPredictions.length} {activeSection === 'playoffs' ? 'selecciones' : 'pronósticos'}
         </p>
         {(filterUser !== 'all' || searchTerm) && (
           <button 

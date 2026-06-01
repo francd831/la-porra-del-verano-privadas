@@ -1,5 +1,5 @@
 {
-  "version": "2026-06-01-01",
+  "version": "2026-06-01-02",
   "forceReload": true,
-  "message": "Correccion de contadores de participacion general."
+  "message": "Correccion de visualizacion de pronosticos completos."
 }
