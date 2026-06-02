@@ -15,6 +15,7 @@ import PredictionsViewerDialog from "@/components/PredictionsViewerDialog";
 import PlayoffBracket from "@/components/PlayoffBracket";
 import { sortStandingsByFifaCriteria, sortThirdPlacedByFifaCriteria } from "@/lib/fifaStandings";
 import { getThirdPlaceAllocation } from "@/lib/thirdPlaceAllocations";
+import { arePredictionsPastDeadline, PREDICTIONS_DEADLINE_DISPLAY } from "@/lib/predictionDeadline";
 
 // Interfaces para los datos de la base de datos
 interface Team {
@@ -190,6 +191,15 @@ export default function Pronosticos() {
   const {
     toast
   } = useToast();
+  const predictionsDeadlinePassed = arePredictionsPastDeadline();
+
+  const notifyPredictionsDeadlinePassed = () => {
+    toast({
+      variant: "destructive",
+      title: "Pronósticos cerrados",
+      description: `El plazo para modificar pronósticos terminó el ${PREDICTIONS_DEADLINE_DISPLAY}.`
+    });
+  };
 
   // Cargar datos de la base de datos
   useEffect(() => {
@@ -1369,6 +1379,11 @@ export default function Pronosticos() {
   // Función para manejar cambios en los marcadores
   // Al cambiar cualquier resultado de grupos, se reinicia TODA la fase eliminatoria
   const handlePartidoChange = (matchId: string, tipo: 'local' | 'visitante', valor: string) => {
+    if (arePredictionsPastDeadline()) {
+      notifyPredictionsDeadlinePassed();
+      return;
+    }
+
     let numeroValor: number | null = null;
     if (valor !== '') {
       const parsed = parseInt(valor, 10);
@@ -1514,6 +1529,11 @@ export default function Pronosticos() {
   // Función para seleccionar ganador de un partido de eliminatorias
   // Sigue la normativa FIFA 2026 para el avance de equipos entre rondas
   const handleSelectWinner = (matchId: string, teamId: string, teamName: string, round: string) => {
+    if (arePredictionsPastDeadline()) {
+      notifyPredictionsDeadlinePassed();
+      return;
+    }
+
     const currentMatch = findPlayoffMatch(playoffMatches, matchId);
     if (!currentMatch || !winnerCanPlayMatch(playoffMatches, matchId, teamId)) return;
 
@@ -1769,6 +1789,9 @@ export default function Pronosticos() {
     if (!user) {
       throw new Error("Debes iniciar sesión para guardar tus pronósticos.");
     }
+    if (arePredictionsPastDeadline()) {
+      throw new Error(`El plazo para modificar pronósticos terminó el ${PREDICTIONS_DEADLINE_DISPLAY}.`);
+    }
 
     const tournamentId = '11111111-1111-1111-1111-111111111111';
     const {
@@ -1952,6 +1975,10 @@ export default function Pronosticos() {
         title: "Error",
         description: "Debes iniciar sesión para guardar tus pronósticos."
       });
+      return;
+    }
+    if (arePredictionsPastDeadline()) {
+      notifyPredictionsDeadlinePassed();
       return;
     }
 
@@ -2180,7 +2207,7 @@ export default function Pronosticos() {
         <h1 className="text-4xl font-bold bg-gradient-hero bg-clip-text text-transparent">
           Pronósticos Mundial 2026
         </h1>
-        <p className="text-muted-foreground">Puedes modificar tus pronósticos hasta el 10 de junio</p>
+        <p className="text-muted-foreground">Puedes modificar tus pronósticos hasta el {PREDICTIONS_DEADLINE_DISPLAY}</p>
       </div>
 
       {/* Aviso cuando los pronósticos están bloqueados */}
@@ -2201,7 +2228,7 @@ export default function Pronosticos() {
           {/* Botón flotante para guardar pronósticos */}
           <div className="fixed top-20 right-4 z-50 flex flex-col items-end gap-2 sm:flex-row">
             {!predictionsLocked && (
-              <Button onClick={handleGuardarPronosticos} disabled={isLoading} className="bg-gradient-hero shadow-strong" size="sm">
+              <Button onClick={handleGuardarPronosticos} disabled={isLoading || predictionsDeadlinePassed} className="bg-gradient-hero shadow-strong" size="sm">
                 {isLoading ? <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Guardando...
@@ -2211,7 +2238,7 @@ export default function Pronosticos() {
                   </>}
               </Button>
             )}
-            <Button onClick={handleGoToPlayoffs} disabled={isLoading || predictionsLocked} className="bg-gradient-hero shadow-strong hover:opacity-90" size="sm">
+            <Button onClick={handleGoToPlayoffs} disabled={isLoading || predictionsLocked || predictionsDeadlinePassed} className="bg-gradient-hero shadow-strong hover:opacity-90" size="sm">
               {isLoading ? <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Guardando...
@@ -2332,9 +2359,9 @@ export default function Pronosticos() {
                             {/* Equipos y marcador en una línea */}
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-medium flex-1 truncate text-right">{match.home_team?.name}</span>
-                              <Input type="number" min="0" max="20" placeholder="-" className="w-10 h-6 text-center text-xs p-0" value={partidosGrupos[match.id]?.local ?? ''} onChange={e => handlePartidoChange(match.id, 'local', e.target.value)} disabled={predictionsLocked} />
+                              <Input type="number" min="0" max="20" placeholder="-" className="w-10 h-6 text-center text-xs p-0" value={partidosGrupos[match.id]?.local ?? ''} onChange={e => handlePartidoChange(match.id, 'local', e.target.value)} disabled={predictionsLocked || predictionsDeadlinePassed} />
                               <span className="text-muted-foreground text-xs">-</span>
-                              <Input type="number" min="0" max="20" placeholder="-" className="w-10 h-6 text-center text-xs p-0" value={partidosGrupos[match.id]?.visitante ?? ''} onChange={e => handlePartidoChange(match.id, 'visitante', e.target.value)} disabled={predictionsLocked} />
+                              <Input type="number" min="0" max="20" placeholder="-" className="w-10 h-6 text-center text-xs p-0" value={partidosGrupos[match.id]?.visitante ?? ''} onChange={e => handlePartidoChange(match.id, 'visitante', e.target.value)} disabled={predictionsLocked || predictionsDeadlinePassed} />
                               <span className="text-xs font-medium flex-1 truncate">{match.away_team?.name}</span>
                               {puntosGanados !== null && <span className="inline-flex items-center justify-center min-w-[24px] h-5 px-1.5 text-[10px] font-bold rounded bg-success text-success-foreground">
                                   +{puntosGanados}
@@ -2460,7 +2487,7 @@ export default function Pronosticos() {
                 <ArrowLeft className="mr-2 w-4 h-4" />
                 <span>Volver a Fase de Grupos</span>
               </Button>
-              <Button onClick={handleGuardarPronosticos} disabled={isLoading || !user} className="bg-gradient-hero shadow-strong" size="sm">
+              <Button onClick={handleGuardarPronosticos} disabled={isLoading || !user || predictionsDeadlinePassed} className="bg-gradient-hero shadow-strong" size="sm">
                 {isLoading ? <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Guardando...
@@ -2480,7 +2507,7 @@ export default function Pronosticos() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <PlayoffBracket playoffMatches={playoffMatches} playoffWinners={playoffWinners} predictionsLocked={predictionsLocked} onSelectWinner={(matchId, teamId, teamName, round) => handleSelectWinner(matchId, teamId, teamName, round)} onViewParticipants={(match, title) => {
+              <PlayoffBracket playoffMatches={playoffMatches} playoffWinners={playoffWinners} predictionsLocked={predictionsLocked || predictionsDeadlinePassed} onSelectWinner={(matchId, teamId, teamName, round) => handleSelectWinner(matchId, teamId, teamName, round)} onViewParticipants={(match, title) => {
               setSelectedMatch({
                 matchId: match.id,
                 type: 'playoff',
@@ -2515,7 +2542,7 @@ export default function Pronosticos() {
                     </div>
                     <span className="font-semibold">Balón de Oro</span>
                   </div>
-                  <Select value={balonOro} onValueChange={setBalonOro} disabled={predictionsLocked}>
+                  <Select value={balonOro} onValueChange={setBalonOro} disabled={predictionsLocked || predictionsDeadlinePassed}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona el mejor jugador" />
                     </SelectTrigger>
@@ -2545,7 +2572,7 @@ export default function Pronosticos() {
                     </div>
                     <span className="font-semibold">Bota de Oro</span>
                   </div>
-                  <Select value={botaOro} onValueChange={setBotaOro} disabled={predictionsLocked}>
+                  <Select value={botaOro} onValueChange={setBotaOro} disabled={predictionsLocked || predictionsDeadlinePassed}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona el máximo goleador" />
                     </SelectTrigger>

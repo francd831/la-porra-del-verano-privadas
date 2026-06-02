@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Clock } from "lucide-react";
+import { getPredictionsDeadlineTime } from "@/lib/predictionDeadline";
 
-// Deadline: June 11, 2026 at 00:00:00 UTC (World Cup 2026 start)
-const PREDICTIONS_DEADLINE = new Date("2026-06-11T00:00:00Z").getTime();
+const PREDICTIONS_DEADLINE = getPredictionsDeadlineTime();
 
 interface TimeLeft {
   days: number;

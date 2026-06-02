@@ -139,7 +139,7 @@ export default function Contacto() {
                 <div className="p-4 bg-muted/30 rounded-lg">
                   <h4 className="font-semibold mb-2">¿Puedo cambiar mis pronósticos?</h4>
                   <p className="text-sm text-muted-foreground">
-                    Sí, puedes modificar tus pronósticos hasta 1 hora antes del inicio de cada partido.
+                    Sí, puedes modificar tus pronósticos hasta el 11 de junio a las 19:00, dos horas antes del primer partido.
                   </p>
                 </div>
 
