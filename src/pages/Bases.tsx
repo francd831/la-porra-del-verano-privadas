@@ -1,6 +1,7 @@
 import { FileText, Target, Trophy, Award, Calendar, Users, Clock, CheckCircle, XCircle, Mail } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PREDICTIONS_DEADLINE_DISPLAY } from "@/lib/predictionDeadline";
 export default function Bases() {
   return <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
@@ -33,8 +34,8 @@ export default function Bases() {
                 <div className="flex items-center space-x-3 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
                   <Clock className="w-8 h-8 text-destructive" />
                   <div>
-                    <h4 className="font-semibold">Fecha Límite</h4>
-                    <p className="text-sm text-muted-foreground">10 Jun 2026, 23:59</p>
+                    <h4 className="font-semibold">Fecha límite</h4>
+                    <p className="text-sm text-muted-foreground">{PREDICTIONS_DEADLINE_DISPLAY}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3 p-4 bg-primary/5 rounded-lg">
