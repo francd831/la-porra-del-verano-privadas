@@ -75,6 +75,7 @@ export default function LigaDetalle() {
   const [savingComments, setSavingComments] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const [deletingLeague, setDeletingLeague] = useState(false);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const currentMember = useMemo(() => {
     return members.find((member) => member.user_id === user?.id);
   }, [members, user]);
@@ -88,6 +89,7 @@ export default function LigaDetalle() {
   const isOwner = league?.owner_id === user?.id;
   const currentMemberIsPending = currentMember?.status === "pending";
   const canEditLeague = isOwner || (currentMember?.role === "admin" && currentMember?.status === "approved");
+  const canViewPendingMembers = isOwner || isPlatformAdmin;
 
   const fetchLeague = useCallback(async () => {
     if (!leagueId) return;
@@ -117,6 +119,7 @@ export default function LigaDetalle() {
         .select("user_id")
         .eq("role", "admin");
       const adminIds = new Set((adminRoles || []).map((role) => role.user_id));
+      setIsPlatformAdmin(!!user && adminIds.has(user.id));
       const userIds = memberRows.map((member) => member.user_id);
       const { data: profilesData } = userIds.length
         ? await supabase.rpc("get_user_display_names", { p_user_ids: userIds })
@@ -175,7 +178,7 @@ export default function LigaDetalle() {
     } finally {
       setLoading(false);
     }
-  }, [leagueId, navigate, toast]);
+  }, [leagueId, navigate, toast, user]);
 
   useEffect(() => {
     if (leagueId && user) {
@@ -513,45 +516,6 @@ export default function LigaDetalle() {
             </Card>
           )}
 
-          {isOwner && pendingMembers.length > 0 && (
-            <Card className="border border-gold/30 bg-gold/5 backdrop-blur-xl shadow-soft overflow-hidden">
-              <CardHeader className="pb-3 border-b border-gold/20">
-                <CardTitle className="flex items-center justify-between text-base">
-                  <span className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gold" />
-                    Aprobaciones pendientes
-                  </span>
-                  <span className="text-xs text-muted-foreground font-normal">{pendingMembers.length}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 space-y-1.5">
-                {pendingMembers.map((member) => (
-                  <div
-                    key={member.user_id}
-                    className="flex items-center justify-between gap-2 rounded-lg bg-muted/20 p-2.5"
-                  >
-                    <div className="min-w-0 flex items-center gap-2">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold/20 text-xs font-bold text-gold">
-                        {member.display_name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="truncate text-sm font-medium">{member.display_name}</span>
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-8 shrink-0 gap-1.5 rounded-lg"
-                      onClick={() => approveMember(member)}
-                      disabled={removingMemberId === member.user_id}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      Aceptar
-                    </Button>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
           {/* Members */}
           <Card className="border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft overflow-hidden">
             <CardHeader className="pb-3 border-b border-border/30">
@@ -658,6 +622,51 @@ export default function LigaDetalle() {
               })}
             </CardContent>
           </Card>
+
+          {canViewPendingMembers && pendingMembers.length > 0 && (
+            <Card className="border border-gold/30 bg-gold/5 backdrop-blur-xl shadow-soft overflow-hidden">
+              <CardHeader className="pb-3 border-b border-gold/20">
+                <CardTitle className="flex items-center justify-between text-base">
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gold" />
+                    Pendientes
+                  </span>
+                  <span className="text-xs text-muted-foreground font-normal">{pendingMembers.length}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 space-y-1.5">
+                {pendingMembers.map((member) => (
+                  <div
+                    key={member.user_id}
+                    className="flex items-center justify-between gap-2 rounded-lg bg-muted/20 p-2.5"
+                  >
+                    <div className="min-w-0 flex items-center gap-2">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold/20 text-xs font-bold text-gold">
+                        {member.display_name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="truncate text-sm font-medium">{member.display_name}</span>
+                    </div>
+                    {isOwner ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-8 shrink-0 gap-1.5 rounded-lg"
+                        onClick={() => approveMember(member)}
+                        disabled={removingMemberId === member.user_id}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                        Aceptar
+                      </Button>
+                    ) : (
+                      <Badge variant="outline" className="shrink-0 border-gold/25 bg-gold/5 text-[10px] text-gold">
+                        Pendiente
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Invite CTA */}
           <Card className="border border-primary/20 bg-primary/5 backdrop-blur-xl shadow-soft overflow-hidden">

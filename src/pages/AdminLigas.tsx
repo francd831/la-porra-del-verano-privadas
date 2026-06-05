@@ -34,10 +34,6 @@ type LeagueSummary = LeagueRow & {
   owner_name: string;
   approved_count: number;
   pending_count: number;
-  pending_members: Array<{
-    user_id: string;
-    display_name: string;
-  }>;
   total_count: number;
 };
 
@@ -70,14 +66,10 @@ export default function AdminLigas() {
         if (membersError) throw membersError;
 
         const typedMembers = (membersData || []) as MemberRow[];
-        const ownerIds = rows.map((league) => league.owner_id);
-        const pendingUserIds = typedMembers
-          .filter((member) => member.status === "pending")
-          .map((member) => member.user_id);
-        const profileUserIds = Array.from(new Set([...ownerIds, ...pendingUserIds]));
+        const ownerIds = Array.from(new Set(rows.map((league) => league.owner_id)));
 
-        const { data: profilesData } = profileUserIds.length
-          ? await supabase.rpc("get_user_display_names", { p_user_ids: profileUserIds })
+        const { data: profilesData } = ownerIds.length
+          ? await supabase.rpc("get_user_display_names", { p_user_ids: ownerIds })
           : { data: [] };
 
         const profileMap = new Map(
@@ -88,18 +80,11 @@ export default function AdminLigas() {
         );
 
         const countsByLeague = new Map<string, { approved: number; pending: number; total: number }>();
-        const pendingMembersByLeague = new Map<string, LeagueSummary["pending_members"]>();
         typedMembers.forEach((member) => {
           const current = countsByLeague.get(member.league_id) || { approved: 0, pending: 0, total: 0 };
           current.total += 1;
           if (member.status === "pending") {
             current.pending += 1;
-            const pendingMembers = pendingMembersByLeague.get(member.league_id) || [];
-            pendingMembers.push({
-              user_id: member.user_id,
-              display_name: profileMap.get(member.user_id) || "Usuario",
-            });
-            pendingMembersByLeague.set(member.league_id, pendingMembers);
           } else {
             current.approved += 1;
           }
@@ -113,7 +98,6 @@ export default function AdminLigas() {
             owner_name: profileMap.get(league.owner_id) || "Usuario",
             approved_count: counts.approved,
             pending_count: counts.pending,
-            pending_members: pendingMembersByLeague.get(league.id) || [],
             total_count: counts.total,
           };
         }));
@@ -142,7 +126,6 @@ export default function AdminLigas() {
         league.owner_name,
         league.invite_code,
         league.comments || "",
-        ...league.pending_members.map((member) => member.display_name),
       ].some((value) => value.toLowerCase().includes(normalizedSearch));
     });
   }, [leagues, search]);
@@ -259,36 +242,16 @@ export default function AdminLigas() {
                       </td>
                       <td className="px-4 py-3 text-sm">{league.owner_name}</td>
                       <td className="px-4 py-3 text-center">
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="flex items-center justify-center gap-2">
-                            <Badge variant="secondary" className="gap-1">
-                              <ShieldCheck className="h-3 w-3" />
-                              {league.approved_count}
+                        <div className="flex items-center justify-center gap-2">
+                          <Badge variant="secondary" className="gap-1">
+                            <ShieldCheck className="h-3 w-3" />
+                            {league.approved_count}
+                          </Badge>
+                          {league.pending_count > 0 && (
+                            <Badge className="gap-1 bg-gold/15 text-gold border border-gold/25">
+                              <Clock className="h-3 w-3" />
+                              {league.pending_count}
                             </Badge>
-                            {league.pending_count > 0 && (
-                              <Badge className="gap-1 border border-gold/25 bg-gold/15 text-gold">
-                                <Clock className="h-3 w-3" />
-                                {league.pending_count}
-                              </Badge>
-                            )}
-                          </div>
-                          {league.pending_members.length > 0 && (
-                            <div className="max-w-[240px] text-left">
-                              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                Pendientes de aprobación
-                              </div>
-                              <div className="flex flex-wrap justify-center gap-1">
-                                {league.pending_members.map((member) => (
-                                  <Badge
-                                    key={member.user_id}
-                                    variant="outline"
-                                    className="max-w-[110px] truncate border-gold/25 bg-gold/5 px-1.5 text-[10px] text-gold"
-                                  >
-                                    {member.display_name}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
                           )}
                         </div>
                       </td>
