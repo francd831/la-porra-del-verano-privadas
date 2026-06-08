@@ -606,7 +606,7 @@ export default function Clasificacion() {
               </div>
               <div className="rounded-lg bg-amber-400/10 px-3 py-2">
                 <div className="text-lg font-black text-amber-300">{generalStats.incomplete}</div>
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Por completar</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Incompletas</div>
               </div>
               <div className="rounded-lg bg-emerald-400/10 px-3 py-2">
                 <div className="text-lg font-black text-emerald-300">{generalStats.complete}</div>
