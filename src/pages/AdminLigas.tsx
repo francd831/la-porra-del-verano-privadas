@@ -1,10 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Clock, Copy, ExternalLink, Search, ShieldCheck, Trophy, Users } from "lucide-react";
+import { Clock, Copy, ExternalLink, Search, ShieldCheck, Trash2, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -42,6 +53,7 @@ export default function AdminLigas() {
   const [leagues, setLeagues] = useState<LeagueSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [deletingLeagueId, setDeletingLeagueId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadLeagues = async () => {
@@ -142,6 +154,35 @@ export default function AdminLigas() {
         title: "Código de invitación",
         description: inviteCode,
       });
+    }
+  };
+
+  const deleteLeague = async (league: LeagueSummary) => {
+    if (deletingLeagueId) return;
+
+    setDeletingLeagueId(league.id);
+    try {
+      const { error } = await supabase
+        .from("leagues")
+        .delete()
+        .eq("id", league.id);
+
+      if (error) throw error;
+
+      setLeagues((current) => current.filter((item) => item.id !== league.id));
+      toast({
+        title: "Liga eliminada",
+        description: `Se ha eliminado ${league.name}.`,
+      });
+    } catch (error) {
+      console.error("Error deleting league:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar la liga.",
+      });
+    } finally {
+      setDeletingLeagueId(null);
     }
   };
 
@@ -273,12 +314,46 @@ export default function AdminLigas() {
                         </Button>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <Button asChild size="sm" className="h-8 gap-2 rounded-lg">
-                          <Link to={`/ligas/${league.id}`}>
-                            Ver
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </Link>
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button asChild size="sm" className="h-8 gap-2 rounded-lg">
+                            <Link to={`/ligas/${league.id}`}>
+                              Ver
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </Link>
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="h-8 gap-2 rounded-lg"
+                                disabled={deletingLeagueId === league.id}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Eliminar
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>¿Eliminar esta liga?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta acción eliminará “{league.name}” y expulsará a todos sus miembros de la liga. Los pronósticos personales de los usuarios se conservarán.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel disabled={deletingLeagueId === league.id}>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => deleteLeague(league)}
+                                  disabled={deletingLeagueId === league.id}
+                                >
+                                  {deletingLeagueId === league.id ? "Eliminando..." : "Sí, eliminar liga"}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </td>
                     </tr>
                   ))}
