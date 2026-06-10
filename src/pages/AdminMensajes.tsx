@@ -44,6 +44,7 @@ type ReadRow = {
 export default function AdminMensajes() {
   const { toast } = useToast();
   const [users, setUsers] = useState<MessageUser[]>([]);
+  const [incompleteUserIds, setIncompleteUserIds] = useState<string[]>([]);
   const [messages, setMessages] = useState<(AdminMessageRow & MessageStats)[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [targetAll, setTargetAll] = useState(true);
@@ -58,6 +59,14 @@ export default function AdminMensajes() {
     try {
       const { data: usersData, error: usersError } = await (supabase as any).rpc("get_admin_message_users");
       if (usersError) throw usersError;
+
+      const knownUserIds = new Set(((usersData || []) as MessageUser[]).map((user) => user.user_id));
+      const { data: incompleteSubmissionsData, error: incompleteSubmissionsError } = await (supabase as any)
+        .from("user_submissions")
+        .select("user_id")
+        .eq("tournament_id", "11111111-1111-1111-1111-111111111111")
+        .eq("is_complete", false);
+      if (incompleteSubmissionsError) throw incompleteSubmissionsError;
 
       const { data: messagesData, error: messagesError } = await (supabase as any)
         .from("admin_messages")
@@ -101,6 +110,10 @@ export default function AdminMensajes() {
       });
 
       setUsers((usersData || []) as MessageUser[]);
+      setIncompleteUserIds(
+        Array.from(new Set((incompleteSubmissionsData || []).map((submission: { user_id: string }) => submission.user_id)))
+          .filter((userId) => knownUserIds.has(userId))
+      );
       setMessages(
         ((messagesData || []) as AdminMessageRow[]).map((message) => ({
           ...message,
@@ -146,6 +159,11 @@ export default function AdminMensajes() {
   const selectAll = () => {
     setTargetAll(true);
     setSelectedUserIds([]);
+  };
+
+  const selectIncomplete = () => {
+    setTargetAll(false);
+    setSelectedUserIds(incompleteUserIds);
   };
 
   const sendMessage = async () => {
@@ -260,6 +278,15 @@ export default function AdminMensajes() {
                   </Badge>
                   <Button type="button" variant="outline" size="sm" onClick={selectAll}>
                     Todos
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={selectIncomplete}
+                    disabled={incompleteUserIds.length === 0}
+                  >
+                    Porras incompletas ({incompleteUserIds.length})
                   </Button>
                 </div>
               </div>
