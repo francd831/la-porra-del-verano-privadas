@@ -123,12 +123,12 @@ export default function MatchStatsDialog({ isOpen, onClose, matchId, homeTeam, a
               {totalPredictions} pronósticos totales
             </p>
             
-            <div className="h-[300px] w-full">
+            <div className="h-[320px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={stats}
                   layout="vertical"
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  margin={{ top: 5, right: 30, left: 8, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis 
@@ -140,8 +140,9 @@ export default function MatchStatsDialog({ isOpen, onClose, matchId, homeTeam, a
                   <YAxis 
                     type="category" 
                     dataKey="result" 
-                    width={60}
-                    tick={{ fill: 'hsl(var(--foreground))', fontWeight: 600 }}
+                    width={72}
+                    interval={0}
+                    tick={{ fill: 'hsl(var(--foreground))', fontWeight: 600, fontSize: 12 }}
                   />
                   <Tooltip 
                     formatter={(value: number, name: string, props: any) => [
