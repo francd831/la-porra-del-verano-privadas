@@ -257,7 +257,7 @@ export default function Pronosticos() {
 
         // Cargar predicciones existentes si hay usuario
         if (user) {
-          await loadExistingPredictions(teamsData || [], groupedPlayoffs, groupedMatches);
+          await loadExistingPredictions(teamsData || [], groupedPlayoffs, groupedMatches, predictionsLocked);
         }
 
         // Cargar estado de bloqueo de pronósticos
@@ -758,9 +758,19 @@ export default function Pronosticos() {
   };
 
   // Cargar predicciones existentes del usuario
-  const loadExistingPredictions = async (teamsData: Team[], basePlayoffMatches: Record<string, Match[]>, groupMatchesData: Record<string, Match[]>) => {
+  const loadExistingPredictions = async (teamsData: Team[], basePlayoffMatches: Record<string, Match[]>, groupMatchesData: Record<string, Match[]>, lockedOverride = false) => {
     if (!user) return;
     try {
+      const { data: tournamentLockData } = await supabase
+        .from('tournaments')
+        .select('predictions_locked')
+        .eq('id', '11111111-1111-1111-1111-111111111111')
+        .single();
+      const shouldIgnoreDrafts = lockedOverride || tournamentLockData?.predictions_locked || false;
+      if (shouldIgnoreDrafts) {
+        clearUserGroupPredictionDrafts();
+      }
+
       // Cargar datos de matches para verificar el tipo
       const {
         data: allMatches
@@ -792,10 +802,12 @@ export default function Pronosticos() {
           playoffWinnersMap[prediction.playoff_round] = prediction.predicted_winner_team_id;
         }
       });
-      const mergedGroupPredictions = {
-        ...groupPredictionsMap,
-        ...readUserGroupPredictionDrafts(),
-      };
+      const mergedGroupPredictions = shouldIgnoreDrafts
+        ? groupPredictionsMap
+        : {
+            ...groupPredictionsMap,
+            ...readUserGroupPredictionDrafts(),
+          };
       setPartidosGrupos(mergedGroupPredictions);
       setPlayoffPredictions(playoffPredictionsMap);
 
