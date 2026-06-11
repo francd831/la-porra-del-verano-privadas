@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-const FEATURE_KEY = "post_lock_tour_2026_v1";
-const ADMIN_PREVIEW_FEATURE_KEY = "post_lock_tour_admin_preview_2026_v1";
+const FEATURE_KEY = "post_lock_tour_2026_v2";
+const ADMIN_PREVIEW_FEATURE_KEY = "post_lock_tour_admin_preview_2026_v2";
 const TOURNAMENT_ID = "11111111-1111-1111-1111-111111111111";
 
 interface TourStep {
   title: string;
-  body: string;
+  body?: string;
   targetId?: string;
 }
 
@@ -53,33 +53,32 @@ export function PostLockTour() {
   const steps = useMemo<TourStep[]>(
     () => [
       {
-        title: "Pronósticos cerrados",
-        body: "Ahora empieza lo bueno. Ya puedes comparar porras, seguir puntos en directo y pelear cada clasificación.",
-      },
-      {
         title: "Inicio",
-        body: "Aquí verás tu resumen de puntuación, próximos partidos, estadísticas y los badges que vayas consiguiendo.",
+        body: "Pronósticos cerrados. ¡Ahora empieza lo bueno!. Desde aquí seguirás tus puntos, próximos partidos, estadísticas, etc.",
         targetId: "nav-dashboard",
       },
       {
         title: "Mi Porra",
-        body: "Tus pronósticos se quedan visibles en el mismo formato en el que los hiciste, para consultarlos cuando quieras.",
+        body: "Tus pronósticos ya no se pueden editar, pero puedes revisarlos con el mismo formato en el que los hiciste.",
         targetId: "nav-mi-porra",
       },
       {
         title: "Pronósticos",
-        body: "Cuando los pronósticos estén cerrados, podrás ver qué ha puesto cada usuario en partidos, eliminatorias y premios.",
+        body: "Mira lo que ha puesto cada participante en grupos, eliminatorias, campeón y premios.",
         targetId: "nav-pronosticos",
       },
       {
         title: "Clasificación",
-        body: "Aquí tendrás la General y las ligas privadas en las que participas, con la clasificación calculada en tiempo real.",
+        body: "Consulta la general y las ligas privadas en las que participas.",
         targetId: "nav-clasificacion",
       },
       {
         title: "Hall of Fame",
-        body: "Verás clasificaciones especiales por categorías. Si entras en un podio, el badge aparecerá también en Inicio.",
+        body: "Para dar más emoción hemos creado categorías especiales. Si entras en un podio, conseguirás badges visibles en la pestaña de Inicio.",
         targetId: "nav-hall-of-fame",
+      },
+      {
+        title: "Mucha suerte",
       },
     ],
     []
@@ -193,14 +192,34 @@ export function PostLockTour() {
   const isLastStep = stepIndex === steps.length - 1;
   const cardStyle = targetBox
     ? {
-        top: Math.min(window.innerHeight - 300, Math.max(88, targetBox.top + targetBox.height + 18)),
-        left: Math.min(window.innerWidth - 352, Math.max(16, targetBox.left + targetBox.width / 2 - 176)),
+        top: Math.max(88, Math.min(window.innerHeight - 300, targetBox.top + targetBox.height + 18)),
+        left: Math.max(16, Math.min(window.innerWidth - 368, targetBox.left + targetBox.width / 2 - 176)),
       }
     : undefined;
 
+  const cutoutPadding = 12;
+  const cutoutTop = Math.max(0, (targetBox?.top ?? 0) - cutoutPadding);
+  const cutoutLeft = Math.max(0, (targetBox?.left ?? 0) - cutoutPadding);
+  const cutoutRight = targetBox
+    ? Math.max(0, window.innerWidth - targetBox.left - targetBox.width - cutoutPadding)
+    : 0;
+  const cutoutHeight = targetBox ? targetBox.height + cutoutPadding * 2 : 0;
+  const cutoutBottom = targetBox
+    ? Math.max(0, window.innerHeight - targetBox.top - targetBox.height - cutoutPadding)
+    : 0;
+
   return (
     <div className="fixed inset-0 z-[200]">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+      {targetBox ? (
+        <>
+          <div className="absolute left-0 right-0 top-0 bg-background/75 backdrop-blur-sm" style={{ height: cutoutTop }} />
+          <div className="absolute left-0 bg-background/75 backdrop-blur-sm" style={{ top: cutoutTop, width: cutoutLeft, height: cutoutHeight }} />
+          <div className="absolute right-0 bg-background/75 backdrop-blur-sm" style={{ top: cutoutTop, width: cutoutRight, height: cutoutHeight }} />
+          <div className="absolute bottom-0 left-0 right-0 bg-background/75 backdrop-blur-sm" style={{ height: cutoutBottom }} />
+        </>
+      ) : (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+      )}
 
       {targetBox && (
         <div
@@ -246,7 +265,9 @@ export function PostLockTour() {
           </div>
         </div>
 
-        <p className="text-sm leading-relaxed text-muted-foreground">{currentStep.body}</p>
+        {currentStep.body && (
+          <p className="text-sm leading-relaxed text-muted-foreground">{currentStep.body}</p>
+        )}
 
         <div className="mt-5 flex items-center justify-between gap-3">
           <span className="text-xs font-medium text-muted-foreground">
