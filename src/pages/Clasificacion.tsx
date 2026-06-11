@@ -502,8 +502,9 @@ export default function Clasificacion() {
   const rankingTitle = selectedLeague ? selectedLeague.name : "General";
   const selectedLeagueIsOwner = !!selectedLeague && selectedLeague.owner_id === user?.id;
   const selectedLeagueIsPending = selectedLeague?.member_status === "pending";
-  const visibleStatsTotal = generalStats.incomplete + generalStats.complete;
-  const getStatsWidth = (value: number) => visibleStatsTotal > 0 ? `${Math.max((value / visibleStatsTotal) * 100, value > 0 ? 4 : 0)}%` : "0%";
+  const participantCount = selectedLeague
+    ? selectedLeague.member_count
+    : generalStats.incomplete + generalStats.complete;
   const getSelectorPosition = (scopeId: string) => {
     const position = rankingPositions[scopeId];
     return position ? `#${position}` : "-";
@@ -593,26 +594,6 @@ export default function Clasificacion() {
           ))}
         </div>
 
-        {isGeneralRanking && (
-          <div className="w-full rounded-xl border border-border/50 bg-card/60 p-3 shadow-soft backdrop-blur-xl xl:max-w-[340px]">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg bg-amber-400/10 px-3 py-2">
-                <div className="text-lg font-black text-amber-300">{generalStats.incomplete}</div>
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Incompletas</div>
-              </div>
-              <div className="rounded-lg bg-emerald-400/10 px-3 py-2">
-                <div className="text-lg font-black text-emerald-300">{generalStats.complete}</div>
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Finalizadas</div>
-              </div>
-            </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted/40">
-              <div className="flex h-full">
-                <div className="bg-amber-400/80" style={{ width: getStatsWidth(generalStats.incomplete) }} />
-                <div className="bg-emerald-400/80" style={{ width: getStatsWidth(generalStats.complete) }} />
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {liveMatches.length > 0 && (
@@ -804,10 +785,15 @@ export default function Clasificacion() {
       ) : (
         <Card className="shadow-strong border-0 bg-gradient-card">
           <CardHeader className="py-3">
-            <CardTitle className="flex items-center space-x-2 text-base">
-              <Trophy className="w-5 h-5 text-gold" />
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="flex min-w-0 items-center space-x-2 text-base">
+                <Trophy className="h-5 w-5 shrink-0 text-gold" />
               <span>{selectedLeague ? `Liga: ${selectedLeague.name}` : "Clasificación general"}</span>
-            </CardTitle>
+              </CardTitle>
+              <Badge variant="outline" className="shrink-0 border-primary/30 bg-primary/10 px-3 py-1 text-primary">
+                {participantCount} participantes
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
