@@ -24,6 +24,11 @@ type Profile = {
   display_name: string | null;
 };
 
+type GeneralStanding = {
+  pointsTotal: number;
+  rank: number;
+};
+
 type ExpectedGroup = {
   eventType: string;
   eventKey: string;
@@ -151,7 +156,9 @@ function EventCard({
           </div>
         ) : (
           topEntries.map((entry, index) => {
-            const isWinner = index === 0;
+            const rank = entry.rank || index + 1;
+            const isWinner = rank === 1;
+            const shieldIndex = Math.max(0, Math.min(2, rank - 1));
 
             return (
               <div
@@ -164,9 +171,9 @@ function EventCard({
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <div className="relative flex h-8 w-8 shrink-0 items-center justify-center">
-                    <Shield className={`h-7 w-7 ${shieldClasses[index] || "fill-primary/20 text-primary"}`} />
-                    <span className={`absolute text-[10px] font-black ${index === 0 ? "text-gold-foreground" : "text-background"}`}>
-                      {entry.rank || index + 1}
+                    <Shield className={`h-7 w-7 ${shieldClasses[shieldIndex] || "fill-primary/20 text-primary"}`} />
+                    <span className={`absolute text-[10px] font-black ${rank === 1 ? "text-gold-foreground" : "text-background"}`}>
+                      {rank}
                     </span>
                   </div>
                   <span className={`truncate text-sm ${isWinner ? "font-bold" : "font-medium"}`}>
@@ -270,6 +277,7 @@ export default function HallOfFame() {
   const { user } = useAuth();
   const [events, setEvents] = useState<ScoreEvent[]>([]);
   const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map());
+  const [generalStandings, setGeneralStandings] = useState<Map<string, GeneralStanding>>(new Map());
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState("");
 
@@ -307,6 +315,35 @@ export default function HallOfFame() {
         const nextEvents = Array.from(eventsById.values());
         setEvents(nextEvents);
 
+        const { data: allSubmissionsData, error: submissionsError } = await supabase
+          .from("user_submissions")
+          .select("user_id, points_total")
+          .eq("tournament_id", TOURNAMENT_ID);
+
+        if (submissionsError) throw submissionsError;
+
+        const { data: adminRolesData, error: adminRolesError } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+
+        if (adminRolesError) throw adminRolesError;
+
+        const adminIds = new Set((adminRolesData || []).map((role) => role.user_id));
+        const nonAdminSubmissions = ((allSubmissionsData || []) as { user_id: string; points_total: number | null }[])
+          .filter((submission) => !adminIds.has(submission.user_id));
+        const nextGeneralStandings = new Map<string, GeneralStanding>();
+
+        for (const submission of nonAdminSubmissions) {
+          const pointsTotal = submission.points_total || 0;
+          nextGeneralStandings.set(submission.user_id, {
+            pointsTotal,
+            rank: nonAdminSubmissions.filter((candidate) => (candidate.points_total || 0) > pointsTotal).length + 1,
+          });
+        }
+
+        setGeneralStandings(nextGeneralStandings);
+
         const userIds = Array.from(new Set(nextEvents.map((event) => event.user_id)));
         if (userIds.length === 0) {
           setProfiles(new Map());
@@ -341,11 +378,26 @@ export default function HallOfFame() {
     }
 
     for (const group of grouped.values()) {
-      group.sort((a, b) => (a.rank || 999) - (b.rank || 999) || b.points - a.points);
+      group.sort((a, b) => {
+        const rankDiff = (a.rank || 999) - (b.rank || 999);
+        if (rankDiff !== 0) return rankDiff;
+
+        const pointsDiff = b.points - a.points;
+        if (pointsDiff !== 0) return pointsDiff;
+
+        const generalRankDiff =
+          (generalStandings.get(a.user_id)?.rank || 9999) -
+          (generalStandings.get(b.user_id)?.rank || 9999);
+        if (generalRankDiff !== 0) return generalRankDiff;
+
+        return getDisplayName(a, profiles).localeCompare(getDisplayName(b, profiles), "es", {
+          sensitivity: "base",
+        });
+      });
     }
 
     return grouped;
-  }, [events]);
+  }, [events, generalStandings, profiles]);
 
   const sectionGroups = useMemo(() => {
     return sectionConfig.map((section) => ({
