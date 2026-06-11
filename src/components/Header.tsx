@@ -27,6 +27,18 @@ const navigation: NavItem[] = [
   { name: "¿Cómo funciona?", href: "/bases", icon: FileText },
 ];
 
+const getTourId = (href: string) => {
+  const tourIds: Record<string, string> = {
+    "/dashboard": "nav-dashboard",
+    "/mi-porra": "nav-mi-porra",
+    "/pronosticos": "nav-pronosticos",
+    "/clasificacion": "nav-clasificacion",
+    "/hall-of-fame": "nav-hall-of-fame",
+  };
+
+  return tourIds[href];
+};
+
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<{ display_name?: string; email?: string } | null>(null);
@@ -177,6 +189,7 @@ export function Header() {
                   <Link
                     key={item.name}
                     to={item.href}
+                    data-tour-id={getTourId(item.href)}
                     className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
                       isActive
                         ? "bg-primary text-primary-foreground shadow-glow"
@@ -246,6 +259,7 @@ export function Header() {
                     <Link
                       key={item.name}
                       to={item.href}
+                      data-tour-id={getTourId(item.href)}
                       onClick={() => setIsMenuOpen(false)}
                       className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                         isActive

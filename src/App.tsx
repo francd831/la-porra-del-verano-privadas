@@ -14,6 +14,7 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import { PWAInstallBanner } from "./components/PWAInstallBanner";
 import { AppVersionGate } from "./components/AppVersionGate";
 import { AdminMessagePopup } from "./components/AdminMessagePopup";
+import { PostLockTour } from "./components/PostLockTour";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
@@ -54,6 +55,7 @@ const App = () => (
             <PWAInstallBanner />
             <AppVersionGate />
             <AdminMessagePopup />
+            <PostLockTour />
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />

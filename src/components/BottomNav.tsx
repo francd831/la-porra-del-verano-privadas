@@ -3,6 +3,19 @@ import { Trophy, Target, Award, FileText, Home, User, BarChart3, Users, MessageS
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+
+const getTourId = (href: string) => {
+  const tourIds: Record<string, string> = {
+    "/dashboard": "nav-dashboard",
+    "/mi-porra": "nav-mi-porra",
+    "/pronosticos": "nav-pronosticos",
+    "/clasificacion": "nav-clasificacion",
+    "/hall-of-fame": "nav-hall-of-fame",
+  };
+
+  return tourIds[href];
+};
+
 export function BottomNav() {
   const location = useLocation();
   const { user } = useAuth();
@@ -67,6 +80,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               to={item.href}
+              data-tour-id={getTourId(item.href)}
               className={`flex flex-col items-center justify-center flex-1 py-1.5 rounded-lg transition-all duration-200 ${
                 isActive
                   ? "text-primary"
