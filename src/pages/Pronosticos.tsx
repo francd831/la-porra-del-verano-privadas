@@ -577,7 +577,7 @@ export default function Pronosticos() {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="text-center">Cargando pronósticos...</div>
+        <div className="text-center">Cargando pronósticos... (puede tardar unos segundos)</div>
       </div>
     );
   }
