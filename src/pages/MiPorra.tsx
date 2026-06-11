@@ -265,7 +265,12 @@ export default function Pronosticos() {
           data: tournamentData
         } = await supabase.from('tournaments').select('predictions_locked').eq('id', '11111111-1111-1111-1111-111111111111').single();
         if (tournamentData) {
-          setPredictionsLocked(tournamentData.predictions_locked || false);
+          const isLocked = tournamentData.predictions_locked || false;
+          setPredictionsLocked(isLocked);
+          if (isLocked) {
+            writeUserPredictionActiveTab("grupos");
+            setActiveTab("grupos");
+          }
         }
 
         // Cargar resultados reales de partidos completados
@@ -1831,6 +1836,11 @@ export default function Pronosticos() {
 
   // Función para ir a la fase eliminatoria
   const handleGoToPlayoffs = async () => {
+    if (predictionsLocked) {
+      setActiveTab("eliminatorias");
+      return;
+    }
+
     // Verificar que se hayan completado todos los partidos de grupos
     const allGroupMatchesFilled = Object.values(groupMatches).every(matches => matches.every(match => {
       const prediction = partidosGrupos[match.id];
@@ -1872,7 +1882,9 @@ export default function Pronosticos() {
   };
 
   const handleBackToGroups = () => {
-    writeUserPredictionActiveTab("grupos");
+    if (!predictionsLocked) {
+      writeUserPredictionActiveTab("grupos");
+    }
     setActiveTab("grupos");
   };
 
@@ -2194,7 +2206,16 @@ export default function Pronosticos() {
           </div>
         </Alert>}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={(nextTab) => {
+          setActiveTab(nextTab);
+          if (!predictionsLocked) {
+            writeUserPredictionActiveTab(nextTab);
+          }
+        }}
+        className="space-y-6"
+      >
 
         {/* Fase de Grupos */}
         <TabsContent value="grupos" className="space-y-4 relative">
@@ -2211,7 +2232,7 @@ export default function Pronosticos() {
                   </>}
               </Button>
             )}
-            <Button onClick={handleGoToPlayoffs} disabled={isLoading || predictionsLocked} className="bg-gradient-hero shadow-strong hover:opacity-90" size="sm">
+            <Button onClick={handleGoToPlayoffs} disabled={isLoading} className="bg-gradient-hero shadow-strong hover:opacity-90" size="sm">
               {isLoading ? <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Guardando...
@@ -2454,13 +2475,12 @@ export default function Pronosticos() {
 
         {/* Fase Eliminatoria */}
         <TabsContent value="eliminatorias" className="space-y-6">
-          {!predictionsLocked && (
-            <div className="fixed top-20 right-4 z-50 flex flex-col items-end gap-2 sm:flex-row">
+          <div className="fixed top-20 right-4 z-50 flex flex-col items-end gap-2 sm:flex-row">
               <Button onClick={handleBackToGroups} className="bg-gradient-hero shadow-strong hover:opacity-90" size="sm">
                 <ArrowLeft className="mr-2 w-4 h-4" />
                 <span>Volver a Fase de Grupos</span>
               </Button>
-              <Button onClick={handleGuardarPronosticos} disabled={isLoading || !user} className="bg-gradient-hero shadow-strong" size="sm">
+              {!predictionsLocked && <Button onClick={handleGuardarPronosticos} disabled={isLoading || !user} className="bg-gradient-hero shadow-strong" size="sm">
                 {isLoading ? <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Guardando...
@@ -2468,9 +2488,8 @@ export default function Pronosticos() {
                     <Save className="w-4 h-4 mr-2" />
                     Guardar Pronósticos
                   </>}
-              </Button>
-            </div>
-          )}
+              </Button>}
+          </div>
 
           <Card className="shadow-soft border-0 bg-gradient-card">
             <CardHeader>
