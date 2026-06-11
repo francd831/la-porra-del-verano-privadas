@@ -247,11 +247,15 @@ export default function Dashboard() {
           }
         }
         const nonAdminSubmissions = allSubmissions?.filter((s) => !adminIds.has(s.user_id)) || [];
-        const userRank = nonAdminSubmissions.findIndex((s) => s.user_id === user.id) + 1;
+        const userPoints = submissionData?.points_total || 0;
+        const userHasSubmission = nonAdminSubmissions.some((s) => s.user_id === user.id);
+        const userRank = userHasSubmission
+          ? nonAdminSubmissions.filter((s) => (s.points_total || 0) > userPoints).length + 1
+          : 0;
         const totalParticipants = nonAdminSubmissions.length;
         setStats({
           displayName: profileData?.display_name || user.email?.split('@')[0] || 'Usuario',
-          totalPoints: submissionData?.points_total || 0,
+          totalPoints: userPoints,
           rank: userRank || 0,
           totalParticipants,
           pointsGroups: submissionData?.points_groups || 0,

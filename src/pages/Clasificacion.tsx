@@ -530,11 +530,16 @@ export default function Clasificacion() {
             </p>
           </div>
         </div>
-        {user && (
-          <Badge className="shrink-0 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary">
-            {currentUserPoints} pts
+        <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
+          <Badge variant="outline" className="rounded-full border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary">
+            {participantCount} participantes
           </Badge>
-        )}
+          {user && (
+            <Badge className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary">
+              {currentUserPoints} pts
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Selector de ranking: General + ligas privadas */}
@@ -790,9 +795,6 @@ export default function Clasificacion() {
                 <Trophy className="h-5 w-5 shrink-0 text-gold" />
               <span>{selectedLeague ? `Liga: ${selectedLeague.name}` : "Clasificación general"}</span>
               </CardTitle>
-              <Badge variant="outline" className="shrink-0 border-primary/30 bg-primary/10 px-3 py-1 text-primary">
-                {participantCount} participantes
-              </Badge>
             </div>
           </CardHeader>
           <CardContent className="p-0">
