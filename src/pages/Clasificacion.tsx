@@ -530,10 +530,39 @@ export default function Clasificacion() {
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
+        <div className="flex shrink-0 flex-col items-end gap-2 lg:flex-row lg:items-center">
           <Badge variant="outline" className="rounded-full border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary">
             {participantCount} participantes
           </Badge>
+          {user && isGeneralRanking && (
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button asChild variant="outline" size="sm" className="h-8 rounded-full border-border/60 bg-card/40 px-3 text-xs">
+                <Link to="/ligas/crear">
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Crear liga
+                </Link>
+              </Button>
+              <div className="flex gap-1.5">
+                <Input
+                  value={inviteCode}
+                  onChange={(event) => setInviteCode(event.target.value.toUpperCase())}
+                  placeholder="Código"
+                  className="h-8 w-24 rounded-full bg-card/40 px-3 text-xs uppercase font-mono tracking-wider"
+                  disabled={joiningLeague || leagues.length >= MAX_PRIVATE_LEAGUES}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-full border-border/60 bg-card/40 px-3 text-xs"
+                  onClick={handleJoinLeague}
+                  disabled={joiningLeague || !inviteCode.trim() || leagues.length >= MAX_PRIVATE_LEAGUES}
+                >
+                  <Search className="mr-1.5 h-3.5 w-3.5" />
+                  {joiningLeague ? "..." : "Unirse"}
+                </Button>
+              </div>
+            </div>
+          )}
           {user && (
             <Badge className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary">
               {currentUserPoints} pts
@@ -628,49 +657,6 @@ export default function Clasificacion() {
             <Badge className="w-fit border border-primary/30 bg-primary text-primary-foreground">
               Clasificacion en tiempo real
             </Badge>
-          </CardContent>
-        </Card>
-      )}
-
-      {user && isGeneralRanking && (
-        <Card className="mb-6 border border-border/50 bg-card/60 backdrop-blur-xl shadow-soft">
-          <CardContent className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <div className="font-semibold text-sm">Ligas privadas</div>
-                <div className="text-xs text-muted-foreground">
-                  Crea una liga o únete con código. Puedes pertenecer a {MAX_PRIVATE_LEAGUES} ligas como máximo.
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button asChild className="h-11 gap-2 rounded-xl font-bold">
-                <Link to="/ligas/crear">
-                  <Plus className="h-4 w-4" />
-                  Crear nueva liga
-                </Link>
-              </Button>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Input
-                  value={inviteCode}
-                  onChange={(event) => setInviteCode(event.target.value.toUpperCase())}
-                  placeholder="Código"
-                  className="h-11 min-w-[150px] uppercase bg-muted/30 font-mono tracking-wider"
-                  disabled={joiningLeague || leagues.length >= MAX_PRIVATE_LEAGUES}
-                />
-                <Button
-                  className="h-11 gap-2 rounded-xl font-bold"
-                  onClick={handleJoinLeague}
-                  disabled={joiningLeague || !inviteCode.trim() || leagues.length >= MAX_PRIVATE_LEAGUES}
-                >
-                  <Search className="h-4 w-4" />
-                  {joiningLeague ? "Uniendo..." : "Unirse"}
-                </Button>
-              </div>
-            </div>
           </CardContent>
         </Card>
       )}
