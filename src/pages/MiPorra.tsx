@@ -15,7 +15,6 @@ import PredictionsViewerDialog from "@/components/PredictionsViewerDialog";
 import PlayoffBracket from "@/components/PlayoffBracket";
 import { sortStandingsByFifaCriteria, sortThirdPlacedByFifaCriteria } from "@/lib/fifaStandings";
 import { getThirdPlaceAllocation } from "@/lib/thirdPlaceAllocations";
-import { PREDICTIONS_DEADLINE_DISPLAY } from "@/lib/predictionDeadline";
 
 // Interfaces para los datos de la base de datos
 interface Team {
@@ -2204,7 +2203,6 @@ export default function Pronosticos() {
         <h1 className="text-4xl font-bold bg-gradient-hero bg-clip-text text-transparent">
           Pronósticos Mundial 2026
         </h1>
-        <p className="text-muted-foreground">Puedes modificar tus pronósticos hasta el {PREDICTIONS_DEADLINE_DISPLAY}</p>
       </div>
 
       {/* Aviso cuando los pronósticos están bloqueados */}

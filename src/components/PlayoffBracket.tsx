@@ -1,4 +1,4 @@
-import { Trophy, Eye, RotateCcw, Save } from "lucide-react";
+import { Trophy, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 interface Team {
@@ -161,12 +161,6 @@ const BracketMatch = ({
         {awaySelected && !isFinal && !awayPoints && <span className="text-[10px]">✓</span>}
         {awaySelected && isFinal && <Trophy className="w-3 h-3 text-gold" />}
       </button>
-      
-      {/* Ver participantes - solo mostrar si no es admin */}
-      {!isAdmin && predictionsLocked && match.home_team && match.away_team && onViewParticipants && <button onClick={() => onViewParticipants(match, 'Pronósticos del partido')} className="flex items-center justify-center gap-1 px-2 py-1 text-[10px] text-muted-foreground hover:bg-muted/50 border-t border-border/50">
-          <Eye className="w-3 h-3" />
-          Ver
-        </button>}
     </div>;
 };
 
