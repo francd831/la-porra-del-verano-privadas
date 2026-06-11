@@ -842,8 +842,8 @@ export default function Clasificacion() {
                             </div>
                           </td>
                           <td className="p-2">
-                            <div className="font-semibold flex items-center space-x-1 text-xs">
-                              <span className="truncate max-w-[100px] sm:max-w-[140px]">{p.display_name}</span>
+                            <div className="font-semibold flex min-w-0 flex-wrap items-center gap-1 text-xs sm:flex-nowrap">
+                              <span className="min-w-0 break-words sm:max-w-[140px] sm:truncate">{p.display_name}</span>
                               {esUsuario && (
                                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] px-1">Tú</Badge>
                               )}
