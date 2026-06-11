@@ -664,7 +664,7 @@ export default function Clasificacion() {
               <Button asChild className="h-11 gap-2 rounded-xl font-bold">
                 <Link to="/ligas/crear">
                   <Plus className="h-4 w-4" />
-                  Crear liga
+                  Crear nueva liga
                 </Link>
               </Button>
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -676,8 +676,7 @@ export default function Clasificacion() {
                   disabled={joiningLeague || leagues.length >= MAX_PRIVATE_LEAGUES}
                 />
                 <Button
-                  variant="outline"
-                  className="h-11 gap-2 rounded-xl"
+                  className="h-11 gap-2 rounded-xl font-bold"
                   onClick={handleJoinLeague}
                   disabled={joiningLeague || !inviteCode.trim() || leagues.length >= MAX_PRIVATE_LEAGUES}
                 >
