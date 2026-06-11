@@ -135,11 +135,14 @@ const BracketMatch = ({
 
   // Para admin: el botón debe estar habilitado para seleccionar ganadores
   // Para usuarios: el botón solo está habilitado si NO está bloqueado
-  const isDisabled = !match.home_team || (isAdmin ? false : predictionsLocked);
-  const awayIsDisabled = !match.away_team || (isAdmin ? false : predictionsLocked);
+  const homeIsMissing = !match.home_team;
+  const awayIsMissing = !match.away_team;
+  const readOnly = !isAdmin && predictionsLocked;
+  const isDisabled = homeIsMissing || readOnly;
+  const awayIsDisabled = awayIsMissing || readOnly;
   return <div className={cn("flex flex-col rounded-lg overflow-hidden border", isFinal ? "border-gold bg-gradient-to-br from-gold/20 to-gold/5 shadow-lg" : "border-border bg-card", compact ? "w-28" : "w-36")}>
       {/* Equipo Local */}
-      <button onClick={() => match.home_team && onSelectWinner?.(match.id, match.home_team_id, match.home_team.name, match.round)} disabled={isDisabled} className={cn("flex items-center gap-1 px-2 py-1.5 text-xs transition-all border-b border-border/50", compact ? "py-1 text-[10px]" : "", homeSelected ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted/50", isDisabled && "cursor-default opacity-50")}>
+      <button onClick={() => match.home_team && onSelectWinner?.(match.id, match.home_team_id, match.home_team.name, match.round)} disabled={isDisabled} className={cn("flex items-center gap-1 px-2 py-1.5 text-xs transition-all border-b border-border/50", compact ? "py-1 text-[10px]" : "", homeSelected ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted/50", isDisabled && "cursor-default", homeIsMissing && "opacity-50")}>
         <span className="flex-1 truncate text-left">
           {match.home_team?.name || 'TBD'}
         </span>
@@ -151,7 +154,7 @@ const BracketMatch = ({
       </button>
       
       {/* Equipo Visitante */}
-      <button onClick={() => match.away_team && onSelectWinner?.(match.id, match.away_team_id, match.away_team.name, match.round)} disabled={awayIsDisabled} className={cn("flex items-center gap-1 px-2 py-1.5 text-xs transition-all", compact ? "py-1 text-[10px]" : "", awaySelected ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted/50", awayIsDisabled && "cursor-default opacity-50")}>
+      <button onClick={() => match.away_team && onSelectWinner?.(match.id, match.away_team_id, match.away_team.name, match.round)} disabled={awayIsDisabled} className={cn("flex items-center gap-1 px-2 py-1.5 text-xs transition-all", compact ? "py-1 text-[10px]" : "", awaySelected ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted/50", awayIsDisabled && "cursor-default", awayIsMissing && "opacity-50")}>
         <span className="flex-1 truncate text-left">
           {match.away_team?.name || 'TBD'}
         </span>
