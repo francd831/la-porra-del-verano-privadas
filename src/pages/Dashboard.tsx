@@ -225,11 +225,12 @@ export default function Dashboard() {
         } else {
           const { data: userPodiumEvents, error: userPodiumError } = await supabase
             .from('user_score_events')
-            .select('event_label, points, rank')
+            .select('event_label, points, rank, event_type')
             .eq('tournament_id', '11111111-1111-1111-1111-111111111111')
             .eq('user_id', user.id)
             .lte('rank', 3)
             .gt('points', 0)
+            .neq('event_type', 'match')
             .order('rank', { ascending: true })
             .order('event_label', { ascending: true });
 
