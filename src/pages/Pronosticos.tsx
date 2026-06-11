@@ -175,6 +175,44 @@ const AWARD_TYPES = [
   { key: 'Balón de Oro', label: 'Balón de Oro' },
 ];
 
+const BALON_ORO_OPTIONS = [
+  "Harry Kane",
+  "Lamine Yamal",
+  "Kylian Mbappé",
+  "Michael Olise",
+  "Lionel Messi",
+  "Vinícius Junior",
+  "Bruno Fernandes",
+  "Raphinha",
+  "Jude Bellingham",
+  "Ousmane Dembélé",
+  "Rayan Cherki",
+  "Declan Rice",
+  "Rodri",
+  "Pedri",
+  "Erling Haaland",
+  "OTRO",
+];
+
+const BOTA_ORO_OPTIONS = [
+  "Kylian Mbappé",
+  "Harry Kane",
+  "Erling Haaland",
+  "Lionel Messi",
+  "Lamine Yamal",
+  "Vinícius Junior",
+  "Cristiano Ronaldo",
+  "Ousmane Dembélé",
+  "Raphinha",
+  "Lautaro Martínez",
+  "Mikel Oyarzabal",
+  "Romelu Lukaku",
+  "Alexander Isak",
+  "Viktor Gyökeres",
+  "Bukayo Saka",
+  "OTRO",
+];
+
 const fetchAllPredictions = async (userIds: string[]) => {
   if (userIds.length === 0) return [];
 
@@ -206,6 +244,7 @@ export default function Pronosticos() {
   const [loading, setLoading] = useState(true);
   const [predictionsLocked, setPredictionsLocked] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
 
   // Navigation state
   const [activeSection, setActiveSection] = useState<SectionType>('groups');
@@ -247,6 +286,7 @@ export default function Pronosticos() {
       setPredictionsLocked(true);
 
       const { data: teamsData } = await supabase.from('teams').select('*').order('name');
+      setTeams(teamsData || []);
       const teamsMap = new Map((teamsData || []).map(t => [t.id, t]));
 
       const { data: matchesData } = await supabase
@@ -473,15 +513,20 @@ export default function Pronosticos() {
     if (activeSection === 'groups') return [];
 
     let relevantPreds: DisplayPrediction[];
+    let baseOptions: string[];
     if (activeSection === 'playoffs') {
       relevantPreds = displayPredictions.filter(p => p.roundDisplay === selectedPlayoffRound);
+      baseOptions = teams.map(team => team.name);
     } else {
       relevantPreds = displayPredictions.filter(p => p.roundDisplay === 'Premios Individuales' && p.matchDisplay === selectedAward);
+      baseOptions = selectedAward === 'Balón de Oro' || selectedAward === 'BalÃ³n de Oro'
+        ? BALON_ORO_OPTIONS
+        : BOTA_ORO_OPTIONS;
     }
 
     // Count occurrences of each prediction value (team name or player name)
     const countMap = new Map<string, number>();
-    const totalUsers = new Set(relevantPreds.map(p => p.userId)).size;
+    const totalUsers = users.length;
 
     relevantPreds.forEach(p => {
       const cleanPred = p.predictionDisplay.includes(' (Real:')
@@ -490,18 +535,25 @@ export default function Pronosticos() {
       countMap.set(cleanPred, (countMap.get(cleanPred) || 0) + 1);
     });
 
-    // For playoffs, we need to know the total number of users to compute %
-    // Each user can pick multiple teams per round (e.g. 32 teams in R32), so % = count / totalUsers * 100
-    const sorted = Array.from(countMap.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([prediction, count]) => ({
-        prediction,
-        count,
-        percentage: totalUsers > 0 ? Math.round((count / totalUsers) * 100) : 0,
-      }));
+    const optionSet = new Set(baseOptions);
+    countMap.forEach((_, prediction) => optionSet.add(prediction));
+
+    const sorted = Array.from(optionSet)
+      .map((prediction) => {
+        const count = countMap.get(prediction) || 0;
+        return {
+          prediction,
+          count,
+          percentage: totalUsers > 0 ? Math.round((count / totalUsers) * 100) : 0,
+        };
+      })
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.prediction.localeCompare(b.prediction, 'es');
+      });
 
     return sorted;
-  }, [displayPredictions, activeSection, selectedPlayoffRound, selectedAward]);
+  }, [displayPredictions, activeSection, selectedPlayoffRound, selectedAward, teams, users.length]);
 
   const aggregatedRoundSummary = useMemo(() => {
     if (activeSection === 'groups') return null;
@@ -509,17 +561,18 @@ export default function Pronosticos() {
     const relevantPreds = activeSection === 'playoffs'
       ? displayPredictions.filter(p => p.roundDisplay === selectedPlayoffRound)
       : displayPredictions.filter(p => p.roundDisplay === 'Premios Individuales' && p.matchDisplay === selectedAward);
+    const totalOptions = activeSection === 'playoffs'
+      ? teams.length
+      : selectedAward === 'Balón de Oro' || selectedAward === 'BalÃ³n de Oro'
+        ? BALON_ORO_OPTIONS.length
+        : BOTA_ORO_OPTIONS.length;
 
     return {
-      uniqueCount: new Set(relevantPreds.map(p => (
-        p.predictionDisplay.includes(' (Real:')
-          ? p.predictionDisplay.split(' (Real:')[0]
-          : p.predictionDisplay
-      ))).size,
+      uniqueCount: totalOptions,
       totalSelections: relevantPreds.length,
-      totalUsers: new Set(relevantPreds.map(p => p.userId)).size,
+      totalUsers: users.length,
     };
-  }, [displayPredictions, activeSection, selectedPlayoffRound, selectedAward]);
+  }, [displayPredictions, activeSection, selectedPlayoffRound, selectedAward, teams.length, users.length]);
 
   if (loading) {
     return (
