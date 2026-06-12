@@ -87,28 +87,11 @@ const adminDemoPodiumBadges: PodiumBadge[] = [
   { eventLabel: "Premios Individuales", rank: 3, points: 30 },
 ];
 
-const podiumBadgeStyles = [
-  {
-    outer: "from-yellow-200 via-gold to-amber-700",
-    inner: "from-amber-300 via-yellow-600 to-yellow-950",
-    text: "text-gold-foreground",
-    glow: "shadow-[0_0_22px_hsl(var(--gold)/0.35)]",
-  },
-  {
-    outer: "from-slate-100 via-slate-300 to-slate-600",
-    inner: "from-slate-200 via-slate-500 to-slate-900",
-    text: "text-background",
-    glow: "shadow-[0_0_18px_hsl(var(--muted-foreground)/0.25)]",
-  },
-  {
-    outer: "from-orange-200 via-amber-700 to-orange-950",
-    inner: "from-orange-300 via-amber-800 to-stone-950",
-    text: "text-background",
-    glow: "shadow-[0_0_18px_hsl(28_80%_45%/0.28)]",
-  },
+const podiumBadgeImages = [
+  "/badges/podium-gold.png",
+  "/badges/podium-silver.png",
+  "/badges/podium-bronze.png",
 ];
-
-const shieldClipPath = "polygon(50% 0%, 88% 12%, 84% 58%, 50% 96%, 16% 58%, 12% 12%)";
 
 // Helper function to calculate points for a single match
 function calculateMatchPoints(prediction: {
@@ -640,7 +623,7 @@ export default function Dashboard() {
                 <div className="mt-4 flex flex-wrap items-start gap-x-5 gap-y-4">
                   {podiumBadges.map((badge) => {
                     const badgeIndex = Math.max(0, Math.min(2, badge.rank - 1));
-                    const badgeStyle = podiumBadgeStyles[badgeIndex];
+                    const badgeImage = podiumBadgeImages[badgeIndex];
 
                     return (
                       <div
@@ -648,20 +631,12 @@ export default function Dashboard() {
                         className="flex w-28 flex-col items-center gap-2 text-center sm:w-32"
                         title={`${badge.eventLabel}: #${badge.rank} con ${badge.points} puntos`}
                       >
-                        <div
-                          className={`relative flex h-14 w-12 items-center justify-center bg-gradient-to-br p-[2px] ${badgeStyle.outer} ${badgeStyle.glow}`}
-                          style={{ clipPath: shieldClipPath }}
-                        >
-                          <div
-                            className={`absolute inset-[3px] bg-gradient-to-br ${badgeStyle.inner}`}
-                            style={{ clipPath: shieldClipPath }}
-                          />
-                          <div className="absolute inset-[7px] border border-white/25" style={{ clipPath: shieldClipPath }} />
-                          <div className="absolute left-1/2 top-2 h-7 w-7 -translate-x-1/2 rounded-full border border-black/35 bg-black/20 shadow-inner" />
-                          <span className={`relative -mt-2 text-xl font-black leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.55)] ${badgeStyle.text}`}>
-                            {badge.rank}
-                          </span>
-                        </div>
+                        <img
+                          src={badgeImage}
+                          alt={`Puesto ${badge.rank}`}
+                          className="h-16 w-16 object-contain drop-shadow-[0_8px_18px_rgba(0,0,0,0.35)] sm:h-[72px] sm:w-[72px]"
+                          loading="lazy"
+                        />
                         <span className="w-full whitespace-normal break-words text-[11px] font-semibold leading-tight text-muted-foreground sm:text-xs">
                           {badge.eventLabel}
                         </span>
