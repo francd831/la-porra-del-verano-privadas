@@ -1,5 +1,5 @@
 {
-  "version": "2026-06-12-03",
+  "version": "2026-06-12-04",
   "forceReload": true,
-  "message": "Correccion de fondo en badges."
+  "message": "Badges con transparencia final."
 }
