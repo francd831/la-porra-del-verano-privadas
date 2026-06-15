@@ -22,8 +22,18 @@ interface FdMatch {
 
 function mapStatus(s: string): string {
   if (s === "FINISHED") return "completed";
-  if (["IN_PLAY", "PAUSED"].includes(s)) return "in_progress";
+  if (["IN_PLAY", "PAUSED", "LIVE"].includes(s)) return "in_progress";
   return "scheduled";
+}
+
+function statusRank(status: string): number {
+  if (status === "completed") return 2;
+  if (status === "in_progress") return 1;
+  return 0;
+}
+
+function hasScore(home: number | null | undefined, away: number | null | undefined): boolean {
+  return typeof home === "number" && typeof away === "number";
 }
 
 async function isAuthorized(req: Request, supabaseUrl: string, serviceKey: string): Promise<boolean> {
@@ -109,9 +119,22 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const newStatus = mapStatus(fx.status);
-      const homeGoals = fx.score?.fullTime?.home ?? null;
-      const awayGoals = fx.score?.fullTime?.away ?? null;
+      const apiStatus = mapStatus(fx.status);
+      const apiHomeGoals = fx.score?.fullTime?.home ?? null;
+      const apiAwayGoals = fx.score?.fullTime?.away ?? null;
+      const apiHasScore = hasScore(apiHomeGoals, apiAwayGoals);
+
+      // football-data can occasionally return stale/incomplete snapshots.
+      // Never downgrade a known result or clear a score we already have.
+      const newStatus =
+        statusRank(apiStatus) < statusRank(match.status) ? match.status : apiStatus;
+      const homeGoals = apiHasScore ? apiHomeGoals : match.home_goals;
+      const awayGoals = apiHasScore ? apiAwayGoals : match.away_goals;
+
+      if (newStatus === "completed" && (homeGoals === null || awayGoals === null)) {
+        errors.push(`Skip ${externalId}: API reported completed without full-time score`);
+        continue;
+      }
 
       // Skip if nothing has changed
       if (
