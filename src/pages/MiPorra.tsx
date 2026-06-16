@@ -395,6 +395,46 @@ export default function Pronosticos() {
     return Boolean(match && (match.home_team_id === winnerId || match.away_team_id === winnerId));
   };
 
+  const ensureSavedWinnersAreVisible = (
+    winnersMap: Record<string, string>,
+    teamsData: Team[],
+    matches: Record<string, Match[]>
+  ) => {
+    const nextMatches = JSON.parse(JSON.stringify(matches)) as Record<string, Match[]>;
+
+    Object.entries(winnersMap).forEach(([matchId, winnerId]) => {
+      const team = teamsData.find(t => t.id === winnerId);
+      if (!team) return;
+
+      for (const [roundKey, roundMatches] of Object.entries(nextMatches)) {
+        const matchIndex = roundMatches.findIndex(match => match.id === matchId);
+        if (matchIndex === -1) continue;
+
+        const match = roundMatches[matchIndex];
+        if (match.home_team_id === winnerId || match.away_team_id === winnerId) return;
+
+        if (!match.home_team_id) {
+          roundMatches[matchIndex] = {
+            ...match,
+            home_team_id: winnerId,
+            home_team: team,
+          };
+        } else if (!match.away_team_id) {
+          roundMatches[matchIndex] = {
+            ...match,
+            away_team_id: winnerId,
+            away_team: team,
+          };
+        }
+
+        nextMatches[roundKey] = roundMatches;
+        return;
+      }
+    });
+
+    return nextMatches;
+  };
+
   // Reconstruir el bracket basándose en las predicciones guardadas
   // Sigue la normativa FIFA 2026 para el mapeo correcto entre rondas
   const reconstructBracketFromPredictions = (winnersMap: Record<string, string>, teamsData: Team[], basePlayoffMatches: Record<string, Match[]>) => {
@@ -522,9 +562,21 @@ export default function Pronosticos() {
     return newPlayoffMatches;
   };
 
-  const normalizeBracketFromWinners = (winnersMap: Record<string, string>, teamsData: Team[], basePlayoffMatches: Record<string, Match[]>) => {
+  const normalizeBracketFromWinners = (
+    winnersMap: Record<string, string>,
+    teamsData: Team[],
+    basePlayoffMatches: Record<string, Match[]>,
+    pruneInvalidWinners = true
+  ) => {
     let normalizedWinners = { ...winnersMap };
     let normalizedMatches = reconstructBracketFromPredictions(normalizedWinners, teamsData, basePlayoffMatches);
+
+    if (!pruneInvalidWinners) {
+      return {
+        winners: normalizedWinners,
+        matches: ensureSavedWinnersAreVisible(normalizedWinners, teamsData, normalizedMatches),
+      };
+    }
 
     for (let i = 0; i < 6; i++) {
       const nextWinners = Object.fromEntries(
@@ -819,7 +871,7 @@ export default function Pronosticos() {
         const newPlayoffMatches = createPlayoffBase(dieciseisavosMatches);
 
         // Ahora aplicar las predicciones de ganadores para avanzar equipos
-        const normalized = normalizeBracketFromWinners(playoffWinnersMap, teamsData, newPlayoffMatches);
+        const normalized = normalizeBracketFromWinners(playoffWinnersMap, teamsData, newPlayoffMatches, false);
         setPlayoffWinners(normalized.winners);
         setPlayoffMatches(normalized.matches);
       } else if (readUserPredictionActiveTab() === "eliminatorias" && Object.keys(groupMatchesData).length > 0) {
