@@ -57,12 +57,15 @@ interface MatchWithPoints {
 interface UpcomingMatch {
   id: string;
   match_date: string;
+  status: string;
   home_team: {
     name: string;
   };
   away_team: {
     name: string;
   };
+  home_goals: number | null;
+  away_goals: number | null;
   userPrediction?: {
     home_goals: number | null;
     away_goals: number | null;
@@ -317,16 +320,19 @@ export default function Dashboard() {
           setRecentMatches(matchesWithPoints);
         }
 
-        // Load all upcoming matches from current date
+        // Load upcoming matches plus matches currently in progress.
         const now = new Date().toISOString();
         const {
           data: upcomingMatchesData
         } = await supabase.from('matches').select(`
             id,
             match_date,
+            status,
+            home_goals,
+            away_goals,
             home_team:teams!matches_home_team_id_fkey(name),
             away_team:teams!matches_away_team_id_fkey(name)
-          `).eq('tournament_id', '11111111-1111-1111-1111-111111111111').neq('status', 'completed').gte('match_date', now).not('match_date', 'is', null).order('match_date', {
+          `).eq('tournament_id', '11111111-1111-1111-1111-111111111111').neq('status', 'completed').or(`status.eq.in_progress,match_date.gte.${now}`).not('match_date', 'is', null).order('match_date', {
           ascending: true
         });
         if (upcomingMatchesData && upcomingMatchesData.length > 0) {
@@ -341,17 +347,20 @@ export default function Dashboard() {
           const upcoming: UpcomingMatch[] = upcomingMatchesData.map((match) => ({
             id: match.id,
             match_date: match.match_date || '',
+            status: match.status || 'scheduled',
             home_team: match.home_team as {
               name: string;
-              flag: string;
             },
             away_team: match.away_team as {
               name: string;
-              flag: string;
             },
+            home_goals: match.home_goals,
+            away_goals: match.away_goals,
             userPrediction: predictionsMap.get(match.id)
           }));
           setUpcomingMatches(upcoming);
+        } else {
+          setUpcomingMatches([]);
         }
 
         // Calculate points by group (including +20 bonus for exact order)
@@ -806,11 +815,18 @@ export default function Dashboard() {
                 <div className="space-y-3 pr-3">
                   {upcomingMatches.map((match) => <div key={match.id} className="p-3 bg-muted/30 rounded-lg border">
                       <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className="text-xs">
-                          {match.match_date && format(new Date(match.match_date), "d MMM, HH:mm", {
-                      locale: es
-                    })}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {match.match_date && format(new Date(match.match_date), "d MMM, HH:mm", {
+                        locale: es
+                      })}
+                          </Badge>
+                          {match.status === 'in_progress' && (
+                            <Badge className="bg-success/20 text-success border-success/30 text-xs">
+                              En juego
+                            </Badge>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2">
                           <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => {
                       setSelectedMatchForStats({
@@ -835,7 +851,11 @@ export default function Dashboard() {
                           <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
                         </div>
                         <div className="px-3 py-1 bg-background rounded text-center min-w-[70px]">
-                          {match.userPrediction && match.userPrediction.home_goals !== null ? <span className="font-bold text-sm">
+                          {match.status === 'in_progress' && match.home_goals !== null && match.away_goals !== null ? (
+                            <span className="font-bold text-sm text-success">
+                              {match.home_goals} - {match.away_goals}
+                            </span>
+                          ) : match.userPrediction && match.userPrediction.home_goals !== null ? <span className="font-bold text-sm">
                               {match.userPrediction.home_goals} - {match.userPrediction.away_goals}
                             </span> : <span className="text-muted-foreground text-sm">vs</span>}
                         </div>
