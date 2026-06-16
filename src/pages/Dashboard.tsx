@@ -811,23 +811,23 @@ export default function Dashboard() {
               )}
             </CardHeader>
             <CardContent>
-              {upcomingMatches.length > 0 ? <ScrollArea className="h-[460px] pr-3">
-                <div className="space-y-3 pr-3">
-                  {upcomingMatches.map((match) => <div key={match.id} className="p-3 bg-muted/30 rounded-lg border">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
+              {upcomingMatches.length > 0 ? <ScrollArea className="h-[460px] pr-2">
+                <div className="space-y-3 pr-2">
+                  {upcomingMatches.map((match) => <div key={match.id} className="min-w-0 p-3 bg-muted/30 rounded-lg border">
+                      <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
+                        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                          <Badge variant="outline" className="text-[11px] px-1.5">
                             {match.match_date && format(new Date(match.match_date), "d MMM, HH:mm", {
                         locale: es
                       })}
                           </Badge>
                           {match.status === 'in_progress' && (
-                            <Badge className="bg-success/20 text-success border-success/30 text-xs">
+                            <Badge className="bg-success/20 text-success border-success/30 text-[11px] px-1.5">
                               En juego
                             </Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex shrink-0 items-center">
                           <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => {
                       setSelectedMatchForStats({
                         id: match.id,
@@ -837,20 +837,15 @@ export default function Dashboard() {
                       setStatsDialogOpen(true);
                     }} title={predictionsLocked ? "Ver estadisticas globales" : "Disponible cuando se cierren los pronosticos"}>
                             <BarChart3 className="w-3 h-3 mr-1" />
-                            Estadísticas
+                            Estad.
                           </Button>
-                          {match.userPrediction && match.userPrediction.home_goals !== null ? <Badge className="bg-success/20 text-success border-success/30">
-                            Pronosticado
-                          </Badge> : <Badge variant="secondary" className="bg-muted text-muted-foreground">
-                            Sin pronóstico
-                          </Badge>}
                         </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 flex-1">
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
                           <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
                         </div>
-                        <div className="px-3 py-1 bg-background rounded text-center min-w-[82px]">
+                        <div className="min-w-[78px] shrink-0 rounded bg-background px-2 py-1 text-center">
                           {match.status === 'in_progress' && match.home_goals !== null && match.away_goals !== null ? (
                             <div className="leading-tight">
                               <span className="block font-bold text-sm text-success">
@@ -866,7 +861,7 @@ export default function Dashboard() {
                               {match.userPrediction.home_goals} - {match.userPrediction.away_goals}
                             </span> : <span className="text-muted-foreground text-sm">vs</span>}
                         </div>
-                        <div className="flex items-center gap-2 flex-1 justify-end">
+                        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
                           <span className="font-medium text-sm truncate">{match.away_team?.name}</span>
                         </div>
                       </div>
