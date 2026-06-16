@@ -850,11 +850,18 @@ export default function Dashboard() {
                         <div className="flex items-center gap-2 flex-1">
                           <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
                         </div>
-                        <div className="px-3 py-1 bg-background rounded text-center min-w-[70px]">
+                        <div className="px-3 py-1 bg-background rounded text-center min-w-[82px]">
                           {match.status === 'in_progress' && match.home_goals !== null && match.away_goals !== null ? (
-                            <span className="font-bold text-sm text-success">
-                              {match.home_goals} - {match.away_goals}
-                            </span>
+                            <div className="leading-tight">
+                              <span className="block font-bold text-sm text-success">
+                                {match.home_goals} - {match.away_goals}
+                              </span>
+                              {match.userPrediction && match.userPrediction.home_goals !== null && (
+                                <span className="block text-[10px] text-muted-foreground">
+                                  Tu porra: {match.userPrediction.home_goals} - {match.userPrediction.away_goals}
+                                </span>
+                              )}
+                            </div>
                           ) : match.userPrediction && match.userPrediction.home_goals !== null ? <span className="font-bold text-sm">
                               {match.userPrediction.home_goals} - {match.userPrediction.away_goals}
                             </span> : <span className="text-muted-foreground text-sm">vs</span>}
