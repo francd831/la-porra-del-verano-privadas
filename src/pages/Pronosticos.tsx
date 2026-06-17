@@ -61,6 +61,8 @@ const ROUND_ORDER: { [key: string]: number } = {
   'Premios Individuales': 8,
 };
 
+const formatPercentage = (value: number) => `${value.toFixed(1).replace('.', ',')}%`;
+
 const calculateGroupStandings = (
   groupMatches: Match[],
   predictions: Map<string, { home_goals: number; away_goals: number }>,
@@ -544,7 +546,7 @@ export default function Pronosticos() {
         return {
           prediction,
           count,
-          percentage: totalUsers > 0 ? Math.round((count / totalUsers) * 100) : 0,
+          percentage: totalUsers > 0 ? Math.round((count / totalUsers) * 1000) / 10 : 0,
         };
       })
       .sort((a, b) => {
@@ -774,11 +776,11 @@ export default function Pronosticos() {
                     />
                     {item.percentage > 0 && (
                       <span className="absolute inset-y-0 left-1 flex items-center text-[10px] font-semibold text-primary-foreground">
-                        {item.percentage}%
+                        {formatPercentage(item.percentage)}
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] text-muted-foreground w-8 text-right shrink-0">{item.percentage}%</span>
+                  <span className="text-[10px] text-muted-foreground w-11 text-right shrink-0">{formatPercentage(item.percentage)}</span>
                 </div>
               );
 
