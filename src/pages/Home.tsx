@@ -179,6 +179,10 @@ export default function Home() {
             <Link to="/registro">Empezar mi porra</Link>
           </Button>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+            <Link className="hover:text-primary underline-offset-4 hover:underline" to="/bases">
+              Bases
+            </Link>
+            <span className="text-muted-foreground/40">·</span>
             <Link className="hover:text-primary underline-offset-4 hover:underline" to="/politica-privacidad">
               Política de privacidad
             </Link>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { User, Save, Calendar, AlertTriangle, CheckCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { User, Save, Calendar, AlertTriangle, CheckCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -338,6 +339,34 @@ export default function Perfil() {
                   <span className="text-sm">{userData.fechaRegistro}</span>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-soft border-0 bg-gradient-card">
+            <CardHeader>
+              <CardTitle>Información legal</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-2 sm:grid-cols-3">
+              <Link
+                to="/bases"
+                className="flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm transition-colors hover:bg-muted"
+              >
+                <FileText className="h-4 w-4 text-primary" />
+                <span>Bases del juego</span>
+              </Link>
+              <Link
+                to="/politica-privacidad"
+                className="flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm transition-colors hover:bg-muted"
+              >
+                <FileText className="h-4 w-4 text-primary" />
+                <span>Política de privacidad</span>
+              </Link>
+              <Link
+                to="/condiciones-servicio"
+                className="flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm transition-colors hover:bg-muted"
+              >
+                <FileText className="h-4 w-4 text-primary" />
+                <span>Condiciones de servicio</span>
+              </Link>
             </CardContent>
           </Card>
       </div>

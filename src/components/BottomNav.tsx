@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Trophy, Target, Award, FileText, Home, User, BarChart3, Users, MessageSquare } from "lucide-react";
+import { Trophy, Target, Award, Home, User, BarChart3, Users, MessageSquare, Medal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,7 +20,6 @@ export function BottomNav() {
   const location = useLocation();
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [predictionsLocked, setPredictionsLocked] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -36,19 +35,6 @@ export function BottomNav() {
     }
   }, [user]);
 
-  useEffect(() => {
-    supabase
-      .from("tournaments")
-      .select("predictions_locked")
-      .limit(1)
-      .single()
-      .then(({ data }) => setPredictionsLocked(!!data?.predictions_locked));
-  }, []);
-
-  const basesOrPronosticos = predictionsLocked
-    ? { href: "/pronosticos", icon: BarChart3, label: "Pronósticos" }
-    : { href: "/bases", icon: FileText, label: "Bases" };
-
   const items = user
     ? isAdmin
       ? [
@@ -62,12 +48,12 @@ export function BottomNav() {
           { href: "/dashboard", icon: Home, label: "Inicio" },
           { href: "/mi-porra", icon: Target, label: "Mi Porra" },
           { href: "/clasificacion", icon: Trophy, label: "Clasificación" },
-          basesOrPronosticos,
-          { href: "/perfil", icon: User, label: "Perfil" },
+          { href: "/pronosticos", icon: BarChart3, label: "Pronósticos" },
+          { href: "/hall-of-fame", icon: Medal, label: "Hall" },
         ]
     : [
         { href: "/", icon: Home, label: "Inicio" },
-        { href: "/bases", icon: FileText, label: "Bases" },
+        { href: "/registro", icon: Target, label: "Registro" },
         { href: "/login", icon: User, label: "Entrar" },
       ];
 

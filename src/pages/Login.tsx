@@ -271,6 +271,10 @@ export default function Login() {
                 </Link>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <Link className="hover:text-primary underline-offset-4 hover:underline" to="/bases">
+                  Bases
+                </Link>
+                <span className="text-muted-foreground/40">·</span>
                 <Link className="hover:text-primary underline-offset-4 hover:underline" to="/politica-privacidad">
                   Política de privacidad
                 </Link>
