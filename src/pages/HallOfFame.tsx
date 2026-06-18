@@ -289,11 +289,13 @@ export default function HallOfFame() {
           .from("user_score_events")
           .select("id, user_id, event_type, event_key, event_label, points, rank, metadata")
           .eq("tournament_id", TOURNAMENT_ID)
+          .gt("points", 0)
           .lte("rank", 3)
           .order("event_type", { ascending: true })
           .order("event_key", { ascending: true })
           .order("rank", { ascending: true })
-          .order("points", { ascending: false });
+          .order("points", { ascending: false })
+          .range(0, 4999);
 
         if (topEventsError) throw topEventsError;
 
