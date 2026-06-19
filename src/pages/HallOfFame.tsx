@@ -42,6 +42,7 @@ type EventGroup = ExpectedGroup & {
 };
 
 const groupLetters = Array.from({ length: 12 }, (_, index) => String.fromCharCode(65 + index));
+const TOP_ENTRIES_FETCH_LIMIT = 299;
 
 const sectionConfig = [
   {
@@ -106,6 +107,8 @@ const sectionConfig = [
     ],
   },
 ];
+
+const expectedHallGroups = sectionConfig.flatMap((section) => section.groups);
 
 function groupKey(eventType: string, eventKey: string) {
   return `${eventType}:${eventKey}`;
@@ -285,19 +288,44 @@ export default function HallOfFame() {
     const loadHallOfFame = async () => {
       setLoading(true);
       try {
-        const { data: topEventsData, error: topEventsError } = await supabase
+        const topEventResponses = await Promise.all(
+          expectedHallGroups.map((group) =>
+            supabase
+              .from("user_score_events")
+              .select("id, user_id, event_type, event_key, event_label, points, rank, metadata")
+              .eq("tournament_id", TOURNAMENT_ID)
+              .eq("event_type", group.eventType)
+              .eq("event_key", group.eventKey)
+              .gt("points", 0)
+              .lte("rank", 3)
+              .order("rank", { ascending: true })
+              .order("points", { ascending: false })
+              .range(0, TOP_ENTRIES_FETCH_LIMIT)
+          )
+        );
+
+        const topEventsError = topEventResponses.find((response) => response.error)?.error;
+
+        if (topEventsError) throw topEventsError;
+
+        const { data: dayTopEventsData, error: dayTopEventsError } = await supabase
           .from("user_score_events")
           .select("id, user_id, event_type, event_key, event_label, points, rank, metadata")
           .eq("tournament_id", TOURNAMENT_ID)
+          .eq("event_type", "day")
           .gt("points", 0)
           .lte("rank", 3)
-          .order("event_type", { ascending: true })
           .order("event_key", { ascending: true })
           .order("rank", { ascending: true })
           .order("points", { ascending: false })
-          .range(0, 4999);
+          .range(0, 999);
 
-        if (topEventsError) throw topEventsError;
+        if (dayTopEventsError) throw dayTopEventsError;
+
+        const topEventsData = [
+          ...topEventResponses.flatMap((response) => (response.data || []) as ScoreEvent[]),
+          ...((dayTopEventsData || []) as ScoreEvent[]),
+        ];
 
         const { data: userEventsData, error: userEventsError } = user
           ? await supabase
