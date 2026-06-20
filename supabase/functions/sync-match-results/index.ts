@@ -82,6 +82,23 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    // Completed matches are terminal. Load all remaining matches once so the
+    // sync does not perform one database query per API fixture and never
+    // reopens a match that has already been finalized locally.
+    const { data: activeMatches, error: activeMatchesError } = await supabase
+      .from("matches")
+      .select("id, external_id, status, home_goals, away_goals")
+      .neq("status", "completed")
+      .not("external_id", "is", null);
+
+    if (activeMatchesError) {
+      throw new Error(`Unable to load active matches: ${activeMatchesError.message}`);
+    }
+
+    const matchesByExternalId = new Map(
+      (activeMatches ?? []).map((match) => [Number(match.external_id), match])
+    );
+
     // Fetch matches from football-data.org
     const res = await fetch(
       `${FOOTBALL_DATA_BASE}/competitions/${COMPETITION_CODE}/matches`,
@@ -102,18 +119,8 @@ Deno.serve(async (req) => {
 
     for (const fx of fixtures) {
       const externalId = fx.id;
+      const match = matchesByExternalId.get(externalId);
 
-      // Find match by external_id
-      const { data: match, error: findErr } = await supabase
-        .from("matches")
-        .select("id, status, home_goals, away_goals")
-        .eq("external_id", externalId)
-        .maybeSingle();
-
-      if (findErr) {
-        errors.push(`Find ${externalId}: ${findErr.message}`);
-        continue;
-      }
       if (!match) {
         skipped++;
         continue;
