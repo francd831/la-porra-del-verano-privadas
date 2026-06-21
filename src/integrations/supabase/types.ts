@@ -1114,6 +1114,10 @@ export type Database = {
         Args: { p_tournament_id: string }
         Returns: undefined
       }
+      reconcile_my_submission_completion: {
+        Args: { p_tournament_id: string }
+        Returns: boolean
+      }
       update_all_user_points: {
         Args: { p_tournament_id: string }
         Returns: undefined

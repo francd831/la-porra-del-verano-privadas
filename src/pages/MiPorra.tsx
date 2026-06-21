@@ -1979,46 +1979,6 @@ export default function Pronosticos() {
   };
 
 
-  // Función para validar que todos los pronósticos están completos
-  const validatePredictions = (): { valid: boolean; message: string } => {
-    // 1. Validar fase de grupos
-    const allGroupMatchesFilled = Object.values(groupMatches).every(matches => 
-      matches.every(match => {
-        const prediction = partidosGrupos[match.id];
-        return prediction && prediction.local !== null && prediction.visitante !== null;
-      })
-    );
-    if (!allGroupMatchesFilled) {
-      return { valid: false, message: "Debes completar todos los resultados de la fase de grupos." };
-    }
-
-    // 2. Validar cuadro de eliminatorias
-    const allRounds = ['Dieciseisavos de Final', 'Octavos de Final', 'Cuartos de Final', 'Semifinales', 'Final'];
-    for (const round of allRounds) {
-      const roundMatches = playoffMatches[round] || [];
-      for (const match of roundMatches) {
-        if (!playoffWinners[match.id]) {
-          return { valid: false, message: `Debes seleccionar el ganador de todos los partidos de ${round}.` };
-        }
-      }
-    }
-
-    // 3. Validar campeón
-    if (!campeon) {
-      return { valid: false, message: "Debes seleccionar el campeón del torneo." };
-    }
-
-    // 4. Validar premios individuales
-    if (!balonOro) {
-      return { valid: false, message: "Debes seleccionar el Balón de Oro." };
-    }
-    if (!botaOro) {
-      return { valid: false, message: "Debes seleccionar la Bota de Oro." };
-    }
-
-    return { valid: true, message: "" };
-  };
-
   // Función para guardar pronósticos
   const handleGuardarPronosticos = async () => {
     if (!user) {
@@ -2029,10 +1989,6 @@ export default function Pronosticos() {
       });
       return;
     }
-
-    // Validar si todo está completo, pero permitir guardar borradores.
-    const validation = validatePredictions();
-    const draftIsIncomplete = !validation.valid;
 
     setIsLoading(true);
     try {
@@ -2149,7 +2105,6 @@ export default function Pronosticos() {
       }
 
       // Guardar predicción del campeón
-      let championPredicted = false;
       await supabase.from('champion_predictions').delete().eq('user_id', user.id).eq('tournament_id', tournamentId);
       if (campeon) {
         // Buscar el ID del equipo por nombre
@@ -2164,7 +2119,6 @@ export default function Pronosticos() {
             submission_id: submissionId
           });
           if (championError) throw championError;
-          championPredicted = true;
         }
       }
 
@@ -2188,31 +2142,29 @@ export default function Pronosticos() {
           submission_id: submissionId
         });
       }
-      let awardsPredicted = false;
       if (awardPredictions.length > 0) {
         await supabase.from('award_predictions').delete().eq('user_id', user.id).eq('tournament_id', tournamentId);
         const {
           error: awardError
         } = await supabase.from('award_predictions').insert(awardPredictions);
         if (awardError) throw awardError;
-        awardsPredicted = true;
       }
 
-      // Actualizar el estado del envío
+      // Recalcular el estado desde los datos persistidos. El navegador no debe
+      // poder marcar una porra como completa si alguna escritura quedó parcial.
       const {
-        error: updateError
-      } = await supabase.from('user_submissions').update({
-        total_predictions: matchPredictions.length,
-        champion_predicted: championPredicted,
-        awards_predicted: awardsPredicted,
-        is_complete: validation.valid,
-        updated_at: new Date().toISOString()
-      }).eq('id', submissionId);
-      if (updateError) throw updateError;
+        data: persistedIsComplete,
+        error: completionError
+      } = await supabase.rpc('reconcile_my_submission_completion', {
+        p_tournament_id: tournamentId
+      });
+      if (completionError) throw completionError;
+
+      const persistedDraftIsIncomplete = !persistedIsComplete;
 
       toast({
-        title: draftIsIncomplete ? "Borrador guardado" : "Pronósticos guardados",
-        description: draftIsIncomplete
+        title: persistedDraftIsIncomplete ? "Borrador guardado" : "Pronósticos guardados",
+        description: persistedDraftIsIncomplete
           ? "Hemos guardado lo que llevas. Aún faltan pronósticos por completar."
           : "Tus pronósticos se han guardado correctamente."
       });
