@@ -871,7 +871,7 @@ export default function Pronosticos() {
         const newPlayoffMatches = createPlayoffBase(dieciseisavosMatches);
 
         // Ahora aplicar las predicciones de ganadores para avanzar equipos
-        const normalized = normalizeBracketFromWinners(playoffWinnersMap, teamsData, newPlayoffMatches);
+        const normalized = normalizeBracketFromWinners(playoffWinnersMap, teamsData, newPlayoffMatches, false);
         setPlayoffWinners(normalized.winners);
         setPlayoffMatches(normalized.matches);
       } else if (readUserPredictionActiveTab() === "eliminatorias" && Object.keys(groupMatchesData).length > 0) {
