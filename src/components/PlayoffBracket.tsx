@@ -98,7 +98,10 @@ const getTeamPoints = (teamId: string, matchId: string, round: string, playoffWi
   // Verificar si el equipo realmente está clasificado a esta ronda (según resultados del admin)
   if (!config.classifiedSet.has(teamId)) return null;
 
-  // Para Dieciseisavos, verificar si el usuario predijo este equipo en cualquier partido R32
+  // En Dieciseisavos el usuario puntua por haber clasificado al equipo desde grupos,
+  // no por haberlo elegido como ganador del cruce.
+  if (round === 'Dieciseisavos de Final') return config.points;
+
   // Para otras rondas, verificar si el usuario predijo este equipo como ganador en la ronda anterior
   const userPredictedThisTeam = Object.entries(playoffWinners).some(([mId, winnerId]) => winnerId === teamId && mId.startsWith(config.prevRoundPrefix));
   return userPredictedThisTeam ? config.points : null;
