@@ -52,6 +52,7 @@ const sectionConfig = [
     groups: [
       { eventType: "overall", eventKey: "total", eventLabel: "Mejor general" },
       { eventType: "overall", eventKey: "groups", eventLabel: "Mejor fase de grupos" },
+      { eventType: "overall", eventKey: "group_order", eventLabel: "Maestro de grupos" },
       { eventType: "overall", eventKey: "playoffs", eventLabel: "Mejor fase de eliminatorias" },
     ],
   },
