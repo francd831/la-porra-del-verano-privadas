@@ -1118,6 +1118,10 @@ export type Database = {
         Args: { p_tournament_id: string }
         Returns: boolean
       }
+      recalculate_user_points_light: {
+        Args: { p_tournament_id: string }
+        Returns: undefined
+      }
       update_all_user_points: {
         Args: { p_tournament_id: string }
         Returns: undefined

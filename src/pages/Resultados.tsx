@@ -1229,7 +1229,7 @@ export default function Resultados() {
       await fetchData();
 
       // Recalcular puntos de todos los usuarios después de actualizar el bracket
-      const { error: recalcError } = await supabase.rpc('update_all_user_points', {
+      const { error: recalcError } = await supabase.rpc('recalculate_user_points_light', {
         p_tournament_id: '11111111-1111-1111-1111-111111111111'
       });
 
@@ -1324,7 +1324,7 @@ export default function Resultados() {
   // Función para guardar los clasificados de playoffs y recalcular puntos
   const handleSavePlayoffClassified = async () => {
     try {
-      const { error: recalcError } = await supabase.rpc('update_all_user_points', {
+      const { error: recalcError } = await supabase.rpc('recalculate_user_points_light', {
         p_tournament_id: '11111111-1111-1111-1111-111111111111'
       });
 
