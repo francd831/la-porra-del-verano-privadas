@@ -153,7 +153,7 @@ function calculateMatchPoints(prediction: {
 }
 
 function getTeamName(team: { name: string } | null | undefined) {
-  return team?.name || "Pendiente";
+  return team?.name || "TBD";
 }
 
 function getPlayoffAdvancePoints(round: string | null): number {
@@ -1145,7 +1145,7 @@ export default function Dashboard() {
                             <span className="flex min-w-0 flex-1 items-center gap-1.5">
                               <span className="truncate">{getTeamName(match.home_team)} pasa</span>
                               {match.playoffStats.userHasHome && (
-                                <Badge variant="secondary" className="h-4 px-1.5 text-[9px] leading-none">Tú</Badge>
+                                <Badge className="h-4 bg-success px-1.5 text-[9px] leading-none text-success-foreground">Tú</Badge>
                               )}
                             </span>
                             <span className="shrink-0 font-semibold text-foreground">{match.playoffStats.homeAdvances}</span>
@@ -1154,7 +1154,7 @@ export default function Dashboard() {
                             <span className="flex min-w-0 flex-1 items-center gap-1.5">
                               <span className="truncate">{getTeamName(match.away_team)} pasa</span>
                               {match.playoffStats.userHasAway && (
-                                <Badge variant="secondary" className="h-4 px-1.5 text-[9px] leading-none">Tú</Badge>
+                                <Badge className="h-4 bg-success px-1.5 text-[9px] leading-none text-success-foreground">Tú</Badge>
                               )}
                             </span>
                             <span className="shrink-0 font-semibold text-foreground">{match.playoffStats.awayAdvances}</span>
@@ -1277,3 +1277,4 @@ export default function Dashboard() {
       <AllMatchesDialog isOpen={allMatchesOpen} onClose={() => setAllMatchesOpen(false)} />
     </div>;
 }
+
