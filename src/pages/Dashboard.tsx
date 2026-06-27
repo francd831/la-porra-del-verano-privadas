@@ -190,6 +190,13 @@ function getShortRound(round: string | null) {
   }
 }
 
+function getUpcomingRoundSeparator(match: UpcomingMatch) {
+  if (match.match_type !== "playoff") {
+    return "Fase de grupos";
+  }
+  return getShortRound(match.round);
+}
+
 function getPlayoffAdvancementPrefixes(round: string | null) {
   switch (round) {
     case "Dieciseisavos de Final":
@@ -1082,7 +1089,24 @@ export default function Dashboard() {
             <CardContent>
               {upcomingMatches.length > 0 ? <ScrollArea className="h-[460px] pr-2">
                 <div className="space-y-3 pr-2">
-                  {upcomingMatches.map((match) => <div key={match.id} className="min-w-0 p-3 bg-muted/30 rounded-lg border">
+                  {upcomingMatches.map((match, index) => {
+                    const roundSeparator = getUpcomingRoundSeparator(match);
+                    const previousMatch = upcomingMatches[index - 1];
+                    const previousRoundSeparator = previousMatch ? getUpcomingRoundSeparator(previousMatch) : null;
+                    const showSeparator = index === 0 || roundSeparator !== previousRoundSeparator;
+
+                    return (
+                    <div key={match.id} className="space-y-2">
+                      {showSeparator && (
+                        <div className="flex items-center gap-2 pt-1">
+                          <div className="h-px flex-1 bg-border/70" />
+                          <span className="rounded-full border border-border/70 bg-background/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            {roundSeparator}
+                          </span>
+                          <div className="h-px flex-1 bg-border/70" />
+                        </div>
+                      )}
+                      <div className="min-w-0 p-3 bg-muted/30 rounded-lg border">
                       <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
                         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                           <Badge variant="outline" className="text-[11px] px-1.5">
@@ -1165,7 +1189,10 @@ export default function Dashboard() {
                           </div>
                         </div>
                       )}
-                    </div>)}
+                      </div>
+                    </div>
+                    );
+                  })}
                 </div>
               </ScrollArea> : <div className="text-center py-8 text-muted-foreground">
                   <Calendar className="w-10 h-10 mx-auto mb-2 opacity-30" />
