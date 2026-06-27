@@ -204,6 +204,34 @@ function getPlayoffAdvancementPrefixes(round: string | null) {
       return [];
   }
 }
+
+async function fetchAllPlayoffPredictions() {
+  const pageSize = 1000;
+  let from = 0;
+  const allPredictions: {
+    playoff_round: string | null;
+    predicted_winner_team_id: string | null;
+    user_id: string;
+  }[] = [];
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('predictions')
+      .select('playoff_round, predicted_winner_team_id, user_id')
+      .not('playoff_round', 'is', null)
+      .range(from, from + pageSize - 1);
+
+    if (error) throw error;
+
+    const page = data || [];
+    allPredictions.push(...page);
+
+    if (page.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return allPredictions;
+}
 export default function Dashboard() {
   const {
     user
@@ -402,12 +430,9 @@ export default function Dashboard() {
           const playoffMatches = matchesWithPoints.filter((match) => match.match_type === 'playoff');
           if (playoffMatches.length > 0) {
             const shouldLoadPlayoffPredictions = playoffMatches.some((match) => match.id !== 'FINAL_1');
-            const { data: playoffPredictions } = shouldLoadPlayoffPredictions
-              ? await supabase
-                .from('predictions')
-                .select('playoff_round, predicted_winner_team_id, user_id')
-                .not('playoff_round', 'is', null)
-              : { data: [] };
+            const playoffPredictions = shouldLoadPlayoffPredictions
+              ? await fetchAllPlayoffPredictions()
+              : [];
             const { data: championPredictions } = await supabase
               .from('champion_predictions')
               .select('predicted_winner_team_id, user_id')
@@ -434,7 +459,7 @@ export default function Dashboard() {
                 const advancementPrefixes = getPlayoffAdvancementPrefixes(match.round);
                 const picksByUser = new Map<string, Set<string>>();
 
-                (playoffPredictions || [])
+                playoffPredictions
                   .filter((prediction) => (
                     !adminIds.has(prediction.user_id) &&
                     advancementPrefixes.some((prefix) => prediction.playoff_round?.startsWith(prefix)) &&
@@ -522,12 +547,9 @@ export default function Dashboard() {
           const playoffUpcoming = upcoming.filter((match) => match.match_type === 'playoff');
           if (playoffUpcoming.length > 0) {
             const shouldLoadPlayoffPredictions = playoffUpcoming.some((match) => match.id !== 'FINAL_1');
-            const { data: playoffPredictions } = shouldLoadPlayoffPredictions
-              ? await supabase
-                .from('predictions')
-                .select('playoff_round, predicted_winner_team_id, user_id')
-                .not('playoff_round', 'is', null)
-              : { data: [] };
+            const playoffPredictions = shouldLoadPlayoffPredictions
+              ? await fetchAllPlayoffPredictions()
+              : [];
             const { data: championPredictions } = await supabase
               .from('champion_predictions')
               .select('predicted_winner_team_id, user_id')
@@ -561,7 +583,7 @@ export default function Dashboard() {
                 const advancementPrefixes = getPlayoffAdvancementPrefixes(match.round);
                 const picksByUser = new Map<string, Set<string>>();
 
-                (playoffPredictions || [])
+                playoffPredictions
                   .filter((prediction) => (
                     !adminIds.has(prediction.user_id) &&
                     advancementPrefixes.some((prefix) => prediction.playoff_round?.startsWith(prefix)) &&
