@@ -1172,7 +1172,7 @@ export default function Dashboard() {
                                 <Badge className="h-4 bg-success px-1.5 text-[9px] leading-none text-success-foreground">Tú</Badge>
                               )}
                             </span>
-                            <span className="shrink-0 font-semibold text-foreground">{match.playoffStats.homeAdvances}</span>
+                            <span className="shrink-0 font-semibold text-foreground">{match.playoffStats.homeAdvances} pers.</span>
                           </div>
                           <div className="flex justify-between gap-2">
                             <span className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -1181,11 +1181,11 @@ export default function Dashboard() {
                                 <Badge className="h-4 bg-success px-1.5 text-[9px] leading-none text-success-foreground">Tú</Badge>
                               )}
                             </span>
-                            <span className="shrink-0 font-semibold text-foreground">{match.playoffStats.awayAdvances}</span>
+                            <span className="shrink-0 font-semibold text-foreground">{match.playoffStats.awayAdvances} pers.</span>
                           </div>
                           <div className="flex justify-between gap-2">
                             <span>Ninguno de los dos</span>
-                            <span className="font-semibold text-foreground">{match.playoffStats.neitherAdvances}</span>
+                            <span className="font-semibold text-foreground">{match.playoffStats.neitherAdvances} pers.</span>
                           </div>
                         </div>
                       )}
