@@ -190,18 +190,18 @@ function getShortRound(round: string | null) {
   }
 }
 
-function getPlayoffPredictionPrefix(round: string | null) {
+function getPlayoffAdvancementPrefixes(round: string | null) {
   switch (round) {
     case "Dieciseisavos de Final":
-      return "R32_";
+      return ["R32_", "R16_", "QF_", "SF_"];
     case "Octavos de Final":
-      return "R16_";
+      return ["R16_", "QF_", "SF_"];
     case "Cuartos de Final":
-      return "QF_";
+      return ["QF_", "SF_"];
     case "Semifinales":
-      return "SF_";
+      return ["SF_"];
     default:
-      return null;
+      return [];
   }
 }
 export default function Dashboard() {
@@ -408,12 +408,10 @@ export default function Dashboard() {
                 .select('playoff_round, predicted_winner_team_id, user_id')
                 .not('playoff_round', 'is', null)
               : { data: [] };
-            const { data: championPredictions } = playoffMatches.some((match) => match.id === 'FINAL_1')
-              ? await supabase
-                .from('champion_predictions')
-                .select('predicted_winner_team_id, user_id')
-                .eq('tournament_id', '11111111-1111-1111-1111-111111111111')
-              : { data: [] };
+            const { data: championPredictions } = await supabase
+              .from('champion_predictions')
+              .select('predicted_winner_team_id, user_id')
+              .eq('tournament_id', '11111111-1111-1111-1111-111111111111');
 
             matchesWithPoints.forEach((match) => {
               if (match.match_type !== 'playoff' || !match.winner_team_id) return;
@@ -433,16 +431,22 @@ export default function Dashboard() {
                     }
                   });
               } else {
-                const roundPrefix = getPlayoffPredictionPrefix(match.round);
+                const advancementPrefixes = getPlayoffAdvancementPrefixes(match.round);
                 const picksByUser = new Map<string, Set<string>>();
 
                 (playoffPredictions || [])
                   .filter((prediction) => (
                     !adminIds.has(prediction.user_id) &&
-                    !!roundPrefix &&
-                    prediction.playoff_round?.startsWith(roundPrefix) &&
+                    advancementPrefixes.some((prefix) => prediction.playoff_round?.startsWith(prefix)) &&
                     prediction.predicted_winner_team_id
                   ))
+                  .forEach((prediction) => {
+                    const picks = picksByUser.get(prediction.user_id) || new Set<string>();
+                    picks.add(prediction.predicted_winner_team_id);
+                    picksByUser.set(prediction.user_id, picks);
+                  });
+                (championPredictions || [])
+                  .filter((prediction) => !adminIds.has(prediction.user_id) && prediction.predicted_winner_team_id)
                   .forEach((prediction) => {
                     const picks = picksByUser.get(prediction.user_id) || new Set<string>();
                     picks.add(prediction.predicted_winner_team_id);
@@ -524,12 +528,10 @@ export default function Dashboard() {
                 .select('playoff_round, predicted_winner_team_id, user_id')
                 .not('playoff_round', 'is', null)
               : { data: [] };
-            const { data: championPredictions } = playoffUpcoming.some((match) => match.id === 'FINAL_1')
-              ? await supabase
-                .from('champion_predictions')
-                .select('predicted_winner_team_id, user_id')
-                .eq('tournament_id', '11111111-1111-1111-1111-111111111111')
-              : { data: [] };
+            const { data: championPredictions } = await supabase
+              .from('champion_predictions')
+              .select('predicted_winner_team_id, user_id')
+              .eq('tournament_id', '11111111-1111-1111-1111-111111111111');
 
             playoffUpcoming.forEach((match) => {
               let homeAdvances = 0;
@@ -556,16 +558,22 @@ export default function Dashboard() {
                 userHasHome = !!match.home_team_id && picksByUser.get(user.id) === match.home_team_id;
                 userHasAway = !!match.away_team_id && picksByUser.get(user.id) === match.away_team_id;
               } else {
-                const roundPrefix = getPlayoffPredictionPrefix(match.round);
+                const advancementPrefixes = getPlayoffAdvancementPrefixes(match.round);
                 const picksByUser = new Map<string, Set<string>>();
 
                 (playoffPredictions || [])
                   .filter((prediction) => (
                     !adminIds.has(prediction.user_id) &&
-                    !!roundPrefix &&
-                    prediction.playoff_round?.startsWith(roundPrefix) &&
+                    advancementPrefixes.some((prefix) => prediction.playoff_round?.startsWith(prefix)) &&
                     prediction.predicted_winner_team_id
                   ))
+                  .forEach((prediction) => {
+                    const picks = picksByUser.get(prediction.user_id) || new Set<string>();
+                    picks.add(prediction.predicted_winner_team_id);
+                    picksByUser.set(prediction.user_id, picks);
+                  });
+                (championPredictions || [])
+                  .filter((prediction) => !adminIds.has(prediction.user_id) && prediction.predicted_winner_team_id)
                   .forEach((prediction) => {
                     const picks = picksByUser.get(prediction.user_id) || new Set<string>();
                     picks.add(prediction.predicted_winner_team_id);
@@ -1177,7 +1185,7 @@ export default function Dashboard() {
                               <BarChart3 className="w-3 h-3 mr-0.5" />
                               Dist.
                             </Button>}
-                            <Badge className={(match.pointsEarned || 0) > 10 ? "bg-success text-success-foreground text-[10px] px-1.5" : (match.pointsEarned || 0) > 0 ? "bg-primary/20 text-primary text-[10px] px-1.5" : "bg-muted text-muted-foreground text-[10px] px-1.5"}>
+                            <Badge className={(match.pointsEarned || 0) > 10 ? "bg-success/80 text-white text-[10px] px-1.5" : (match.pointsEarned || 0) > 0 ? "bg-primary/80 text-white text-[10px] px-1.5" : "bg-muted/70 text-white text-[10px] px-1.5"}>
                               +{match.pointsEarned || 0}
                             </Badge>
                           </div>
