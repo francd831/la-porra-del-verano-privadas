@@ -86,6 +86,8 @@ interface UpcomingMatch {
     homeAdvances: number;
     awayAdvances: number;
     neitherAdvances: number;
+    userHasHome: boolean;
+    userHasAway: boolean;
   };
 }
 interface AwardPoints {
@@ -185,6 +187,21 @@ function getShortRound(round: string | null) {
       return "Final";
     default:
       return "Grupo";
+  }
+}
+
+function getPlayoffPredictionPrefix(round: string | null) {
+  switch (round) {
+    case "Dieciseisavos de Final":
+      return "R32_";
+    case "Octavos de Final":
+      return "R16_";
+    case "Cuartos de Final":
+      return "QF_";
+    case "Semifinales":
+      return "SF_";
+    default:
+      return null;
   }
 }
 export default function Dashboard() {
@@ -384,12 +401,12 @@ export default function Dashboard() {
           });
           const playoffMatches = matchesWithPoints.filter((match) => match.match_type === 'playoff');
           if (playoffMatches.length > 0) {
-            const playoffIds = playoffMatches.filter((match) => match.id !== 'FINAL_1').map((match) => match.id);
-            const { data: playoffPredictions } = playoffIds.length > 0
+            const shouldLoadPlayoffPredictions = playoffMatches.some((match) => match.id !== 'FINAL_1');
+            const { data: playoffPredictions } = shouldLoadPlayoffPredictions
               ? await supabase
                 .from('predictions')
                 .select('playoff_round, predicted_winner_team_id, user_id')
-                .in('playoff_round', playoffIds)
+                .not('playoff_round', 'is', null)
               : { data: [] };
             const { data: championPredictions } = playoffMatches.some((match) => match.id === 'FINAL_1')
               ? await supabase
@@ -400,6 +417,7 @@ export default function Dashboard() {
 
             matchesWithPoints.forEach((match) => {
               if (match.match_type !== 'playoff' || !match.winner_team_id) return;
+              const winnerTeamId = match.winner_team_id;
               const pointsForWinner = getPlayoffAdvancePoints(match.round);
               const distributionCounts: Record<number, number> = { 0: 0, [pointsForWinner]: 0 };
 
@@ -407,7 +425,7 @@ export default function Dashboard() {
                 (championPredictions || [])
                   .filter((prediction) => !adminIds.has(prediction.user_id))
                   .forEach((prediction) => {
-                    const points = prediction.predicted_winner_team_id === match.winner_team_id ? pointsForWinner : 0;
+                    const points = prediction.predicted_winner_team_id === winnerTeamId ? pointsForWinner : 0;
                     distributionCounts[points] = (distributionCounts[points] || 0) + 1;
                     if (prediction.user_id === user.id) {
                       match.userPlayoffPredictionTeamId = prediction.predicted_winner_team_id;
@@ -415,16 +433,29 @@ export default function Dashboard() {
                     }
                   });
               } else {
+                const roundPrefix = getPlayoffPredictionPrefix(match.round);
+                const picksByUser = new Map<string, Set<string>>();
+
                 (playoffPredictions || [])
-                  .filter((prediction) => prediction.playoff_round === match.id && !adminIds.has(prediction.user_id))
+                  .filter((prediction) => (
+                    !adminIds.has(prediction.user_id) &&
+                    !!roundPrefix &&
+                    prediction.playoff_round?.startsWith(roundPrefix) &&
+                    prediction.predicted_winner_team_id
+                  ))
                   .forEach((prediction) => {
-                    const points = prediction.predicted_winner_team_id === match.winner_team_id ? pointsForWinner : 0;
-                    distributionCounts[points] = (distributionCounts[points] || 0) + 1;
-                    if (prediction.user_id === user.id) {
-                      match.userPlayoffPredictionTeamId = prediction.predicted_winner_team_id;
-                      match.pointsEarned = points;
-                    }
+                    const picks = picksByUser.get(prediction.user_id) || new Set<string>();
+                    picks.add(prediction.predicted_winner_team_id);
+                    picksByUser.set(prediction.user_id, picks);
                   });
+
+                const usersWithWinner = Array.from(picksByUser.values()).filter((picks) => picks.has(winnerTeamId)).length;
+                distributionCounts[pointsForWinner] = usersWithWinner;
+                const userPicks = picksByUser.get(user.id);
+                if (userPicks) {
+                  match.userPlayoffPredictionTeamId = userPicks.has(winnerTeamId) ? winnerTeamId : Array.from(userPicks)[0];
+                  match.pointsEarned = userPicks.has(winnerTeamId) ? pointsForWinner : 0;
+                }
               }
 
               distributionCounts[0] = Math.max(0, totalParticipants - (distributionCounts[pointsForWinner] || 0));
@@ -486,12 +517,12 @@ export default function Dashboard() {
           }));
           const playoffUpcoming = upcoming.filter((match) => match.match_type === 'playoff');
           if (playoffUpcoming.length > 0) {
-            const playoffIds = playoffUpcoming.filter((match) => match.id !== 'FINAL_1').map((match) => match.id);
-            const { data: playoffPredictions } = playoffIds.length > 0
+            const shouldLoadPlayoffPredictions = playoffUpcoming.some((match) => match.id !== 'FINAL_1');
+            const { data: playoffPredictions } = shouldLoadPlayoffPredictions
               ? await supabase
                 .from('predictions')
                 .select('playoff_round, predicted_winner_team_id, user_id')
-                .in('playoff_round', playoffIds)
+                .not('playoff_round', 'is', null)
               : { data: [] };
             const { data: championPredictions } = playoffUpcoming.some((match) => match.id === 'FINAL_1')
               ? await supabase
@@ -503,27 +534,64 @@ export default function Dashboard() {
             playoffUpcoming.forEach((match) => {
               let homeAdvances = 0;
               let awayAdvances = 0;
-              let neitherAdvances = 0;
-              const sourcePredictions = match.id === 'FINAL_1'
-                ? (championPredictions || [])
-                : (playoffPredictions || []).filter((prediction) => prediction.playoff_round === match.id);
+              let usersWithEitherTeam = 0;
+              let userHasHome = false;
+              let userHasAway = false;
 
-              sourcePredictions
-                .filter((prediction) => !adminIds.has(prediction.user_id))
-                .forEach((prediction) => {
-                  if (match.home_team_id && prediction.predicted_winner_team_id === match.home_team_id) {
-                    homeAdvances++;
-                  } else if (match.away_team_id && prediction.predicted_winner_team_id === match.away_team_id) {
-                    awayAdvances++;
-                  } else {
-                    neitherAdvances++;
-                  }
-                });
+              if (match.id === 'FINAL_1') {
+                const picksByUser = new Map<string, string>();
+                (championPredictions || [])
+                  .filter((prediction) => !adminIds.has(prediction.user_id))
+                  .forEach((prediction) => {
+                    picksByUser.set(prediction.user_id, prediction.predicted_winner_team_id);
+                  });
+
+                homeAdvances = match.home_team_id
+                  ? Array.from(picksByUser.values()).filter((teamId) => teamId === match.home_team_id).length
+                  : 0;
+                awayAdvances = match.away_team_id
+                  ? Array.from(picksByUser.values()).filter((teamId) => teamId === match.away_team_id).length
+                  : 0;
+                usersWithEitherTeam = homeAdvances + awayAdvances;
+                userHasHome = !!match.home_team_id && picksByUser.get(user.id) === match.home_team_id;
+                userHasAway = !!match.away_team_id && picksByUser.get(user.id) === match.away_team_id;
+              } else {
+                const roundPrefix = getPlayoffPredictionPrefix(match.round);
+                const picksByUser = new Map<string, Set<string>>();
+
+                (playoffPredictions || [])
+                  .filter((prediction) => (
+                    !adminIds.has(prediction.user_id) &&
+                    !!roundPrefix &&
+                    prediction.playoff_round?.startsWith(roundPrefix) &&
+                    prediction.predicted_winner_team_id
+                  ))
+                  .forEach((prediction) => {
+                    const picks = picksByUser.get(prediction.user_id) || new Set<string>();
+                    picks.add(prediction.predicted_winner_team_id);
+                    picksByUser.set(prediction.user_id, picks);
+                  });
+
+                homeAdvances = match.home_team_id
+                  ? Array.from(picksByUser.values()).filter((picks) => picks.has(match.home_team_id!)).length
+                  : 0;
+                awayAdvances = match.away_team_id
+                  ? Array.from(picksByUser.values()).filter((picks) => picks.has(match.away_team_id!)).length
+                  : 0;
+                usersWithEitherTeam = Array.from(picksByUser.values()).filter((picks) => (
+                  (!!match.home_team_id && picks.has(match.home_team_id)) ||
+                  (!!match.away_team_id && picks.has(match.away_team_id))
+                )).length;
+                userHasHome = !!match.home_team_id && !!picksByUser.get(user.id)?.has(match.home_team_id);
+                userHasAway = !!match.away_team_id && !!picksByUser.get(user.id)?.has(match.away_team_id);
+              }
 
               match.playoffStats = {
                 homeAdvances,
                 awayAdvances,
-                neitherAdvances: Math.max(0, totalParticipants - homeAdvances - awayAdvances),
+                neitherAdvances: Math.max(0, totalParticipants - usersWithEitherTeam),
+                userHasHome,
+                userHasAway,
               };
             });
           }
@@ -1044,11 +1112,21 @@ export default function Dashboard() {
                       {match.match_type === 'playoff' && match.playoffStats && (
                         <div className="mt-2 grid grid-cols-1 gap-1 rounded-md bg-background/60 p-2 text-[11px] text-muted-foreground">
                           <div className="flex justify-between gap-2">
-                            <span className="truncate">{getTeamName(match.home_team)} pasa</span>
+                            <span className="flex min-w-0 items-center gap-1.5">
+                              <span className="truncate">{getTeamName(match.home_team)} pasa</span>
+                              {match.playoffStats.userHasHome && (
+                                <Badge variant="secondary" className="h-4 px-1.5 text-[9px] leading-none">Tú</Badge>
+                              )}
+                            </span>
                             <span className="font-semibold text-foreground">{match.playoffStats.homeAdvances}</span>
                           </div>
                           <div className="flex justify-between gap-2">
-                            <span className="truncate">{getTeamName(match.away_team)} pasa</span>
+                            <span className="flex min-w-0 items-center gap-1.5">
+                              <span className="truncate">{getTeamName(match.away_team)} pasa</span>
+                              {match.playoffStats.userHasAway && (
+                                <Badge variant="secondary" className="h-4 px-1.5 text-[9px] leading-none">Tú</Badge>
+                              )}
+                            </span>
                             <span className="font-semibold text-foreground">{match.playoffStats.awayAdvances}</span>
                           </div>
                           <div className="flex justify-between gap-2">
