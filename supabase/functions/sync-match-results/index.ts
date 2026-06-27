@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
     // reopens a match that has already been finalized locally.
     const { data: activeMatches, error: activeMatchesError } = await supabase
       .from("matches")
-      .select("id, external_id, status, home_goals, away_goals")
+      .select("id, external_id, status, home_goals, away_goals, match_type, home_team_id, away_team_id, winner_team_id")
       .neq("status", "completed")
       .not("external_id", "is", null);
 
@@ -137,6 +137,14 @@ Deno.serve(async (req) => {
         statusRank(apiStatus) < statusRank(match.status) ? match.status : apiStatus;
       const homeGoals = apiHasScore ? apiHomeGoals : match.home_goals;
       const awayGoals = apiHasScore ? apiAwayGoals : match.away_goals;
+      const winnerTeamId =
+        match.match_type === "playoff" && hasScore(homeGoals, awayGoals)
+          ? homeGoals > awayGoals
+            ? match.home_team_id
+            : awayGoals > homeGoals
+              ? match.away_team_id
+              : null
+          : match.winner_team_id;
 
       if (newStatus === "completed" && (homeGoals === null || awayGoals === null)) {
         errors.push(`Skip ${externalId}: API reported completed without full-time score`);
@@ -147,7 +155,8 @@ Deno.serve(async (req) => {
       if (
         match.status === newStatus &&
         match.home_goals === homeGoals &&
-        match.away_goals === awayGoals
+        match.away_goals === awayGoals &&
+        match.winner_team_id === winnerTeamId
       ) {
         continue;
       }
@@ -158,6 +167,7 @@ Deno.serve(async (req) => {
           status: newStatus,
           home_goals: homeGoals,
           away_goals: awayGoals,
+          winner_team_id: winnerTeamId,
           updated_at: new Date().toISOString(),
         })
         .eq("id", match.id);

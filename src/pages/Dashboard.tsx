@@ -39,36 +39,53 @@ interface GroupPoints {
 interface MatchWithPoints {
   id: string;
   match_date: string;
+  match_type: string;
+  round: string | null;
   home_team: {
     name: string;
-  };
+  } | null;
   away_team: {
     name: string;
-  };
+  } | null;
+  home_team_id: string | null;
+  away_team_id: string | null;
   home_goals: number | null;
   away_goals: number | null;
+  winner_team_id: string | null;
   userPrediction?: {
     home_goals: number | null;
     away_goals: number | null;
   };
+  userPlayoffPredictionTeamId?: string | null;
   pointsEarned?: number;
   group_id?: string | null;
+  playoffDistribution?: { points: number; participants: number }[];
 }
 interface UpcomingMatch {
   id: string;
   match_date: string;
   status: string;
+  match_type: string;
+  round: string | null;
   home_team: {
     name: string;
-  };
+  } | null;
   away_team: {
     name: string;
-  };
+  } | null;
+  home_team_id: string | null;
+  away_team_id: string | null;
+  winner_team_id: string | null;
   home_goals: number | null;
   away_goals: number | null;
   userPrediction?: {
     home_goals: number | null;
     away_goals: number | null;
+  };
+  playoffStats?: {
+    homeAdvances: number;
+    awayAdvances: number;
+    neitherAdvances: number;
   };
 }
 interface AwardPoints {
@@ -131,6 +148,44 @@ function calculateMatchPoints(prediction: {
     }
   }
   return points;
+}
+
+function getTeamName(team: { name: string } | null | undefined) {
+  return team?.name || "Pendiente";
+}
+
+function getPlayoffAdvancePoints(round: string | null): number {
+  switch (round) {
+    case "Dieciseisavos de Final":
+      return 15;
+    case "Octavos de Final":
+      return 20;
+    case "Cuartos de Final":
+      return 30;
+    case "Semifinales":
+      return 40;
+    case "Final":
+      return 50;
+    default:
+      return 0;
+  }
+}
+
+function getShortRound(round: string | null) {
+  switch (round) {
+    case "Dieciseisavos de Final":
+      return "1/16";
+    case "Octavos de Final":
+      return "1/8";
+    case "Cuartos de Final":
+      return "1/4";
+    case "Semifinales":
+      return "1/2";
+    case "Final":
+      return "Final";
+    default:
+      return "Grupo";
+  }
 }
 export default function Dashboard() {
   const {
@@ -279,12 +334,17 @@ export default function Dashboard() {
         } = await supabase.from('matches').select(`
             id,
             match_date,
+            match_type,
+            round,
             home_goals,
             away_goals,
+            winner_team_id,
+            home_team_id,
+            away_team_id,
             group_id,
             home_team:teams!matches_home_team_id_fkey(name),
             away_team:teams!matches_away_team_id_fkey(name)
-          `).eq('tournament_id', '11111111-1111-1111-1111-111111111111').eq('status', 'completed').eq('match_type', 'group').not('home_goals', 'is', null).not('away_goals', 'is', null).order('match_date', {
+          `).eq('tournament_id', '11111111-1111-1111-1111-111111111111').eq('status', 'completed').not('match_date', 'is', null).order('match_date', {
           ascending: false
         }).limit(5);
         if (finishedMatchesData && finishedMatchesData.length > 0) {
@@ -302,6 +362,8 @@ export default function Dashboard() {
             return {
               id: match.id,
               match_date: match.match_date || '',
+              match_type: match.match_type || 'group',
+              round: match.round,
               home_team: match.home_team as {
                 name: string;
                 flag: string;
@@ -310,13 +372,67 @@ export default function Dashboard() {
                 name: string;
                 flag: string;
               },
+              home_team_id: match.home_team_id,
+              away_team_id: match.away_team_id,
               home_goals: match.home_goals,
               away_goals: match.away_goals,
+              winner_team_id: match.winner_team_id,
               group_id: match.group_id,
               userPrediction: prediction,
               pointsEarned
             };
           });
+          const playoffMatches = matchesWithPoints.filter((match) => match.match_type === 'playoff');
+          if (playoffMatches.length > 0) {
+            const playoffIds = playoffMatches.filter((match) => match.id !== 'FINAL_1').map((match) => match.id);
+            const { data: playoffPredictions } = playoffIds.length > 0
+              ? await supabase
+                .from('predictions')
+                .select('playoff_round, predicted_winner_team_id, user_id')
+                .in('playoff_round', playoffIds)
+              : { data: [] };
+            const { data: championPredictions } = playoffMatches.some((match) => match.id === 'FINAL_1')
+              ? await supabase
+                .from('champion_predictions')
+                .select('predicted_winner_team_id, user_id')
+                .eq('tournament_id', '11111111-1111-1111-1111-111111111111')
+              : { data: [] };
+
+            matchesWithPoints.forEach((match) => {
+              if (match.match_type !== 'playoff' || !match.winner_team_id) return;
+              const pointsForWinner = getPlayoffAdvancePoints(match.round);
+              const distributionCounts: Record<number, number> = { 0: 0, [pointsForWinner]: 0 };
+
+              if (match.id === 'FINAL_1') {
+                (championPredictions || [])
+                  .filter((prediction) => !adminIds.has(prediction.user_id))
+                  .forEach((prediction) => {
+                    const points = prediction.predicted_winner_team_id === match.winner_team_id ? pointsForWinner : 0;
+                    distributionCounts[points] = (distributionCounts[points] || 0) + 1;
+                    if (prediction.user_id === user.id) {
+                      match.userPlayoffPredictionTeamId = prediction.predicted_winner_team_id;
+                      match.pointsEarned = points;
+                    }
+                  });
+              } else {
+                (playoffPredictions || [])
+                  .filter((prediction) => prediction.playoff_round === match.id && !adminIds.has(prediction.user_id))
+                  .forEach((prediction) => {
+                    const points = prediction.predicted_winner_team_id === match.winner_team_id ? pointsForWinner : 0;
+                    distributionCounts[points] = (distributionCounts[points] || 0) + 1;
+                    if (prediction.user_id === user.id) {
+                      match.userPlayoffPredictionTeamId = prediction.predicted_winner_team_id;
+                      match.pointsEarned = points;
+                    }
+                  });
+              }
+
+              distributionCounts[0] = Math.max(0, totalParticipants - (distributionCounts[pointsForWinner] || 0));
+              match.playoffDistribution = Object.entries(distributionCounts)
+                .map(([points, participants]) => ({ points: Number(points), participants }))
+                .sort((a, b) => a.points - b.points);
+            });
+          }
           setRecentMatches(matchesWithPoints);
         }
 
@@ -328,8 +444,13 @@ export default function Dashboard() {
             id,
             match_date,
             status,
+            match_type,
+            round,
             home_goals,
             away_goals,
+            winner_team_id,
+            home_team_id,
+            away_team_id,
             home_team:teams!matches_home_team_id_fkey(name),
             away_team:teams!matches_away_team_id_fkey(name)
           `).eq('tournament_id', '11111111-1111-1111-1111-111111111111').neq('status', 'completed').or(`status.eq.in_progress,match_date.gte.${now}`).not('match_date', 'is', null).order('match_date', {
@@ -348,16 +469,64 @@ export default function Dashboard() {
             id: match.id,
             match_date: match.match_date || '',
             status: match.status || 'scheduled',
+            match_type: match.match_type || 'group',
+            round: match.round,
             home_team: match.home_team as {
               name: string;
             },
             away_team: match.away_team as {
               name: string;
             },
+            home_team_id: match.home_team_id,
+            away_team_id: match.away_team_id,
+            winner_team_id: match.winner_team_id,
             home_goals: match.home_goals,
             away_goals: match.away_goals,
             userPrediction: predictionsMap.get(match.id)
           }));
+          const playoffUpcoming = upcoming.filter((match) => match.match_type === 'playoff');
+          if (playoffUpcoming.length > 0) {
+            const playoffIds = playoffUpcoming.filter((match) => match.id !== 'FINAL_1').map((match) => match.id);
+            const { data: playoffPredictions } = playoffIds.length > 0
+              ? await supabase
+                .from('predictions')
+                .select('playoff_round, predicted_winner_team_id, user_id')
+                .in('playoff_round', playoffIds)
+              : { data: [] };
+            const { data: championPredictions } = playoffUpcoming.some((match) => match.id === 'FINAL_1')
+              ? await supabase
+                .from('champion_predictions')
+                .select('predicted_winner_team_id, user_id')
+                .eq('tournament_id', '11111111-1111-1111-1111-111111111111')
+              : { data: [] };
+
+            playoffUpcoming.forEach((match) => {
+              let homeAdvances = 0;
+              let awayAdvances = 0;
+              let neitherAdvances = 0;
+              const sourcePredictions = match.id === 'FINAL_1'
+                ? (championPredictions || [])
+                : (playoffPredictions || []).filter((prediction) => prediction.playoff_round === match.id);
+
+              sourcePredictions
+                .filter((prediction) => !adminIds.has(prediction.user_id))
+                .forEach((prediction) => {
+                  if (match.home_team_id && prediction.predicted_winner_team_id === match.home_team_id) {
+                    homeAdvances++;
+                  } else if (match.away_team_id && prediction.predicted_winner_team_id === match.away_team_id) {
+                    awayAdvances++;
+                  } else {
+                    neitherAdvances++;
+                  }
+                });
+
+              match.playoffStats = {
+                homeAdvances,
+                awayAdvances,
+                neitherAdvances: Math.max(0, totalParticipants - homeAdvances - awayAdvances),
+              };
+            });
+          }
           setUpcomingMatches(upcoming);
         } else {
           setUpcomingMatches([]);
@@ -607,6 +776,8 @@ export default function Dashboard() {
       }
     };
     loadDashboardData();
+    const intervalId = window.setInterval(loadDashboardData, 30000);
+    return () => window.clearInterval(intervalId);
   }, [user]);
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">
@@ -821,6 +992,11 @@ export default function Dashboard() {
                         locale: es
                       })}
                           </Badge>
+                          {match.match_type === 'playoff' && (
+                            <Badge variant="secondary" className="text-[11px] px-1.5">
+                              {getShortRound(match.round)}
+                            </Badge>
+                          )}
                           {match.status === 'in_progress' && (
                             <Badge className="bg-success/20 text-success border-success/30 text-[11px] px-1.5">
                               En juego
@@ -828,22 +1004,22 @@ export default function Dashboard() {
                           )}
                         </div>
                         <div className="flex shrink-0 items-center">
-                          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => {
+                          {match.match_type === 'group' && <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => {
                       setSelectedMatchForStats({
                         id: match.id,
-                        homeTeam: match.home_team?.name || '',
-                        awayTeam: match.away_team?.name || ''
+                        homeTeam: getTeamName(match.home_team),
+                        awayTeam: getTeamName(match.away_team)
                       });
                       setStatsDialogOpen(true);
                     }} title={predictionsLocked ? "Ver estadisticas globales" : "Disponible cuando se cierren los pronosticos"}>
                             <BarChart3 className="w-3 h-3 mr-1" />
                             Estad.
-                          </Button>
+                          </Button>}
                         </div>
                       </div>
                       <div className="flex min-w-0 items-center justify-between gap-2">
                         <div className="flex min-w-0 flex-1 items-center gap-2">
-                          <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
+                          <span className="font-medium text-sm truncate">{getTeamName(match.home_team)}</span>
                         </div>
                         <div className="min-w-[78px] shrink-0 rounded bg-background px-2 py-1 text-center">
                           {match.status === 'in_progress' && match.home_goals !== null && match.away_goals !== null ? (
@@ -862,9 +1038,25 @@ export default function Dashboard() {
                             </span> : <span className="text-muted-foreground text-sm">vs</span>}
                         </div>
                         <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-                          <span className="font-medium text-sm truncate">{match.away_team?.name}</span>
+                          <span className="font-medium text-sm truncate">{getTeamName(match.away_team)}</span>
                         </div>
                       </div>
+                      {match.match_type === 'playoff' && match.playoffStats && (
+                        <div className="mt-2 grid grid-cols-1 gap-1 rounded-md bg-background/60 p-2 text-[11px] text-muted-foreground">
+                          <div className="flex justify-between gap-2">
+                            <span className="truncate">{getTeamName(match.home_team)} pasa</span>
+                            <span className="font-semibold text-foreground">{match.playoffStats.homeAdvances}</span>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <span className="truncate">{getTeamName(match.away_team)} pasa</span>
+                            <span className="font-semibold text-foreground">{match.playoffStats.awayAdvances}</span>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <span>Ninguno de los dos</span>
+                            <span className="font-semibold text-foreground">{match.playoffStats.neitherAdvances}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>)}
                 </div>
               </ScrollArea> : <div className="text-center py-8 text-muted-foreground">
@@ -896,24 +1088,38 @@ export default function Dashboard() {
                                 ({match.userPrediction.home_goals}-{match.userPrediction.away_goals})
                               </span>
                             )}
+                            {match.match_type === 'playoff' && (
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                {getShortRound(match.round)}
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => loadDistribution(match.id, match.home_goals!, match.away_goals!)} title={predictionsLocked ? "Ver distribucion global" : "Disponible cuando se cierren los pronosticos"}>
+                            {match.match_type === 'group' && <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px]" onClick={() => loadDistribution(match.id, match.home_goals!, match.away_goals!)} title={predictionsLocked ? "Ver distribucion global" : "Disponible cuando se cierren los pronosticos"}>
                               <BarChart3 className="w-3 h-3 mr-0.5" />
                               Dist.
-                            </Button>
+                            </Button>}
                             <Badge className={(match.pointsEarned || 0) > 10 ? "bg-success text-success-foreground text-[10px] px-1.5" : (match.pointsEarned || 0) > 0 ? "bg-primary/20 text-primary text-[10px] px-1.5" : "bg-muted text-muted-foreground text-[10px] px-1.5"}>
                               +{match.pointsEarned || 0}
                             </Badge>
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="font-medium text-xs truncate flex-1">{match.home_team?.name}</span>
+                          <span className="font-medium text-xs truncate flex-1">{getTeamName(match.home_team)}</span>
                           <div className="px-2 py-0.5 bg-background rounded text-center min-w-[55px]">
                             <span className="font-bold text-xs">{match.home_goals} - {match.away_goals}</span>
                           </div>
-                          <span className="font-medium text-xs truncate flex-1 text-right">{match.away_team?.name}</span>
+                          <span className="font-medium text-xs truncate flex-1 text-right">{getTeamName(match.away_team)}</span>
                         </div>
+                        {match.match_type === 'playoff' && match.playoffDistribution && (
+                          <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
+                            {match.playoffDistribution.map((item) => (
+                              <span key={`${match.id}-${item.points}`} className="rounded bg-background px-2 py-1 text-muted-foreground">
+                                <span className="font-semibold text-foreground">{item.participants}</span> usuarios con {item.points} pts
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       {distributionMatchId === match.id && (
                         <div className="mt-1 p-3 rounded-lg border bg-muted/20">
