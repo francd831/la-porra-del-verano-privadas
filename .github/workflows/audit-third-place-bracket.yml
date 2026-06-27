@@ -1,0 +1,53 @@
+name: Audit third-place bracket
+
+on:
+  schedule:
+    - cron: "*/15 * 27-28 6 *"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Update Supabase if the bracket does not match the expected allocation"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Audit round of 32 allocation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
+          /usr/lib/postgresql/17/bin/psql --version
+
+      - name: Validate database secret
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "Missing SUPABASE_DB_URL repository secret."
+            exit 1
+          fi
+
+      - name: Audit bracket
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PSQL_BIN: /usr/lib/postgresql/17/bin/psql
+        run: |
+          APPLY_FLAG=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.apply }}" = "true" ]; then
+            APPLY_FLAG="--apply"
+          fi
+          node scripts/audit-third-place-bracket.mjs $APPLY_FLAG
