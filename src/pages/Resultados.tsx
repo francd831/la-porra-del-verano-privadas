@@ -479,78 +479,16 @@ export default function Resultados() {
       if (error) throw error;
       removeGroupResultDraft(matchId);
 
-      // Find the match and its group
-      const allMatches = Object.values(groupMatches).flat();
-      const match = allMatches.find(m => m.id === matchId);
-      const matchGroup = Object.keys(groupMatches).find(g =>
-        groupMatches[g].some(m => m.id === matchId));
-
-      // ── STEP 1: Auto-sort group standings ──
-      if (matchGroup) {
-        const autoClasificacion = (() => {
-          const estadisticas: Record<string, EstadisticasEquipo> = {};
-          const partidosGrupo = groupMatches[matchGroup] || [];
-          partidosGrupo.forEach(m => {
-            const homeTeam = m.home_team?.name || m.home_team_id;
-            const awayTeam = m.away_team?.name || m.away_team_id;
-            if (!estadisticas[homeTeam]) estadisticas[homeTeam] = { equipo: homeTeam, puntos: 0, partidosJugados: 0, partidosGanados: 0, partidosEmpatados: 0, partidosPerdidos: 0, golesFavor: 0, golesContra: 0, diferencia: 0 };
-            if (!estadisticas[awayTeam]) estadisticas[awayTeam] = { equipo: awayTeam, puntos: 0, partidosJugados: 0, partidosGanados: 0, partidosEmpatados: 0, partidosPerdidos: 0, golesFavor: 0, golesContra: 0, diferencia: 0 };
-          });
-          partidosGrupo.forEach(m => {
-            const res = resultadosGrupos[m.id];
-            if (res && res.local !== null && res.visitante !== null) {
-              const homeTeam = m.home_team?.name || m.home_team_id;
-              const awayTeam = m.away_team?.name || m.away_team_id;
-              estadisticas[homeTeam].partidosJugados++; estadisticas[homeTeam].golesFavor += res.local; estadisticas[homeTeam].golesContra += res.visitante;
-              estadisticas[awayTeam].partidosJugados++; estadisticas[awayTeam].golesFavor += res.visitante; estadisticas[awayTeam].golesContra += res.local;
-              if (res.local > res.visitante) { estadisticas[homeTeam].partidosGanados++; estadisticas[homeTeam].puntos += 3; estadisticas[awayTeam].partidosPerdidos++; }
-              else if (res.local < res.visitante) { estadisticas[awayTeam].partidosGanados++; estadisticas[awayTeam].puntos += 3; estadisticas[homeTeam].partidosPerdidos++; }
-              else { estadisticas[homeTeam].partidosEmpatados++; estadisticas[awayTeam].partidosEmpatados++; estadisticas[homeTeam].puntos += 1; estadisticas[awayTeam].puntos += 1; }
-            }
-          });
-          const standingsWithDifference = Object.values(estadisticas).map(e => ({ ...e, diferencia: e.golesFavor - e.golesContra }));
-          return sortStandingsByFifaCriteria(
-            standingsWithDifference,
-            partidosGrupo,
-            (m) => m.home_team?.name || m.home_team_id,
-            (m) => m.away_team?.name || m.away_team_id,
-            (m) => {
-              const res = resultadosGrupos[m.id];
-              return res ? { home: res.local, away: res.visitante } : null;
-            }
-          );
-        })();
-        const partidosGrupoAuto = groupMatches[matchGroup] || [];
-        const teamOrder = autoClasificacion.map(equipo => {
-          const mg = partidosGrupoAuto.find(m => 
-            m.home_team?.name === equipo.equipo || m.away_team?.name === equipo.equipo
-          );
-          return mg?.home_team?.name === equipo.equipo ? mg.home_team_id : mg?.away_team_id;
-        }).filter(Boolean) as string[];
-
-        if (teamOrder.length > 0) {
-          await supabase
-            .from('group_standings_override')
-            .upsert({
-              group_id: matchGroup,
-              tournament_id: '11111111-1111-1111-1111-111111111111',
-              team_order: teamOrder,
-              updated_at: new Date().toISOString()
-            }, { onConflict: 'group_id,tournament_id' });
-          
-          setManualGroupOrders(prev => ({
-            ...prev,
-            [matchGroup]: teamOrder
-          }));
-        }
-      }
+      // group_standings_override se reserva para correcciones manuales del admin.
+      // Guardar aqui ordenes automaticos provisionales puede tapar el calculo real
+      // cuando el grupo termina mas tarde por cron/API.
 
       // ── STEP 2: Update R32 teams ──
       await updateRoundOf32Teams();
 
       if (showToast) {
         // Recalcular puntos
-        const { error: recalcError } = await supabase.rpc('update_all_user_points', {
+        const { error: recalcError } = await supabase.rpc('recalculate_user_points_light', {
           p_tournament_id: '11111111-1111-1111-1111-111111111111'
         });
 
@@ -603,7 +541,7 @@ export default function Resultados() {
 
     if (savedCount > 0) {
       // Recalcular puntos una sola vez al final
-      await supabase.rpc('update_all_user_points', {
+      await supabase.rpc('recalculate_user_points_light', {
         p_tournament_id: '11111111-1111-1111-1111-111111111111'
       });
 
@@ -670,7 +608,7 @@ export default function Resultados() {
       if (awardsError) throw awardsError;
 
       // 5. Recalcular puntos de todos los usuarios
-      await supabase.rpc('update_all_user_points', {
+      await supabase.rpc('recalculate_user_points_light', {
         p_tournament_id: tournamentId
       });
 
@@ -858,6 +796,15 @@ export default function Resultados() {
     const teamOrder = manualGroupOrders[groupId];
     if (!teamOrder) return;
 
+    if (!isGroupComplete(groupId)) {
+      toast({
+        variant: "destructive",
+        title: "Grupo incompleto",
+        description: "Solo puedes guardar el orden manual cuando el grupo tenga todos sus partidos finalizados.",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('group_standings_override')
@@ -877,13 +824,13 @@ export default function Resultados() {
         return newPending;
       });
 
-      // Recalcular puntos de todos los usuarios
-      await supabase.rpc('update_all_user_points', {
-        p_tournament_id: '11111111-1111-1111-1111-111111111111'
-      });
-
       // Actualizar dieciseisavos
       await updateRoundOf32Teams();
+
+      // Recalcular puntos de todos los usuarios
+      await supabase.rpc('recalculate_user_points_light', {
+        p_tournament_id: '11111111-1111-1111-1111-111111111111'
+      });
 
       toast({
         title: "Orden guardado",
@@ -1299,7 +1246,7 @@ export default function Resultados() {
       }
       
       // Recalcular puntos después del reset
-      await supabase.rpc('update_all_user_points', {
+      await supabase.rpc('recalculate_user_points_light', {
         p_tournament_id: '11111111-1111-1111-1111-111111111111'
       });
       
@@ -1504,7 +1451,7 @@ export default function Resultados() {
       if (error) throw error;
 
       // Recalcular puntos
-      const { error: recalcError } = await supabase.rpc('update_all_user_points', {
+      const { error: recalcError } = await supabase.rpc('recalculate_user_points_light', {
         p_tournament_id: '11111111-1111-1111-1111-111111111111'
       });
 
@@ -1579,7 +1526,7 @@ export default function Resultados() {
       }
 
       // Recalcular puntos
-      const { error: recalcError } = await supabase.rpc('update_all_user_points', {
+      const { error: recalcError } = await supabase.rpc('recalculate_user_points_light', {
         p_tournament_id: '11111111-1111-1111-1111-111111111111'
       });
 
