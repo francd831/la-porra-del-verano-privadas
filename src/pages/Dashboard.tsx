@@ -1142,22 +1142,22 @@ export default function Dashboard() {
                       {match.match_type === 'playoff' && match.playoffStats && (
                         <div className="mt-2 grid grid-cols-1 gap-1 rounded-md bg-background/60 p-2 text-[11px] text-muted-foreground">
                           <div className="flex justify-between gap-2">
-                            <span className="flex min-w-0 items-center gap-1.5">
+                            <span className="flex min-w-0 flex-1 items-center gap-1.5">
                               <span className="truncate">{getTeamName(match.home_team)} pasa</span>
                               {match.playoffStats.userHasHome && (
                                 <Badge variant="secondary" className="h-4 px-1.5 text-[9px] leading-none">Tú</Badge>
                               )}
                             </span>
-                            <span className="font-semibold text-foreground">{match.playoffStats.homeAdvances}</span>
+                            <span className="shrink-0 font-semibold text-foreground">{match.playoffStats.homeAdvances}</span>
                           </div>
                           <div className="flex justify-between gap-2">
-                            <span className="flex min-w-0 items-center gap-1.5">
+                            <span className="flex min-w-0 flex-1 items-center gap-1.5">
                               <span className="truncate">{getTeamName(match.away_team)} pasa</span>
                               {match.playoffStats.userHasAway && (
                                 <Badge variant="secondary" className="h-4 px-1.5 text-[9px] leading-none">Tú</Badge>
                               )}
                             </span>
-                            <span className="font-semibold text-foreground">{match.playoffStats.awayAdvances}</span>
+                            <span className="shrink-0 font-semibold text-foreground">{match.playoffStats.awayAdvances}</span>
                           </div>
                           <div className="flex justify-between gap-2">
                             <span>Ninguno de los dos</span>
