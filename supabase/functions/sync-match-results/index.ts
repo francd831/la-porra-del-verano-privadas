@@ -36,6 +36,17 @@ function hasScore(home: number | null | undefined, away: number | null | undefin
   return typeof home === "number" && typeof away === "number";
 }
 
+function isRecentlyCompleted(match: { status: string; updated_at?: string | null }): boolean {
+  if (match.status !== "completed" || !match.updated_at) return false;
+
+  const updatedAt = new Date(match.updated_at).getTime();
+  if (Number.isNaN(updatedAt)) return false;
+
+  // Keep checking recently completed matches because providers can correct
+  // disallowed goals or final scores shortly after full time.
+  return Date.now() - updatedAt < 6 * 60 * 60 * 1000;
+}
+
 async function isAuthorized(req: Request, supabaseUrl: string, serviceKey: string): Promise<boolean> {
   const syncSecret = Deno.env.get("SYNC_RESULTS_SECRET");
   const providedSecret = req.headers.get("x-sync-secret");
@@ -82,21 +93,22 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Completed matches are terminal. Load all remaining matches once so the
-    // sync does not perform one database query per API fixture and never
-    // reopens a match that has already been finalized locally.
-    const { data: activeMatches, error: activeMatchesError } = await supabase
+    // Load active matches plus recently completed ones once, so the sync does
+    // not perform one database query per API fixture while still catching late
+    // provider corrections such as disallowed goals.
+    const { data: syncableMatches, error: syncableMatchesError } = await supabase
       .from("matches")
-      .select("id, external_id, status, home_goals, away_goals, match_type, home_team_id, away_team_id, winner_team_id")
-      .neq("status", "completed")
+      .select("id, external_id, status, updated_at, home_goals, away_goals, match_type, home_team_id, away_team_id, winner_team_id")
       .not("external_id", "is", null);
 
-    if (activeMatchesError) {
-      throw new Error(`Unable to load active matches: ${activeMatchesError.message}`);
+    if (syncableMatchesError) {
+      throw new Error(`Unable to load syncable matches: ${syncableMatchesError.message}`);
     }
 
     const matchesByExternalId = new Map(
-      (activeMatches ?? []).map((match) => [Number(match.external_id), match])
+      (syncableMatches ?? [])
+        .filter((match) => match.status !== "completed" || isRecentlyCompleted(match))
+        .map((match) => [Number(match.external_id), match])
     );
 
     // Fetch matches from football-data.org
@@ -143,7 +155,7 @@ Deno.serve(async (req) => {
             ? match.home_team_id
             : awayGoals > homeGoals
               ? match.away_team_id
-              : null
+              : match.winner_team_id
           : match.winner_team_id;
 
       if (newStatus === "completed" && (homeGoals === null || awayGoals === null)) {
