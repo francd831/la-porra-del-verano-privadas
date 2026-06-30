@@ -1074,21 +1074,21 @@ export default function Dashboard() {
         </div>
 
         {/* Recent and Upcoming Matches Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid w-full max-w-full grid-cols-1 gap-6 overflow-hidden lg:grid-cols-2">
           {/* Upcoming Matches */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-primary" />
+          <Card className="min-w-0 max-w-full overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+              <CardTitle className="flex min-w-0 items-center gap-2 text-base sm:text-lg">
+                <Calendar className="h-5 w-5 shrink-0 text-primary" />
                 Próximos Partidos
               </CardTitle>
               {upcomingMatches.length > 0 && (
-                <Badge variant="secondary">{upcomingMatches.length}</Badge>
+                <Badge variant="secondary" className="shrink-0">{upcomingMatches.length}</Badge>
               )}
             </CardHeader>
-            <CardContent>
-              {upcomingMatches.length > 0 ? <ScrollArea className="h-[460px] pr-2">
-                <div className="space-y-3 pr-2">
+            <CardContent className="min-w-0 overflow-hidden px-3 sm:px-6">
+              {upcomingMatches.length > 0 ? <ScrollArea className="h-[460px] w-full max-w-full overflow-hidden">
+                <div className="w-full max-w-full space-y-3 pr-1 sm:pr-2">
                   {upcomingMatches.map((match, index) => {
                     const roundSeparator = getUpcomingRoundSeparator(match);
                     const previousMatch = upcomingMatches[index - 1];
@@ -1096,7 +1096,7 @@ export default function Dashboard() {
                     const showSeparator = index === 0 || roundSeparator !== previousRoundSeparator;
 
                     return (
-                    <div key={match.id} className="space-y-2">
+                    <div key={match.id} className="w-full max-w-full space-y-2 overflow-hidden">
                       {showSeparator && (
                         <div className="flex items-center gap-2 pt-1">
                           <div className="h-px flex-1 bg-border/70" />
@@ -1106,7 +1106,7 @@ export default function Dashboard() {
                           <div className="h-px flex-1 bg-border/70" />
                         </div>
                       )}
-                      <div className="min-w-0 p-3 bg-muted/30 rounded-lg border">
+                      <div className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border bg-muted/30 p-2.5 sm:p-3">
                       <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
                         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                           <Badge variant="outline" className="text-[11px] px-1.5">
@@ -1139,11 +1139,11 @@ export default function Dashboard() {
                           </Button>}
                         </div>
                       </div>
-                      <div className="flex min-w-0 items-center justify-between gap-2">
-                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
                           <span className="font-medium text-sm truncate">{getTeamName(match.home_team)}</span>
                         </div>
-                        <div className="min-w-[78px] shrink-0 rounded bg-background px-2 py-1 text-center">
+                        <div className="w-[68px] rounded bg-background px-1.5 py-1 text-center sm:w-[78px] sm:px-2">
                           {match.status === 'in_progress' && match.home_goals !== null && match.away_goals !== null ? (
                             <div className="leading-tight">
                               <span className="block font-bold text-sm text-success">
@@ -1159,13 +1159,13 @@ export default function Dashboard() {
                               {match.userPrediction.home_goals} - {match.userPrediction.away_goals}
                             </span> : <span className="text-muted-foreground text-sm">vs</span>}
                         </div>
-                        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+                        <div className="flex min-w-0 items-center justify-end gap-2">
                           <span className="font-medium text-sm truncate">{getTeamName(match.away_team)}</span>
                         </div>
                       </div>
                       {match.match_type === 'playoff' && match.playoffStats && (
-                        <div className="mt-2 grid grid-cols-1 gap-1 rounded-md bg-background/60 p-2 text-[11px] text-muted-foreground">
-                          <div className="flex justify-between gap-2">
+                        <div className="mt-2 grid w-full min-w-0 grid-cols-1 gap-1 rounded-md bg-background/60 p-2 text-[11px] text-muted-foreground">
+                          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                             <span className="flex min-w-0 flex-1 items-center gap-1.5">
                               <span className="truncate">{getTeamName(match.home_team)} pasa</span>
                               {match.playoffStats.userHasHome && (
@@ -1174,7 +1174,7 @@ export default function Dashboard() {
                             </span>
                             <span className="shrink-0 font-semibold text-foreground">{match.playoffStats.homeAdvances} pers.</span>
                           </div>
-                          <div className="flex justify-between gap-2">
+                          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                             <span className="flex min-w-0 flex-1 items-center gap-1.5">
                               <span className="truncate">{getTeamName(match.away_team)} pasa</span>
                               {match.playoffStats.userHasAway && (
@@ -1183,9 +1183,9 @@ export default function Dashboard() {
                             </span>
                             <span className="shrink-0 font-semibold text-foreground">{match.playoffStats.awayAdvances} pers.</span>
                           </div>
-                          <div className="flex justify-between gap-2">
-                            <span>Ninguno de los dos</span>
-                            <span className="font-semibold text-foreground">{match.playoffStats.neitherAdvances} pers.</span>
+                          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                            <span className="truncate">Ninguno de los dos</span>
+                            <span className="shrink-0 font-semibold text-foreground">{match.playoffStats.neitherAdvances} pers.</span>
                           </div>
                         </div>
                       )}
