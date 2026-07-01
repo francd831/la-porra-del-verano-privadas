@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, ChevronDown, ChevronUp, Crown, Medal, MessageSquare, Plus, Search, Star, Timer, Trophy, Users } from "lucide-react";
+import { AlertTriangle, Calculator, ChevronDown, ChevronUp, Crown, Medal, MessageSquare, Plus, RotateCcw, Search, Sparkles, Star, Timer, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,48 @@ import { useToast } from "@/hooks/use-toast";
 
 const DEFAULT_TOURNAMENT_ID = "11111111-1111-1111-1111-111111111111";
 const MAX_PRIVATE_LEAGUES = 3;
+const WHAT_IF_ALLOWED_USER_IDS = new Set(["9b7996cb-f410-41dd-b6b3-4c5ac2cd5a56"]);
+
+const PLAYOFF_ROUNDS = [
+  { id: "Dieciseisavos de Final", label: "1/16", predictionPrefix: "R32", points: 15 },
+  { id: "Octavos de Final", label: "Octavos", predictionPrefix: "R16", points: 20 },
+  { id: "Cuartos de Final", label: "Cuartos", predictionPrefix: "QF", points: 30 },
+  { id: "Semifinales", label: "Semis", predictionPrefix: "SF", points: 40 },
+  { id: "Final", label: "Final", predictionPrefix: "CHAMPION", points: 50 },
+] as const;
+
+const NEXT_SLOT_BY_MATCH_ID: Record<string, { target: string; side: "home" | "away" }> = {
+  R32_1: { target: "R16_2", side: "home" },
+  R32_2: { target: "R16_1", side: "home" },
+  R32_3: { target: "R16_2", side: "away" },
+  R32_4: { target: "R16_3", side: "home" },
+  R32_5: { target: "R16_1", side: "away" },
+  R32_6: { target: "R16_3", side: "away" },
+  R32_7: { target: "R16_4", side: "home" },
+  R32_8: { target: "R16_4", side: "away" },
+  R32_9: { target: "R16_6", side: "home" },
+  R32_10: { target: "R16_6", side: "away" },
+  R32_11: { target: "R16_5", side: "home" },
+  R32_12: { target: "R16_5", side: "away" },
+  R32_13: { target: "R16_8", side: "home" },
+  R32_14: { target: "R16_7", side: "home" },
+  R32_15: { target: "R16_8", side: "away" },
+  R32_16: { target: "R16_7", side: "away" },
+  R16_1: { target: "QF_1", side: "home" },
+  R16_2: { target: "QF_1", side: "away" },
+  R16_3: { target: "QF_3", side: "home" },
+  R16_4: { target: "QF_3", side: "away" },
+  R16_5: { target: "QF_2", side: "home" },
+  R16_6: { target: "QF_2", side: "away" },
+  R16_7: { target: "QF_4", side: "home" },
+  R16_8: { target: "QF_4", side: "away" },
+  QF_1: { target: "SF_1", side: "home" },
+  QF_2: { target: "SF_1", side: "away" },
+  QF_3: { target: "SF_2", side: "home" },
+  QF_4: { target: "SF_2", side: "away" },
+  SF_1: { target: "FINAL_1", side: "home" },
+  SF_2: { target: "FINAL_1", side: "away" },
+};
 
 interface UserRanking {
   user_id: string;
@@ -76,6 +118,46 @@ interface LiveMatch {
   away_team: { name: string } | null;
 }
 
+interface PlayoffTeam {
+  id: string;
+  name: string;
+}
+
+interface WhatIfMatch {
+  id: string;
+  round: string | null;
+  match_date: string | null;
+  status: string | null;
+  home_team_id: string | null;
+  away_team_id: string | null;
+  winner_team_id: string | null;
+  home_team: PlayoffTeam | null;
+  away_team: PlayoffTeam | null;
+}
+
+interface WhatIfDisplayMatch extends WhatIfMatch {
+  home_display: PlayoffTeam | null;
+  away_display: PlayoffTeam | null;
+}
+
+interface WhatIfPrediction {
+  user_id: string;
+  playoff_round: string | null;
+  predicted_winner_team_id: string | null;
+}
+
+interface WhatIfChampionPrediction {
+  user_id: string;
+  predicted_winner_team_id: string | null;
+}
+
+interface SimulatedRanking extends UserRanking {
+  current_position: number;
+  simulated_position: number;
+  simulated_total: number;
+  simulated_delta: number;
+}
+
 interface GeneralStats {
   registered: number;
   notStarted: number;
@@ -101,8 +183,15 @@ export default function Clasificacion() {
   const [selectedLeagueId, setSelectedLeagueId] = useState("general");
   const [inviteCode, setInviteCode] = useState("");
   const [joiningLeague, setJoiningLeague] = useState(false);
+  const [whatIfMatches, setWhatIfMatches] = useState<WhatIfMatch[]>([]);
+  const [whatIfPredictions, setWhatIfPredictions] = useState<WhatIfPrediction[]>([]);
+  const [whatIfChampionPredictions, setWhatIfChampionPredictions] = useState<WhatIfChampionPrediction[]>([]);
+  const [whatIfSelections, setWhatIfSelections] = useState<Record<string, string>>({});
+  const [simulatedRankings, setSimulatedRankings] = useState<SimulatedRanking[] | null>(null);
+  const [whatIfLoading, setWhatIfLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const showWhatIf = !!user && WHAT_IF_ALLOWED_USER_IDS.has(user.id);
 
   const selectedLeague = useMemo(
     () => leagues.find((league) => league.id === selectedLeagueId) || null,
@@ -243,6 +332,93 @@ export default function Clasificacion() {
   useEffect(() => {
     fetchUserLeagues();
   }, [fetchUserLeagues]);
+
+  const fetchAllWhatIfPredictions = useCallback(async () => {
+    const pageSize = 1000;
+    let from = 0;
+    const rows: WhatIfPrediction[] = [];
+
+    while (true) {
+      const { data, error } = await supabase
+        .from("predictions")
+        .select("user_id, playoff_round, predicted_winner_team_id")
+        .not("playoff_round", "is", null)
+        .not("predicted_winner_team_id", "is", null)
+        .range(from, from + pageSize - 1);
+
+      if (error) throw error;
+      rows.push(...((data || []) as WhatIfPrediction[]));
+      if (!data || data.length < pageSize) break;
+      from += pageSize;
+    }
+
+    return rows;
+  }, []);
+
+  const fetchWhatIfData = useCallback(async () => {
+    if (!showWhatIf) {
+      setWhatIfMatches([]);
+      setWhatIfPredictions([]);
+      setWhatIfChampionPredictions([]);
+      setWhatIfSelections({});
+      setSimulatedRankings(null);
+      return;
+    }
+
+    setWhatIfLoading(true);
+    try {
+      const { data: matchesData, error: matchesError } = await supabase
+        .from("matches")
+        .select(`
+          id,
+          round,
+          match_date,
+          status,
+          home_team_id,
+          away_team_id,
+          winner_team_id,
+          home_team:teams!matches_home_team_id_fkey(id, name),
+          away_team:teams!matches_away_team_id_fkey(id, name)
+        `)
+        .eq("tournament_id", DEFAULT_TOURNAMENT_ID)
+        .eq("match_type", "playoff")
+        .order("match_date", { ascending: true });
+
+      if (matchesError) throw matchesError;
+
+      const [predictionsData, championPredictionsResult] = await Promise.all([
+        fetchAllWhatIfPredictions(),
+        supabase
+          .from("champion_predictions")
+          .select("user_id, predicted_winner_team_id")
+          .eq("tournament_id", DEFAULT_TOURNAMENT_ID),
+      ]);
+
+      if (championPredictionsResult.error) throw championPredictionsResult.error;
+
+      setWhatIfMatches((matchesData || []).map((match) => ({
+        id: match.id,
+        round: match.round,
+        match_date: match.match_date,
+        status: match.status,
+        home_team_id: match.home_team_id,
+        away_team_id: match.away_team_id,
+        winner_team_id: match.winner_team_id,
+        home_team: match.home_team as PlayoffTeam | null,
+        away_team: match.away_team as PlayoffTeam | null,
+      })));
+      setWhatIfPredictions(predictionsData);
+      setWhatIfChampionPredictions((championPredictionsResult.data || []) as WhatIfChampionPrediction[]);
+    } catch (e) {
+      console.error("Error loading what-if data:", e);
+    } finally {
+      setWhatIfLoading(false);
+    }
+  }, [fetchAllWhatIfPredictions, showWhatIf]);
+
+  useEffect(() => {
+    fetchWhatIfData();
+  }, [fetchWhatIfData]);
 
   const getJoinErrorMessage = (error: unknown) => {
     const message =
@@ -514,6 +690,173 @@ export default function Clasificacion() {
       ? "text-primary-foreground"
       : "text-muted-foreground";
 
+  const getRoundConfig = (round: string | null) =>
+    PLAYOFF_ROUNDS.find((item) => item.id === round);
+
+  const isMatchCompleted = (status: string | null) => {
+    const normalized = (status || "").toLowerCase();
+    return normalized === "completed" || normalized === "finished";
+  };
+
+  const whatIfMatchesById = useMemo(() => {
+    return new Map(whatIfMatches.map((match) => [match.id, match]));
+  }, [whatIfMatches]);
+
+  const whatIfDisplayMatches = useMemo(() => {
+    const displayById = new Map<string, WhatIfDisplayMatch>(
+      whatIfMatches.map((match) => [
+        match.id,
+        {
+          ...match,
+          home_display: match.home_team,
+          away_display: match.away_team,
+        },
+      ])
+    );
+
+    const applyWinnerToNextSlot = (match: WhatIfDisplayMatch, winnerTeamId: string | null) => {
+      if (!winnerTeamId) return;
+      const nextSlot = NEXT_SLOT_BY_MATCH_ID[match.id];
+      const target = nextSlot ? displayById.get(nextSlot.target) : null;
+      if (!target) return;
+
+      const selectedTeam =
+        match.home_display?.id === winnerTeamId
+          ? match.home_display
+          : match.away_display?.id === winnerTeamId
+            ? match.away_display
+            : null;
+      if (!selectedTeam) return;
+
+      if (nextSlot.side === "home" && !target.home_team_id) {
+        target.home_display = selectedTeam;
+      }
+      if (nextSlot.side === "away" && !target.away_team_id) {
+        target.away_display = selectedTeam;
+      }
+    };
+
+    PLAYOFF_ROUNDS.forEach((round) => {
+      Array.from(displayById.values())
+        .filter((match) => match.round === round.id)
+        .forEach((match) => {
+          const winnerTeamId = isMatchCompleted(match.status)
+            ? match.winner_team_id
+            : whatIfSelections[match.id] || null;
+          applyWinnerToNextSlot(match, winnerTeamId);
+        });
+    });
+
+    return Array.from(displayById.values()).sort((a, b) => {
+      const roundA = PLAYOFF_ROUNDS.findIndex((round) => round.id === a.round);
+      const roundB = PLAYOFF_ROUNDS.findIndex((round) => round.id === b.round);
+      if (roundA !== roundB) return roundA - roundB;
+      return a.id.localeCompare(b.id, undefined, { numeric: true });
+    });
+  }, [whatIfMatches, whatIfSelections]);
+
+  const pendingWhatIfMatchesByRound = useMemo(() => {
+    const grouped = new Map<string, WhatIfDisplayMatch[]>();
+    whatIfDisplayMatches
+      .filter((match) => !isMatchCompleted(match.status))
+      .forEach((match) => {
+        const current = grouped.get(match.round || "") || [];
+        current.push(match);
+        grouped.set(match.round || "", current);
+      });
+    return grouped;
+  }, [whatIfDisplayMatches]);
+
+  const clearDownstreamSelections = (matchId: string, selections: Record<string, string>) => {
+    const nextSelections = { ...selections };
+    let cursor = NEXT_SLOT_BY_MATCH_ID[matchId]?.target;
+    while (cursor) {
+      delete nextSelections[cursor];
+      cursor = NEXT_SLOT_BY_MATCH_ID[cursor]?.target;
+    }
+    return nextSelections;
+  };
+
+  const handleWhatIfSelection = (matchId: string, teamId: string | null) => {
+    if (!teamId) return;
+    setWhatIfSelections((prev) => ({
+      ...clearDownstreamSelections(matchId, prev),
+      [matchId]: teamId,
+    }));
+    setSimulatedRankings(null);
+  };
+
+  const calculateWhatIfRanking = () => {
+    const deltasByUser = new Map<string, number>();
+    const awardedKeysByUser = new Map<string, Set<string>>();
+
+    const addDelta = (userId: string, key: string, points: number) => {
+      const awardedKeys = awardedKeysByUser.get(userId) || new Set<string>();
+      if (awardedKeys.has(key)) return;
+      awardedKeys.add(key);
+      awardedKeysByUser.set(userId, awardedKeys);
+      deltasByUser.set(userId, (deltasByUser.get(userId) || 0) + points);
+    };
+
+    Object.entries(whatIfSelections).forEach(([matchId, winnerTeamId]) => {
+      const match = whatIfMatchesById.get(matchId);
+      const roundConfig = getRoundConfig(match?.round || null);
+      if (!match || !roundConfig || isMatchCompleted(match.status)) return;
+
+      if (roundConfig.predictionPrefix === "CHAMPION") {
+        whatIfChampionPredictions
+          .filter((prediction) => prediction.predicted_winner_team_id === winnerTeamId)
+          .forEach((prediction) => {
+            addDelta(prediction.user_id, `CHAMPION:${winnerTeamId}`, roundConfig.points);
+          });
+        return;
+      }
+
+      whatIfPredictions
+        .filter((prediction) =>
+          prediction.predicted_winner_team_id === winnerTeamId
+          && (prediction.playoff_round || "").startsWith(`${roundConfig.predictionPrefix}_`)
+        )
+        .forEach((prediction) => {
+          addDelta(prediction.user_id, `${roundConfig.predictionPrefix}:${winnerTeamId}`, roundConfig.points);
+        });
+    });
+
+    const simulated = visibleRankings
+      .map((ranking) => ({
+        ...ranking,
+        current_position: rankingPositionsByUser.get(ranking.user_id) || 0,
+        simulated_total: ranking.points_total + (deltasByUser.get(ranking.user_id) || 0),
+        simulated_delta: deltasByUser.get(ranking.user_id) || 0,
+        simulated_position: 0,
+      }))
+      .sort((a, b) => {
+        if (b.simulated_total !== a.simulated_total) return b.simulated_total - a.simulated_total;
+        return a.display_name.localeCompare(b.display_name, "es", { sensitivity: "base" });
+      });
+
+    const ranked = simulated.map((ranking, index, all) => {
+      const firstSamePointsIndex = all.findIndex((candidate) => candidate.simulated_total === ranking.simulated_total);
+      return {
+        ...ranking,
+        simulated_position: firstSamePointsIndex + 1,
+      };
+    });
+
+    setSimulatedRankings(ranked);
+  };
+
+  const resetWhatIf = () => {
+    setWhatIfSelections({});
+    setSimulatedRankings(null);
+  };
+
+  const hasWhatIfSelections = Object.keys(whatIfSelections).length > 0;
+  const simulatedTop = simulatedRankings?.slice(0, 10) || [];
+  const simulatedCurrentUser = user
+    ? simulatedRankings?.find((ranking) => ranking.user_id === user.id) || null
+    : null;
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl pb-24">
       {/* Header */}
@@ -706,6 +1049,177 @@ export default function Clasificacion() {
                   {selectedLeague.comments || "El admin todavía no ha añadido comentarios a esta liga."}
                 </p>
               </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {showWhatIf && (
+        <Card className="mb-6 overflow-hidden border-primary/25 bg-card/70 shadow-soft backdrop-blur-xl">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  ¿Y si...?
+                </CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Simula qué pasaría en esta clasificación si pasan unos equipos u otros.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={resetWhatIf}
+                  disabled={!hasWhatIfSelections}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Limpiar
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="rounded-xl font-bold"
+                  onClick={calculateWhatIfRanking}
+                  disabled={!hasWhatIfSelections}
+                >
+                  <Calculator className="mr-2 h-4 w-4" />
+                  Calcular
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {whatIfLoading ? (
+              <div className="rounded-2xl border border-border/50 bg-muted/20 p-4 text-sm text-muted-foreground">
+                Preparando simulador...
+              </div>
+            ) : (
+              <>
+                <div className="space-y-5">
+                  {PLAYOFF_ROUNDS.map((round) => {
+                    const matches = pendingWhatIfMatchesByRound.get(round.id) || [];
+                    if (matches.length === 0) return null;
+
+                    return (
+                      <div key={round.id} className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-px flex-1 bg-border/60" />
+                          <Badge variant="outline" className="rounded-full border-primary/25 bg-primary/10 px-3 py-1 text-primary">
+                            {round.label}
+                          </Badge>
+                          <div className="h-px flex-1 bg-border/60" />
+                        </div>
+                        <div className="grid gap-2 md:grid-cols-2">
+                          {matches.map((match) => {
+                            const selectedTeamId = whatIfSelections[match.id];
+                            const homeSelected = selectedTeamId === match.home_display?.id;
+                            const awaySelected = selectedTeamId === match.away_display?.id;
+
+                            return (
+                              <div
+                                key={match.id}
+                                className="rounded-2xl border border-border/50 bg-background/35 p-3"
+                              >
+                                <div className="mb-2 flex items-center justify-between gap-2">
+                                  <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                                    {match.id.replace("_", " ")}
+                                  </span>
+                                  <span className="text-[11px] font-semibold text-primary">+{round.points}</span>
+                                </div>
+                                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                                  <button
+                                    type="button"
+                                    className={`min-h-12 rounded-xl border px-3 py-2 text-left text-sm font-bold transition ${
+                                      homeSelected
+                                        ? "border-primary bg-primary text-primary-foreground shadow-neon"
+                                        : "border-border/60 bg-secondary/70 text-foreground hover:border-primary/40 hover:bg-primary/10"
+                                    } ${!match.home_display ? "cursor-not-allowed opacity-50" : ""}`}
+                                    onClick={() => handleWhatIfSelection(match.id, match.home_display?.id || null)}
+                                    disabled={!match.home_display}
+                                  >
+                                    <span className="block truncate">{match.home_display?.name || "TBD"}</span>
+                                  </button>
+                                  <span className="text-xs font-bold text-muted-foreground">vs</span>
+                                  <button
+                                    type="button"
+                                    className={`min-h-12 rounded-xl border px-3 py-2 text-left text-sm font-bold transition ${
+                                      awaySelected
+                                        ? "border-primary bg-primary text-primary-foreground shadow-neon"
+                                        : "border-border/60 bg-secondary/70 text-foreground hover:border-primary/40 hover:bg-primary/10"
+                                    } ${!match.away_display ? "cursor-not-allowed opacity-50" : ""}`}
+                                    onClick={() => handleWhatIfSelection(match.id, match.away_display?.id || null)}
+                                    disabled={!match.away_display}
+                                  >
+                                    <span className="block truncate">{match.away_display?.name || "TBD"}</span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {simulatedRankings && (
+                  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <h3 className="text-sm font-bold text-foreground">Clasificación simulada</h3>
+                      <Badge className="rounded-full bg-primary text-primary-foreground">
+                        {Object.keys(whatIfSelections).length} escenarios
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {simulatedTop.map((ranking) => (
+                        <div
+                          key={ranking.user_id}
+                          className={`grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl border px-3 py-2 ${
+                            ranking.user_id === user?.id
+                              ? "border-primary/35 bg-primary/10"
+                              : "border-border/45 bg-background/40"
+                          }`}
+                        >
+                          <span className="text-sm font-black text-primary">#{ranking.simulated_position}</span>
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-bold text-foreground">{ranking.display_name}</div>
+                            <div className="text-[11px] text-muted-foreground">
+                              Ahora #{ranking.current_position || "-"}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-black text-foreground">{ranking.simulated_total} pts</div>
+                            {ranking.simulated_delta > 0 && (
+                              <div className="text-[11px] font-bold text-emerald-400">+{ranking.simulated_delta}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {simulatedCurrentUser && !simulatedTop.some((ranking) => ranking.user_id === simulatedCurrentUser.user_id) && (
+                        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl border border-primary/35 bg-primary/10 px-3 py-2">
+                          <span className="text-sm font-black text-primary">#{simulatedCurrentUser.simulated_position}</span>
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-bold text-foreground">Tu posición</div>
+                            <div className="text-[11px] text-muted-foreground">
+                              Ahora #{simulatedCurrentUser.current_position || "-"}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-black text-foreground">{simulatedCurrentUser.simulated_total} pts</div>
+                            {simulatedCurrentUser.simulated_delta > 0 && (
+                              <div className="text-[11px] font-bold text-emerald-400">+{simulatedCurrentUser.simulated_delta}</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
