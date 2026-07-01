@@ -1090,7 +1090,11 @@ export default function Clasificacion() {
                   Calcular
                 </Button>
               </div>
-              {!whatIfExpanded && <ChevronDown className="h-5 w-5 shrink-0 text-primary" />}
+              {whatIfExpanded ? (
+                <ChevronUp className="h-5 w-5 shrink-0 text-primary" />
+              ) : (
+                <ChevronDown className="h-5 w-5 shrink-0 text-primary" />
+              )}
             </div>
           </CardHeader>
           {whatIfExpanded && <CardContent className="space-y-3 px-3 pb-4 sm:px-5 sm:pb-5">
