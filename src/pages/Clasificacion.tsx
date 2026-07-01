@@ -1121,6 +1121,18 @@ export default function Clasificacion() {
                   })}
                 </div>
 
+                <div className="flex justify-center border-t border-border/50 pt-4">
+                  <Button
+                    type="button"
+                    className="w-full max-w-xs rounded-xl font-bold"
+                    onClick={calculateWhatIfRanking}
+                    disabled={!hasWhatIfSelections}
+                  >
+                    <Calculator className="mr-2 h-4 w-4" />
+                    Calcular
+                  </Button>
+                </div>
+
                 {simulatedRankings && (
                   <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
                     <div className="mb-3 flex items-center justify-between gap-3">
