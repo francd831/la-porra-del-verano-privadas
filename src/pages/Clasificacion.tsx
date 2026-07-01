@@ -1041,12 +1041,12 @@ export default function Clasificacion() {
       )}
 
       {showWhatIf && (
-        <Card className="mb-6 overflow-hidden border-primary/25 bg-card/70 shadow-soft backdrop-blur-xl">
+        <Card className="mb-6 overflow-hidden border-cyan-400/30 bg-gradient-to-br from-cyan-500/10 via-primary/10 to-purple-500/15 shadow-[0_0_28px_rgba(34,211,238,0.12)] backdrop-blur-xl">
           <CardHeader className="p-0">
             <div
               role="button"
               tabIndex={0}
-              className="flex w-full flex-col gap-2 p-3 text-left transition hover:bg-primary/5 sm:flex-row sm:items-start sm:justify-between sm:p-4"
+              className="flex w-full flex-col gap-2 p-3 text-left transition hover:bg-cyan-400/10 sm:flex-row sm:items-start sm:justify-between sm:p-4"
               onClick={() => setWhatIfExpanded((prev) => !prev)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -1062,6 +1062,9 @@ export default function Clasificacion() {
                     <Sparkles className="relative h-3.5 w-3.5 text-primary" />
                   </span>
                   ¿Y si...?
+                  <Badge className="rounded-full border border-cyan-300/40 bg-cyan-300/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-cyan-100">
+                    New
+                  </Badge>
                 </CardTitle>
                 <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
                   Simula qué pasaría en esta clasificación si pasan unos equipos u otros.
