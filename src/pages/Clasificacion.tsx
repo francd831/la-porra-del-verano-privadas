@@ -21,13 +21,6 @@ const PLAYOFF_ROUNDS = [
   { id: "Final", label: "Final", predictionPrefix: "CHAMPION", points: 50 },
 ] as const;
 
-const PLAYOFF_ADVANCEMENT_PREFIXES: Record<string, string[]> = {
-  R32: ["R32", "R16", "QF", "SF"],
-  R16: ["R16", "QF", "SF"],
-  QF: ["QF", "SF"],
-  SF: ["SF"],
-};
-
 const NEXT_SLOT_BY_MATCH_ID: Record<string, { target: string; side: "home" | "away" }> = {
   R32_1: { target: "R16_2", side: "home" },
   R32_2: { target: "R16_1", side: "home" },
@@ -147,21 +140,15 @@ interface WhatIfDisplayMatch extends WhatIfMatch {
   away_display: PlayoffTeam | null;
 }
 
-interface WhatIfPrediction {
-  user_id: string;
-  playoff_round: string | null;
-  predicted_winner_team_id: string | null;
-}
-
-interface WhatIfChampionPrediction {
-  user_id: string;
-  predicted_winner_team_id: string | null;
-}
-
 interface SimulatedRanking extends UserRanking {
   current_position: number;
   simulated_position: number;
   simulated_total: number;
+  simulated_delta: number;
+}
+
+interface WhatIfSimulationDelta {
+  user_id: string;
   simulated_delta: number;
 }
 
@@ -191,11 +178,10 @@ export default function Clasificacion() {
   const [inviteCode, setInviteCode] = useState("");
   const [joiningLeague, setJoiningLeague] = useState(false);
   const [whatIfMatches, setWhatIfMatches] = useState<WhatIfMatch[]>([]);
-  const [whatIfPredictions, setWhatIfPredictions] = useState<WhatIfPrediction[]>([]);
-  const [whatIfChampionPredictions, setWhatIfChampionPredictions] = useState<WhatIfChampionPrediction[]>([]);
   const [whatIfSelections, setWhatIfSelections] = useState<Record<string, string>>({});
   const [simulatedRankings, setSimulatedRankings] = useState<SimulatedRanking[] | null>(null);
   const [whatIfLoading, setWhatIfLoading] = useState(false);
+  const [whatIfExpanded, setWhatIfExpanded] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const showWhatIf = !!user && WHAT_IF_ALLOWED_USER_IDS.has(user.id);
@@ -340,33 +326,9 @@ export default function Clasificacion() {
     fetchUserLeagues();
   }, [fetchUserLeagues]);
 
-  const fetchAllWhatIfPredictions = useCallback(async () => {
-    const pageSize = 1000;
-    let from = 0;
-    const rows: WhatIfPrediction[] = [];
-
-    while (true) {
-      const { data, error } = await supabase
-        .from("predictions")
-        .select("user_id, playoff_round, predicted_winner_team_id")
-        .not("playoff_round", "is", null)
-        .not("predicted_winner_team_id", "is", null)
-        .range(from, from + pageSize - 1);
-
-      if (error) throw error;
-      rows.push(...((data || []) as WhatIfPrediction[]));
-      if (!data || data.length < pageSize) break;
-      from += pageSize;
-    }
-
-    return rows;
-  }, []);
-
   const fetchWhatIfData = useCallback(async () => {
-    if (!showWhatIf) {
+    if (!showWhatIf || !whatIfExpanded) {
       setWhatIfMatches([]);
-      setWhatIfPredictions([]);
-      setWhatIfChampionPredictions([]);
       setWhatIfSelections({});
       setSimulatedRankings(null);
       return;
@@ -393,16 +355,6 @@ export default function Clasificacion() {
 
       if (matchesError) throw matchesError;
 
-      const [predictionsData, championPredictionsResult] = await Promise.all([
-        fetchAllWhatIfPredictions(),
-        supabase
-          .from("champion_predictions")
-          .select("user_id, predicted_winner_team_id")
-          .eq("tournament_id", DEFAULT_TOURNAMENT_ID),
-      ]);
-
-      if (championPredictionsResult.error) throw championPredictionsResult.error;
-
       setWhatIfMatches((matchesData || []).map((match) => ({
         id: match.id,
         round: match.round,
@@ -414,14 +366,12 @@ export default function Clasificacion() {
         home_team: match.home_team as PlayoffTeam | null,
         away_team: match.away_team as PlayoffTeam | null,
       })));
-      setWhatIfPredictions(predictionsData);
-      setWhatIfChampionPredictions((championPredictionsResult.data || []) as WhatIfChampionPrediction[]);
     } catch (e) {
       console.error("Error loading what-if data:", e);
     } finally {
       setWhatIfLoading(false);
     }
-  }, [fetchAllWhatIfPredictions, showWhatIf]);
+  }, [showWhatIf, whatIfExpanded]);
 
   useEffect(() => {
     fetchWhatIfData();
@@ -697,17 +647,10 @@ export default function Clasificacion() {
       ? "text-primary-foreground"
       : "text-muted-foreground";
 
-  const getRoundConfig = (round: string | null) =>
-    PLAYOFF_ROUNDS.find((item) => item.id === round);
-
   const isMatchCompleted = (status: string | null) => {
     const normalized = (status || "").toLowerCase();
     return normalized === "completed" || normalized === "finished";
   };
-
-  const whatIfMatchesById = useMemo(() => {
-    return new Map(whatIfMatches.map((match) => [match.id, match]));
-  }, [whatIfMatches]);
 
   const whatIfDisplayMatches = useMemo(() => {
     const displayById = new Map<string, WhatIfDisplayMatch>(
@@ -793,49 +736,31 @@ export default function Clasificacion() {
     setSimulatedRankings(null);
   };
 
-  const calculateWhatIfRanking = () => {
-    const deltasByUser = new Map<string, number>();
-    const awardedKeysByUser = new Map<string, Set<string>>();
-
-    const addDelta = (userId: string, key: string, points: number) => {
-      const awardedKeys = awardedKeysByUser.get(userId) || new Set<string>();
-      if (awardedKeys.has(key)) return;
-      awardedKeys.add(key);
-      awardedKeysByUser.set(userId, awardedKeys);
-      deltasByUser.set(userId, (deltasByUser.get(userId) || 0) + points);
+  const calculateWhatIfRanking = async () => {
+    const callableSupabase = supabase as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>
+      ) => Promise<{ data: WhatIfSimulationDelta[] | null; error: Error | null }>;
     };
 
-    Object.entries(whatIfSelections).forEach(([matchId, winnerTeamId]) => {
-      const match = whatIfMatchesById.get(matchId);
-      const roundConfig = getRoundConfig(match?.round || null);
-      if (!match || !roundConfig || isMatchCompleted(match.status)) return;
-
-      if (roundConfig.predictionPrefix === "CHAMPION") {
-        whatIfChampionPredictions
-          .filter((prediction) => prediction.predicted_winner_team_id === winnerTeamId)
-          .forEach((prediction) => {
-            addDelta(prediction.user_id, `CHAMPION:${winnerTeamId}`, roundConfig.points);
-          });
-        return;
-      }
-
-      const validPrefixes = PLAYOFF_ADVANCEMENT_PREFIXES[roundConfig.predictionPrefix] || [roundConfig.predictionPrefix];
-
-      whatIfPredictions
-        .filter((prediction) =>
-          prediction.predicted_winner_team_id === winnerTeamId
-          && validPrefixes.some((prefix) => (prediction.playoff_round || "").startsWith(`${prefix}_`))
-        )
-        .forEach((prediction) => {
-          addDelta(prediction.user_id, `${roundConfig.predictionPrefix}:${winnerTeamId}`, roundConfig.points);
-        });
-
-      whatIfChampionPredictions
-        .filter((prediction) => prediction.predicted_winner_team_id === winnerTeamId)
-        .forEach((prediction) => {
-          addDelta(prediction.user_id, `${roundConfig.predictionPrefix}:${winnerTeamId}`, roundConfig.points);
-        });
+    const { data, error } = await callableSupabase.rpc("simulate_what_if_rankings", {
+      p_tournament_id: DEFAULT_TOURNAMENT_ID,
+      p_selected_winners: whatIfSelections,
+      p_user_ids: visibleRankings.map((ranking) => ranking.user_id),
     });
+
+    if (error) {
+      console.error("Error calculating what-if ranking:", error);
+      toast({
+        variant: "destructive",
+        title: "No se pudo calcular",
+        description: "Prueba de nuevo en unos segundos.",
+      });
+      return;
+    }
+
+    const deltasByUser = new Map((data || []).map((row) => [row.user_id, row.simulated_delta || 0]));
 
     const simulated = visibleRankings
       .map((ranking) => ({
@@ -1071,18 +996,32 @@ export default function Clasificacion() {
 
       {showWhatIf && (
         <Card className="mb-6 overflow-hidden border-primary/25 bg-card/70 shadow-soft backdrop-blur-xl">
-          <CardHeader className="pb-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <CardHeader className="p-0">
+            <div
+              role="button"
+              tabIndex={0}
+              className="flex w-full flex-col gap-3 p-4 text-left transition hover:bg-primary/5 sm:flex-row sm:items-start sm:justify-between sm:p-5"
+              onClick={() => setWhatIfExpanded((prev) => !prev)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setWhatIfExpanded((prev) => !prev);
+                }
+              }}
+            >
               <div>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-gradient-to-br from-primary/35 via-purple-500/25 to-cyan-400/15 shadow-glow">
+                    <span className="absolute inset-1 rounded-full bg-white/10 blur-[1px]" />
+                    <Sparkles className="relative h-4 w-4 text-primary" />
+                  </span>
                   ¿Y si...?
                 </CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Simula qué pasaría en esta clasificación si pasan unos equipos u otros.
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className={`flex gap-2 ${whatIfExpanded ? "" : "hidden"}`} onClick={(event) => event.stopPropagation()}>
                 <Button
                   type="button"
                   variant="outline"
@@ -1105,9 +1044,10 @@ export default function Clasificacion() {
                   Calcular
                 </Button>
               </div>
+              {!whatIfExpanded && <ChevronDown className="h-5 w-5 shrink-0 text-primary" />}
             </div>
           </CardHeader>
-          <CardContent className="space-y-5">
+          {whatIfExpanded && <CardContent className="space-y-5">
             {whatIfLoading ? (
               <div className="rounded-2xl border border-border/50 bg-muted/20 p-4 text-sm text-muted-foreground">
                 Preparando simulador...
@@ -1236,7 +1176,7 @@ export default function Clasificacion() {
                 )}
               </>
             )}
-          </CardContent>
+          </CardContent>}
         </Card>
       )}
 
