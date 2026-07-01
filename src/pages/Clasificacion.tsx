@@ -1000,7 +1000,7 @@ export default function Clasificacion() {
             <div
               role="button"
               tabIndex={0}
-              className="flex w-full flex-col gap-3 p-4 text-left transition hover:bg-primary/5 sm:flex-row sm:items-start sm:justify-between sm:p-5"
+              className="flex w-full flex-col gap-2 p-3 text-left transition hover:bg-primary/5 sm:flex-row sm:items-start sm:justify-between sm:p-4"
               onClick={() => setWhatIfExpanded((prev) => !prev)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -1010,65 +1010,65 @@ export default function Clasificacion() {
               }}
             >
               <div>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-gradient-to-br from-primary/35 via-purple-500/25 to-cyan-400/15 shadow-glow">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-gradient-to-br from-primary/35 via-purple-500/25 to-cyan-400/15 shadow-glow">
                     <span className="absolute inset-1 rounded-full bg-white/10 blur-[1px]" />
-                    <Sparkles className="relative h-4 w-4 text-primary" />
+                    <Sparkles className="relative h-3.5 w-3.5 text-primary" />
                   </span>
                   ¿Y si...?
                 </CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
                   Simula qué pasaría en esta clasificación si pasan unos equipos u otros.
                 </p>
               </div>
-              <div className={`flex gap-2 ${whatIfExpanded ? "" : "hidden"}`} onClick={(event) => event.stopPropagation()}>
+              <div className={`flex gap-1.5 ${whatIfExpanded ? "" : "hidden"}`} onClick={(event) => event.stopPropagation()}>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="rounded-xl"
+                  className="h-8 rounded-lg px-2.5 text-xs"
                   onClick={resetWhatIf}
                   disabled={!hasWhatIfSelections}
                 >
-                  <RotateCcw className="mr-2 h-4 w-4" />
+                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                   Limpiar
                 </Button>
                 <Button
                   type="button"
                   size="sm"
-                  className="rounded-xl font-bold"
+                  className="h-8 rounded-lg px-2.5 text-xs font-bold"
                   onClick={calculateWhatIfRanking}
                   disabled={!hasWhatIfSelections}
                 >
-                  <Calculator className="mr-2 h-4 w-4" />
+                  <Calculator className="mr-1.5 h-3.5 w-3.5" />
                   Calcular
                 </Button>
               </div>
               {!whatIfExpanded && <ChevronDown className="h-5 w-5 shrink-0 text-primary" />}
             </div>
           </CardHeader>
-          {whatIfExpanded && <CardContent className="space-y-5">
+          {whatIfExpanded && <CardContent className="space-y-3 px-3 pb-4 sm:px-5 sm:pb-5">
             {whatIfLoading ? (
               <div className="rounded-2xl border border-border/50 bg-muted/20 p-4 text-sm text-muted-foreground">
                 Preparando simulador...
               </div>
             ) : (
               <>
-                <div className="space-y-5">
+                <div className="space-y-3">
                   {PLAYOFF_ROUNDS.map((round) => {
                     const matches = pendingWhatIfMatchesByRound.get(round.id) || [];
                     if (matches.length === 0) return null;
 
                     return (
-                      <div key={round.id} className="space-y-3">
-                        <div className="flex items-center gap-3">
+                      <div key={round.id} className="space-y-2">
+                        <div className="flex items-center gap-2">
                           <div className="h-px flex-1 bg-border/60" />
-                          <Badge variant="outline" className="rounded-full border-primary/25 bg-primary/10 px-3 py-1 text-primary">
+                          <Badge variant="outline" className="rounded-full border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] text-primary">
                             {round.label}
                           </Badge>
                           <div className="h-px flex-1 bg-border/60" />
                         </div>
-                        <div className="grid gap-2 md:grid-cols-2">
+                        <div className="grid gap-1.5 md:grid-cols-2">
                           {matches.map((match) => {
                             const selectedTeamId = whatIfSelections[match.id];
                             const homeSelected = selectedTeamId === match.home_display?.id;
@@ -1077,18 +1077,18 @@ export default function Clasificacion() {
                             return (
                               <div
                                 key={match.id}
-                                className="rounded-2xl border border-border/50 bg-background/35 p-3"
+                                className="rounded-xl border border-border/50 bg-background/35 p-2"
                               >
-                                <div className="mb-2 flex items-center justify-between gap-2">
-                                  <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                                <div className="mb-1.5 flex items-center justify-between gap-2">
+                                  <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                                     {match.id.replace("_", " ")}
                                   </span>
-                                  <span className="text-[11px] font-semibold text-primary">+{round.points}</span>
+                                  <span className="text-[10px] font-semibold text-primary">+{round.points}</span>
                                 </div>
-                                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
                                   <button
                                     type="button"
-                                    className={`min-h-12 rounded-xl border px-3 py-2 text-left text-sm font-bold transition ${
+                                    className={`min-h-9 rounded-lg border px-2 py-1.5 text-left text-xs font-bold transition sm:text-sm ${
                                       homeSelected
                                         ? "border-primary bg-primary text-primary-foreground shadow-neon"
                                         : "border-border/60 bg-secondary/70 text-foreground hover:border-primary/40 hover:bg-primary/10"
@@ -1098,10 +1098,10 @@ export default function Clasificacion() {
                                   >
                                     <span className="block truncate">{match.home_display?.name || "TBD"}</span>
                                   </button>
-                                  <span className="text-xs font-bold text-muted-foreground">vs</span>
+                                  <span className="text-[10px] font-bold text-muted-foreground">vs</span>
                                   <button
                                     type="button"
-                                    className={`min-h-12 rounded-xl border px-3 py-2 text-left text-sm font-bold transition ${
+                                    className={`min-h-9 rounded-lg border px-2 py-1.5 text-left text-xs font-bold transition sm:text-sm ${
                                       awaySelected
                                         ? "border-primary bg-primary text-primary-foreground shadow-neon"
                                         : "border-border/60 bg-secondary/70 text-foreground hover:border-primary/40 hover:bg-primary/10"
@@ -1121,45 +1121,46 @@ export default function Clasificacion() {
                   })}
                 </div>
 
-                <div className="flex justify-center border-t border-border/50 pt-4">
+                <div className="flex justify-center border-t border-border/50 pt-3">
                   <Button
                     type="button"
-                    className="w-full max-w-xs rounded-xl font-bold"
+                    size="sm"
+                    className="h-8 w-full max-w-48 rounded-lg text-xs font-bold"
                     onClick={calculateWhatIfRanking}
                     disabled={!hasWhatIfSelections}
                   >
-                    <Calculator className="mr-2 h-4 w-4" />
+                    <Calculator className="mr-1.5 h-3.5 w-3.5" />
                     Calcular
                   </Button>
                 </div>
 
                 {simulatedRankings && (
-                  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-                    <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
                       <h3 className="text-sm font-bold text-foreground">Clasificación simulada</h3>
-                      <Badge className="rounded-full bg-primary text-primary-foreground">
+                      <Badge className="rounded-full bg-primary px-2 py-0.5 text-[10px] text-primary-foreground">
                         {Object.keys(whatIfSelections).length} escenarios
                       </Badge>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {simulatedTop.map((ranking) => (
                         <div
                           key={ranking.user_id}
-                          className={`grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl border px-3 py-2 ${
+                          className={`grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-lg border px-2.5 py-1.5 ${
                             ranking.user_id === user?.id
                               ? "border-primary/35 bg-primary/10"
                               : "border-border/45 bg-background/40"
                           }`}
                         >
-                          <span className="text-sm font-black text-primary">#{ranking.simulated_position}</span>
+                          <span className="text-xs font-black text-primary">#{ranking.simulated_position}</span>
                           <div className="min-w-0">
-                            <div className="truncate text-sm font-bold text-foreground">{ranking.display_name}</div>
+                            <div className="truncate text-xs font-bold text-foreground sm:text-sm">{ranking.display_name}</div>
                             <div className="text-[11px] text-muted-foreground">
                               Ahora #{ranking.current_position || "-"}
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-sm font-black text-foreground">{ranking.simulated_total} pts</div>
+                            <div className="text-xs font-black text-foreground sm:text-sm">{ranking.simulated_total} pts</div>
                             {ranking.simulated_delta > 0 && (
                               <div className="text-[11px] font-bold text-emerald-400">+{ranking.simulated_delta}</div>
                             )}
@@ -1167,8 +1168,8 @@ export default function Clasificacion() {
                         </div>
                       ))}
                       {simulatedCurrentUser && !simulatedTop.some((ranking) => ranking.user_id === simulatedCurrentUser.user_id) && (
-                        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl border border-primary/35 bg-primary/10 px-3 py-2">
-                          <span className="text-sm font-black text-primary">#{simulatedCurrentUser.simulated_position}</span>
+                        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-lg border border-primary/35 bg-primary/10 px-2.5 py-1.5">
+                          <span className="text-xs font-black text-primary">#{simulatedCurrentUser.simulated_position}</span>
                           <div className="min-w-0">
                             <div className="truncate text-sm font-bold text-foreground">Tu posición</div>
                             <div className="text-[11px] text-muted-foreground">
@@ -1176,7 +1177,7 @@ export default function Clasificacion() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-sm font-black text-foreground">{simulatedCurrentUser.simulated_total} pts</div>
+                            <div className="text-xs font-black text-foreground sm:text-sm">{simulatedCurrentUser.simulated_total} pts</div>
                             {simulatedCurrentUser.simulated_delta > 0 && (
                               <div className="text-[11px] font-bold text-emerald-400">+{simulatedCurrentUser.simulated_delta}</div>
                             )}
