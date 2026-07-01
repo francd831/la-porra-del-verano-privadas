@@ -12,7 +12,10 @@ import { useToast } from "@/hooks/use-toast";
 
 const DEFAULT_TOURNAMENT_ID = "11111111-1111-1111-1111-111111111111";
 const MAX_PRIVATE_LEAGUES = 3;
-const WHAT_IF_ALLOWED_USER_IDS = new Set(["9b7996cb-f410-41dd-b6b3-4c5ac2cd5a56"]);
+const WHAT_IF_ALLOWED_USER_IDS = new Set([
+  "9b7996cb-f410-41dd-b6b3-4c5ac2cd5a56",
+  "40393e5b-d7b3-4c10-96fa-f6628084b00b",
+]);
 
 const PLAYOFF_ROUNDS = [
   { id: "Dieciseisavos de Final", label: "1/16", predictionPrefix: "R32", points: 15 },
@@ -1062,14 +1065,15 @@ export default function Clasificacion() {
                     <Sparkles className="relative h-3.5 w-3.5 text-primary" />
                   </span>
                   ¿Y si...?
-                  <Badge className="rounded-full border border-cyan-300/40 bg-cyan-300/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-cyan-100">
-                    New
-                  </Badge>
                 </CardTitle>
                 <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
                   Simula qué pasaría en esta clasificación si pasan unos equipos u otros.
                 </p>
               </div>
+              <div className="flex items-center gap-2 self-end sm:self-start">
+                <Badge className="rounded-full border border-cyan-300/40 bg-cyan-300/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-cyan-100">
+                  New
+                </Badge>
               <div className={`flex gap-1.5 ${whatIfExpanded ? "" : "hidden"}`} onClick={(event) => event.stopPropagation()}>
                 <Button
                   type="button"
@@ -1098,6 +1102,7 @@ export default function Clasificacion() {
               ) : (
                 <ChevronDown className="h-5 w-5 shrink-0 text-primary" />
               )}
+              </div>
             </div>
           </CardHeader>
           {whatIfExpanded && <CardContent className="space-y-3 px-3 pb-4 sm:px-5 sm:pb-5">
