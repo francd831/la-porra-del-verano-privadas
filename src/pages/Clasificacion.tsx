@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +21,44 @@ const PLAYOFF_ROUNDS = [
   { id: "Semifinales", label: "Semis", predictionPrefix: "SF", points: 40 },
   { id: "Final", label: "Final", predictionPrefix: "CHAMPION", points: 50 },
 ] as const;
+
+const BALON_ORO_OPTIONS = [
+  "Harry Kane",
+  "Lamine Yamal",
+  "Kylian Mbappé",
+  "Michael Olise",
+  "Lionel Messi",
+  "Vinícius Junior",
+  "Bruno Fernandes",
+  "Raphinha",
+  "Jude Bellingham",
+  "Ousmane Dembélé",
+  "Rayan Cherki",
+  "Declan Rice",
+  "Rodri",
+  "Pedri",
+  "Erling Haaland",
+  "OTRO",
+];
+
+const BOTA_ORO_OPTIONS = [
+  "Kylian Mbappé",
+  "Harry Kane",
+  "Erling Haaland",
+  "Lionel Messi",
+  "Lamine Yamal",
+  "Vinícius Junior",
+  "Cristiano Ronaldo",
+  "Ousmane Dembélé",
+  "Raphinha",
+  "Lautaro Martínez",
+  "Mikel Oyarzabal",
+  "Romelu Lukaku",
+  "Alexander Isak",
+  "Viktor Gyökeres",
+  "Bukayo Saka",
+  "OTRO",
+];
 
 const NEXT_SLOT_BY_MATCH_ID: Record<string, { target: string; side: "home" | "away" }> = {
   R32_1: { target: "R16_2", side: "home" },
@@ -179,6 +218,7 @@ export default function Clasificacion() {
   const [joiningLeague, setJoiningLeague] = useState(false);
   const [whatIfMatches, setWhatIfMatches] = useState<WhatIfMatch[]>([]);
   const [whatIfSelections, setWhatIfSelections] = useState<Record<string, string>>({});
+  const [whatIfAwards, setWhatIfAwards] = useState<Record<string, string>>({});
   const [simulatedRankings, setSimulatedRankings] = useState<SimulatedRanking[] | null>(null);
   const [whatIfLoading, setWhatIfLoading] = useState(false);
   const [whatIfExpanded, setWhatIfExpanded] = useState(false);
@@ -330,6 +370,7 @@ export default function Clasificacion() {
     if (!showWhatIf || !whatIfExpanded) {
       setWhatIfMatches([]);
       setWhatIfSelections({});
+      setWhatIfAwards({});
       setSimulatedRankings(null);
       return;
     }
@@ -737,6 +778,9 @@ export default function Clasificacion() {
   };
 
   const calculateWhatIfRanking = async () => {
+    const selectedAwards = Object.fromEntries(
+      Object.entries(whatIfAwards).filter(([, value]) => value)
+    );
     const callableSupabase = supabase as unknown as {
       rpc: (
         fn: string,
@@ -748,6 +792,7 @@ export default function Clasificacion() {
       p_tournament_id: DEFAULT_TOURNAMENT_ID,
       p_selected_winners: whatIfSelections,
       p_user_ids: visibleRankings.map((ranking) => ranking.user_id),
+      p_award_winners: selectedAwards,
     });
 
     if (error) {
@@ -788,10 +833,11 @@ export default function Clasificacion() {
 
   const resetWhatIf = () => {
     setWhatIfSelections({});
+    setWhatIfAwards({});
     setSimulatedRankings(null);
   };
 
-  const hasWhatIfSelections = Object.keys(whatIfSelections).length > 0;
+  const hasWhatIfSelections = Object.keys(whatIfSelections).length > 0 || Object.values(whatIfAwards).some(Boolean);
   const simulatedTop = simulatedRankings?.slice(0, 10) || [];
   const simulatedCurrentUser = user
     ? simulatedRankings?.find((ranking) => ranking.user_id === user.id) || null
@@ -1079,12 +1125,6 @@ export default function Clasificacion() {
                                 key={match.id}
                                 className="rounded-xl border border-border/50 bg-background/35 p-2"
                               >
-                                <div className="mb-1.5 flex items-center justify-between gap-2">
-                                  <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                                    {match.id.replace("_", " ")}
-                                  </span>
-                                  <span className="text-[10px] font-semibold text-primary">+{round.points}</span>
-                                </div>
                                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
                                   <button
                                     type="button"
@@ -1119,6 +1159,64 @@ export default function Clasificacion() {
                       </div>
                     );
                   })}
+                </div>
+
+                <div className="space-y-2 border-t border-border/50 pt-3">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="h-px flex-1 bg-border/60" />
+                    <Badge variant="outline" className="rounded-full border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] text-primary">
+                      Premios individuales
+                    </Badge>
+                    <div className="h-px flex-1 bg-border/60" />
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                        Balón de Oro
+                      </label>
+                      <Select
+                        value={whatIfAwards.balon_oro || ""}
+                        onValueChange={(value) => {
+                          setWhatIfAwards((prev) => ({ ...prev, balon_oro: value }));
+                          setSimulatedRankings(null);
+                        }}
+                      >
+                        <SelectTrigger className="h-9 rounded-lg text-xs">
+                          <SelectValue placeholder="Elegir jugador" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {BALON_ORO_OPTIONS.map((player) => (
+                            <SelectItem key={player} value={player}>
+                              {player}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                        Bota de Oro
+                      </label>
+                      <Select
+                        value={whatIfAwards.bota_oro || ""}
+                        onValueChange={(value) => {
+                          setWhatIfAwards((prev) => ({ ...prev, bota_oro: value }));
+                          setSimulatedRankings(null);
+                        }}
+                      >
+                        <SelectTrigger className="h-9 rounded-lg text-xs">
+                          <SelectValue placeholder="Elegir jugador" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {BOTA_ORO_OPTIONS.map((player) => (
+                            <SelectItem key={player} value={player}>
+                              {player}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex justify-center border-t border-border/50 pt-3">
