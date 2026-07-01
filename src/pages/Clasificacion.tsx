@@ -21,6 +21,13 @@ const PLAYOFF_ROUNDS = [
   { id: "Final", label: "Final", predictionPrefix: "CHAMPION", points: 50 },
 ] as const;
 
+const PLAYOFF_ADVANCEMENT_PREFIXES: Record<string, string[]> = {
+  R32: ["R32", "R16", "QF", "SF"],
+  R16: ["R16", "QF", "SF"],
+  QF: ["QF", "SF"],
+  SF: ["SF"],
+};
+
 const NEXT_SLOT_BY_MATCH_ID: Record<string, { target: string; side: "home" | "away" }> = {
   R32_1: { target: "R16_2", side: "home" },
   R32_2: { target: "R16_1", side: "home" },
@@ -812,11 +819,19 @@ export default function Clasificacion() {
         return;
       }
 
+      const validPrefixes = PLAYOFF_ADVANCEMENT_PREFIXES[roundConfig.predictionPrefix] || [roundConfig.predictionPrefix];
+
       whatIfPredictions
         .filter((prediction) =>
           prediction.predicted_winner_team_id === winnerTeamId
-          && (prediction.playoff_round || "").startsWith(`${roundConfig.predictionPrefix}_`)
+          && validPrefixes.some((prefix) => (prediction.playoff_round || "").startsWith(`${prefix}_`))
         )
+        .forEach((prediction) => {
+          addDelta(prediction.user_id, `${roundConfig.predictionPrefix}:${winnerTeamId}`, roundConfig.points);
+        });
+
+      whatIfChampionPredictions
+        .filter((prediction) => prediction.predicted_winner_team_id === winnerTeamId)
         .forEach((prediction) => {
           addDelta(prediction.user_id, `${roundConfig.predictionPrefix}:${winnerTeamId}`, roundConfig.points);
         });
